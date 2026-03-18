@@ -1,26 +1,404 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-forest: #0F2E1F;
+  --color-forest-dark: #0A1F15;
+  --color-gold: #C2A25D;
+  --color-gold-light: #D4C08A;
+  --color-gold-dark: #A8893D;
+  --color-sand: #F3EFE6;
+  --color-clay: #8A6D56;
+  --color-clay-light: #A68B73;
+  --color-sage: #C2CCB5;
+  --color-cream: #EEE8DD;
+  --color-neutral-100: #FAFAF7;
+  --color-neutral-200: #F0EDE6;
+  --color-neutral-300: #E2DDD4;
+
+  --font-heading: var(--font-playfair);
+  --font-body: var(--font-dm-sans);
+  --font-accent: var(--font-cormorant);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ===================================
+   Base Styles
+   =================================== */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-body), sans-serif;
+    background-color: var(--color-neutral-100);
+    color: var(--color-forest);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading), serif;
+    font-weight: 700;
+    color: var(--color-forest);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ===================================
+   Animations
+   =================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes kenBurns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.08) translate(-1%, -1%);
+  }
+}
+
+@keyframes scrollDown {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(194, 162, 93, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(194, 162, 93, 0.15);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.7s ease-out both;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out both;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.6s ease-out both;
+}
+
+.animate-kenBurns {
+  animation: kenBurns 20s ease-in-out alternate infinite;
+}
+
+.animate-scrollDown {
+  animation: scrollDown 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(194, 162, 93, 0.08), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.animate-pulseGlow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Stagger children animations */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 500ms; }
+
+/* ===================================
+   Product Theme Variants
+   =================================== */
+
+.theme-herbal {
+  --theme-accent: #2D5A3D;
+  --theme-accent-light: #4A7C5C;
+  --theme-bg: linear-gradient(135deg, #F5F9F6, #EAF2EC);
+  --theme-glow: rgba(45, 90, 61, 0.12);
+}
+
+.theme-skincare {
+  --theme-accent: #C47D3E;
+  --theme-accent-light: #D9A06A;
+  --theme-bg: linear-gradient(135deg, #FDF8F3, #F8EFE4);
+  --theme-glow: rgba(196, 125, 62, 0.12);
+}
+
+.theme-beauty {
+  --theme-accent: #B5547A;
+  --theme-accent-light: #D07A9A;
+  --theme-bg: linear-gradient(135deg, #FDF5F8, #F8E8EF);
+  --theme-glow: rgba(181, 84, 122, 0.12);
+}
+
+.theme-food {
+  --theme-accent: #8B6E2F;
+  --theme-accent-light: #B08E4A;
+  --theme-bg: linear-gradient(135deg, #FBF8F0, #F3EDD8);
+  --theme-glow: rgba(139, 110, 47, 0.12);
+}
+
+.theme-wellness {
+  --theme-accent: #6B7A5A;
+  --theme-accent-light: #8B9A7A;
+  --theme-bg: linear-gradient(135deg, #F7F9F4, #EBF0E6);
+  --theme-glow: rgba(107, 122, 90, 0.12);
+}
+
+/* Per-category background textures */
+.theme-herbal .product-hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 10c-8 12-20 18-30 18C18 40 30 60 40 70c10-10 22-30 30-42-10 0-22-6-30-18z' fill='%232D5A3D' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 80px 80px;
+  z-index: 1;
+}
+
+.theme-skincare .product-hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 30% 50%, rgba(196, 125, 62, 0.15), transparent 60%),
+              radial-gradient(ellipse at 70% 30%, rgba(217, 160, 106, 0.1), transparent 50%);
+  z-index: 1;
+}
+
+.theme-beauty .product-hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 20% 60%, rgba(181, 84, 122, 0.12), transparent 50%),
+              radial-gradient(ellipse at 80% 40%, rgba(208, 122, 154, 0.08), transparent 50%);
+  z-index: 1;
+}
+
+.theme-food .product-hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  z-index: 1;
+}
+
+.theme-wellness .product-hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='25' fill='none' stroke='%236B7A5A' stroke-width='0.5' opacity='0.3'/%3E%3Ccircle cx='30' cy='30' r='18' fill='none' stroke='%236B7A5A' stroke-width='0.4' opacity='0.2'/%3E%3Ccircle cx='30' cy='30' r='11' fill='none' stroke='%236B7A5A' stroke-width='0.3' opacity='0.15'/%3E%3C/svg%3E");
+  background-size: 60px 60px;
+  z-index: 1;
+}
+
+/* ===================================
+   Moon Theme (Chandraprabha)
+   =================================== */
+
+.theme-moon {
+  --theme-accent: #8B9DC3;
+  --theme-accent-light: #B0C4DE;
+  --theme-bg: linear-gradient(135deg, #0B1026, #141B3D);
+  --theme-glow: rgba(139, 157, 195, 0.15);
+}
+
+@keyframes moonOrbit {
+  0% { transform: rotate(0deg) translateX(20px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(20px) rotate(-360deg); }
+}
+
+@keyframes silverPulse {
+  0%, 100% { box-shadow: 0 0 20px 4px rgba(176, 196, 222, 0.15); }
+  50% { box-shadow: 0 0 40px 8px rgba(176, 196, 222, 0.25); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 0.6; transform: translateY(90vh) scale(1); }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-10vh) scale(0.5); opacity: 0; }
+}
+
+@keyframes moonPhase {
+  0%, 100% { clip-path: inset(0 50% 0 0); }
+  25% { clip-path: inset(0 25% 0 0); }
+  50% { clip-path: inset(0 0 0 0); }
+  75% { clip-path: inset(0 0 0 25%); }
+}
+
+.animate-moonOrbit { animation: moonOrbit 30s linear infinite; }
+.animate-silverPulse { animation: silverPulse 4s ease-in-out infinite; }
+.animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
+.animate-floatUp { animation: floatUp 12s linear infinite; }
+.animate-moonPhase { animation: moonPhase 8s ease-in-out infinite; }
+
+/* ===================================
+   Sun Theme (Suryakanti)
+   =================================== */
+
+.theme-sun {
+  --theme-accent: #E8A317;
+  --theme-accent-light: #F0C75E;
+  --theme-bg: linear-gradient(135deg, #FFF8E7, #FFF0CC);
+  --theme-glow: rgba(232, 163, 23, 0.15);
+}
+
+@keyframes sunburstPulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.05); opacity: 0.5; }
+}
+
+@keyframes warmGlow {
+  0%, 100% { box-shadow: 0 0 30px 6px rgba(232, 163, 23, 0.15); }
+  50% { box-shadow: 0 0 60px 12px rgba(232, 163, 23, 0.25); }
+}
+
+@keyframes sunRay {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes sunShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-sunburstPulse { animation: sunburstPulse 6s ease-in-out infinite; }
+.animate-warmGlow { animation: warmGlow 4s ease-in-out infinite; }
+.animate-sunRay { animation: sunRay 60s linear infinite; }
+.animate-sunShimmer {
+  background: linear-gradient(90deg, transparent, rgba(232, 163, 23, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: sunShimmer 3s ease-in-out infinite;
+}
+
+/* ===================================
+   Utility Classes
+   =================================== */
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gold-underline::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-gold-light));
+  margin-top: 12px;
+}
+
+.gold-underline-center::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-gold-light));
+  margin: 12px auto 0;
+}
+
+/* Image zoom on hover */
+.img-zoom {
+  overflow: hidden;
+}
+
+.img-zoom img {
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.img-zoom:hover img {
+  transform: scale(1.08);
+}
+
+/* Product hero background positioning for theme textures */
+.product-hero-bg {
+  position: relative;
+  background-color: var(--color-neutral-100);
+}
+
+/* Hero glow text */
+.hero-glow-text {
+  text-shadow: 0 0 80px rgba(194, 162, 93, 0.15), 0 0 160px rgba(194, 162, 93, 0.08);
+}
+
+/* Hero title — first slide: "Svayam" in lighter weight */
+.hero-title span:first-child {
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
