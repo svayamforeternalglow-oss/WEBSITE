@@ -17,7 +17,26 @@ const app = express();
 
 // Security middlewares
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+
+// Dynamic CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL?.replace('https://', 'https://www.'),
+  process.env.FRONTEND_URL?.replace('https://www.', 'https://'),
+].filter(Boolean).map(url => url.replace(/\/$/, ''));
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.indexOf(origin + '/') !== -1) {
+      callback(null, true);
+    } else {
+      callback(null, new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // Rate limiting
 const limiter = rateLimit({
