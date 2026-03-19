@@ -86,6 +86,11 @@ export const addOrderItems = async (req, res) => {
       receipt: `receipt_${Date.now()}`,
     });
 
+    if (!razorpayOrder || !razorpayOrder.id) {
+       console.error("Razorpay order creation failed: ", razorpayOrder);
+       throw new Error('Failed to create Razorpay payment order. Check your keys.');
+    }
+
     const order = new Order({
       user: req.user._id,
       orderItems: finalItems,
@@ -638,6 +643,11 @@ export const createGuestOrder = async (req, res) => {
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     });
+
+    if (!razorpayOrder || !razorpayOrder.id) {
+       console.error("Guest Razorpay order creation failed: ", razorpayOrder);
+       throw new Error('Failed to create guest payment order. Check your keys.');
+    }
 
     const order = new Order({
       orderItems,
