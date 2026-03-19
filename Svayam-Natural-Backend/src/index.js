@@ -1,0 +1,62 @@
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+
+import connectDB from './config/db.js';
+import startCronJobs from './utils/cronJobs.js';
+
+// Load env vars
+dotenv.config();
+
+// Connect to database
+connectDB();
+
+const app = express();
+
+// Security middlewares
+app.use(helmet());
+app.use(cors({ origin: process.env.FRONTEND_URL }));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+app.use('/api', limiter);
+
+// Body parser (with rawBody support for Razorpay webhooks)
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+
+import userRoutes from './routes/userRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import shippingRoutes from './routes/shippingRoutes.js';
+
+// Routes
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/payment', paymentRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/shipping', shippingRoutes);
+
+app.get('/', (req, res) => {
+  res.send('Svayam-Natural API is running...');
+});
+
+const PORT = process.env.PORT || 5000;
+
+// Start background cron jobs
+startCronJobs();
+
+app.listen(PORT, () => {
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
