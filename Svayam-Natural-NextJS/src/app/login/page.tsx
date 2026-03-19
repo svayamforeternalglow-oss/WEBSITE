@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
@@ -52,7 +51,6 @@ export default function LoginPage() {
     <section className="flex min-h-screen items-center justify-center bg-forest px-6">
       <div className="w-full max-w-md">
         <div className="mb-10 text-center">
-          <Image src="/Svayam_Logo1.png" alt="Svayam Natural" width={200} height={70} className="mx-auto mb-6 h-14 w-auto" />
           <h1 className="font-heading text-2xl font-bold text-sand">Sign In</h1>
           <p className="mt-2 text-sm text-sand/50">Welcome to Svayam Natural</p>
         </div>

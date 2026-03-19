@@ -93,8 +93,8 @@ export default function HeroSlider() {
       <div className="pointer-events-none absolute bottom-1/4 right-1/4 -z-0 h-[400px] w-[400px] rounded-full bg-gold/[0.04] blur-[100px]" />
 
       {/* Content */}
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-28 pb-20 lg:px-10">
-        <div className="max-w-2xl">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-28 pb-20 text-center md:text-left lg:px-10">
+        <div className="mx-auto max-w-2xl md:mx-0">
           {slides.map((slide, i) => (
             <div
               key={i}
@@ -105,7 +105,7 @@ export default function HeroSlider() {
               }`}
             >
               {/* Subtitle pill */}
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.08] px-4 py-1.5 backdrop-blur-sm">
+              <div className="mb-6 inline-flex items-center justify-center gap-2 rounded-full border border-gold/30 bg-gold/[0.08] px-4 py-1.5 backdrop-blur-sm md:justify-start">
                 <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" />
                 <span className="text-xs font-medium uppercase tracking-[0.2em] text-gold-light">
                   {slide.subtitle}
@@ -125,14 +125,14 @@ export default function HeroSlider() {
               </h1>
 
               {/* Description */}
-              <p className="mb-12 max-w-md text-base leading-relaxed text-sand/60 md:text-lg">
+              <p className="mx-auto mb-12 max-w-md text-base leading-relaxed text-sand/60 md:mx-0 md:text-lg">
                 {slide.description}
               </p>
 
               {/* CTA */}
               <Link
                 href={slide.cta.href}
-                className="group inline-flex items-center gap-4 rounded-full bg-gold px-8 py-4 text-sm font-semibold uppercase tracking-wider text-forest transition-all duration-300 hover:bg-gold-light hover:shadow-[0_0_40px_rgba(194,162,93,0.3)]"
+                className="group inline-flex items-center justify-center gap-4 rounded-full bg-gold px-8 py-4 text-sm font-semibold uppercase tracking-wider text-forest transition-all duration-300 hover:bg-gold-light hover:shadow-[0_0_40px_rgba(194,162,93,0.3)] md:justify-start"
               >
                 {slide.cta.label}
                 <ArrowLongRightIcon className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -142,9 +142,9 @@ export default function HeroSlider() {
         </div>
       </div>
 
-      {/* Slide indicators with progress bar — aligned to content container */}
-      <div className="absolute inset-x-0 bottom-12 z-10 mx-auto flex max-w-7xl items-center justify-between px-6 lg:px-10">
-        <div className="flex items-center gap-6">
+      {/* Slide indicators with progress bar — centered on mobile */}
+      <div className="absolute inset-x-0 bottom-12 z-10 mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 px-6 md:flex-row md:justify-between lg:px-10">
+        <div className="flex items-center justify-center gap-6">
           {slides.map((_, i) => (
             <button
               key={i}

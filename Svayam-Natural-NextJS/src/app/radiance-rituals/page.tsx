@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import SectionHeader from "@/components/SectionHeader";
+import SkinAwarenessQuiz from "@/components/SkinAwarenessQuiz";
+import { programLinks } from "@/config/programLinks";
 
 export const metadata: Metadata = {
   title: "Radiance Rituals — Face Yoga",
@@ -11,9 +13,9 @@ export const metadata: Metadata = {
 
 const programPlans = [
   {
-    name: "Mini Program",
-    tier: "starter",
-    price: "Coming Soon",
+    name: "5-Day Radiance Reset (Beginners Program)",
+    registerLink: programLinks.radianceReset5Days,
+    popular: true,
     features: [
       "Introduction to Face Yoga basics",
       "5 foundational exercises",
@@ -22,9 +24,8 @@ const programPlans = [
     ],
   },
   {
-    name: "Silver Plan",
-    tier: "silver",
-    price: "Coming Soon",
+    name: "Face Sculpt Transformation & Holistic Face Rejuvenation – 48 Days",
+    registerLink: programLinks.faceSculpt48Days,
     features: [
       "Complete Face Yoga curriculum",
       "Personalized routine plan",
@@ -34,30 +35,15 @@ const programPlans = [
     ],
   },
   {
-    name: "Golden Plan",
-    tier: "golden",
-    popular: true,
-    price: "Coming Soon",
+    name: "Ageless Glow Platinum Program – 90 Days",
+    registerLink: programLinks.agelessGlow90Days,
     features: [
-      "Everything in Silver",
+      "Everything in 48-Day program",
       "1-on-1 sessions with Chaitanya",
       "Advanced sculpting techniques",
       "Nutrition & lifestyle guidance",
       "Priority support",
       "Certificate of completion",
-    ],
-  },
-  {
-    name: "Platinum Plan",
-    tier: "platinum",
-    price: "Coming Soon",
-    features: [
-      "Everything in Golden",
-      "Unlimited personal consultations",
-      "Custom holistic beauty plan",
-      "VIP community membership",
-      "Exclusive workshops & retreats",
-      "Lifetime access to updates",
     ],
   },
 ];
@@ -226,37 +212,8 @@ export default function RadianceRitualsPage() {
         </div>
       </section>
 
-      {/* ─── Quiz CTA ─── */}
-      <section className="relative overflow-hidden bg-forest py-20" id="quiz">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--color-gold)_0%,transparent_70%)] opacity-[0.04]" />
-        <div className="relative mx-auto max-w-3xl px-6 text-center lg:px-10">
-          <AnimateOnScroll animation="fadeInUp">
-            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-gold/20 bg-gold/[0.08]">
-              <svg className="h-8 w-8 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                <circle cx="12" cy="17" r="0.5" fill="currentColor" />
-              </svg>
-            </div>
-            <h2 className="mb-4 font-heading text-3xl font-bold text-white md:text-4xl">
-              Take a Quick Quiz!
-            </h2>
-            <p className="mb-8 text-sand/60">
-              Discover your personalized Face Yoga routine with a short
-              questionnaire. Get a free video tutorial tailored to your results.
-            </p>
-            <a
-              href="#"
-              className="group inline-flex items-center gap-3 rounded-full bg-gold px-10 py-4 text-sm font-bold uppercase tracking-wider text-forest transition-all duration-300 hover:bg-gold-light hover:shadow-[0_0_40px_rgba(194,162,93,0.3)]"
-            >
-              Start the Quiz
-              <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </a>
-          </AnimateOnScroll>
-        </div>
-      </section>
+      {/* ─── Quiz ─── */}
+      <SkinAwarenessQuiz />
 
       {/* ─── Science Behind Face Yoga ─── */}
       <section className="bg-neutral-100 py-24 lg:py-28">
@@ -459,7 +416,7 @@ export default function RadianceRitualsPage() {
             />
           </AnimateOnScroll>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {programPlans.map((plan, i) => (
               <AnimateOnScroll key={plan.name} animation="fadeInUp" delay={i * 100}>
                 <div
@@ -474,12 +431,9 @@ export default function RadianceRitualsPage() {
                       Most Popular
                     </span>
                   )}
-                  <h3 className="mb-2 font-heading text-xl font-bold text-forest">
+                  <h3 className="mb-6 font-heading text-xl font-bold text-forest">
                     {plan.name}
                   </h3>
-                  <p className="mb-6 text-2xl font-bold text-gold-dark">
-                    {plan.price}
-                  </p>
                   <ul className="mb-8 flex-1 space-y-3">
                     {plan.features.map((feature) => (
                       <li
@@ -493,15 +447,18 @@ export default function RadianceRitualsPage() {
                       </li>
                     ))}
                   </ul>
-                  <button
-                    className={`w-full rounded-lg py-3 text-sm font-bold uppercase tracking-wider transition-all duration-300 ${
+                  <a
+                    href={plan.registerLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`block w-full rounded-lg py-3 text-center text-sm font-bold uppercase tracking-wider transition-all duration-300 ${
                       plan.popular
                         ? "bg-gold text-forest hover:bg-gold-dark"
                         : "border border-forest/20 text-forest hover:border-forest hover:bg-forest hover:text-sand"
                     }`}
                   >
-                    Get Started
-                  </button>
+                    Register
+                  </a>
                 </div>
               </AnimateOnScroll>
             ))}

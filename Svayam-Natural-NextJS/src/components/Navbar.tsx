@@ -70,6 +70,14 @@ export default function Navbar() {
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1024) setMobileOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const handleDropdownEnter = () => {
     if (dropdownTimeout.current) clearTimeout(dropdownTimeout.current);
     setDropdownOpen(true);
@@ -96,15 +104,15 @@ export default function Navbar() {
         }`}
       />
 
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 lg:px-8">
-        {/* Logo — 1.75x scale */}
-        <Link href="/" className="flex-shrink-0">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-5 lg:px-8 lg:py-0.5">
+        {/* Logo — left-aligned on mobile, proper tap target */}
+        <Link href="/" className="flex min-h-[44px] flex-shrink-0 items-center" aria-label="Svayam Natural - Home">
           <Image
-            src="/Svayam_Logo1.png"
-            alt="Svayam Natural"
-            width={280}
-            height={98}
-            className={`h-[4.75rem] w-auto transition-all duration-300 lg:h-[5.25rem] ${solid ? "" : "brightness-0 invert"}`}
+            src="/Svayam_Logo4.png"
+            alt=""
+            width={420}
+            height={147}
+            className="h-10 w-auto max-w-[180px] transition-all duration-300 sm:h-12 sm:max-w-[220px] lg:h-[6rem] lg:max-w-none"
             priority
           />
         </Link>
@@ -279,15 +287,36 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu — full-screen overlay, logo in same place (white washed) */}
       <div
-        className={`fixed inset-0 top-[65px] bg-forest/[0.98] backdrop-blur-2xl transition-all duration-500 lg:hidden ${
+        className={`fixed inset-0 z-50 flex flex-col bg-forest/[0.98] backdrop-blur-2xl transition-all duration-500 lg:hidden ${
           mobileOpen
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
         }`}
       >
-        <div className="flex h-full flex-col items-center justify-center gap-1 pb-20">
+        {/* Header: logo (same position as navbar) + close */}
+        <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 sm:px-5">
+          <Link href="/" onClick={() => setMobileOpen(false)} className="flex min-h-[44px] flex-shrink-0 items-center">
+            <Image
+              src="/Svayam_Logo4.png"
+              alt=""
+              width={420}
+              height={147}
+              className="h-10 w-auto max-w-[180px] brightness-0 invert sm:h-12 sm:max-w-[220px]"
+            />
+          </Link>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-gold hover:bg-gold/10"
+            aria-label="Close menu"
+          >
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="flex flex-1 flex-col items-center justify-center gap-1 pb-20">
           {navLinks.map((link, i) => (
             <div key={link.href} className="flex flex-col items-center">
               {link.children ? (

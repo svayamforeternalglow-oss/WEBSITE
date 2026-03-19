@@ -65,15 +65,15 @@ export default function Footer() {
       />
 
       <div className="relative mx-auto max-w-7xl px-6 py-20 lg:px-10">
-        <div className="grid gap-14 md:grid-cols-2 lg:grid-cols-12">
+        <div className="grid place-items-center gap-14 text-center md:place-items-start md:grid-cols-2 md:text-left lg:grid-cols-12">
           {/* Brand */}
-          <div className="lg:col-span-4">
+          <div className="-mt-2 w-full md:-ml-2 lg:col-span-4">
             {isLight ? (
               <div
-                className="mb-5 h-[5.25rem] w-[15rem] bg-forest"
+                className="mx-auto mb-4 h-[12rem] w-[36rem] max-w-full bg-forest md:mx-0"
                 style={{
-                  maskImage: "url(/Svayam_Logo1.png)",
-                  WebkitMaskImage: "url(/Svayam_Logo1.png)",
+                  maskImage: "url(/Svayam_Logo2.png)",
+                  WebkitMaskImage: "url(/Svayam_Logo2.png)",
                   maskSize: "contain",
                   WebkitMaskSize: "contain",
                   maskRepeat: "no-repeat",
@@ -86,61 +86,26 @@ export default function Footer() {
               />
             ) : (
               <Image
-                src="/Svayam_Logo1.png"
+                src="/Svayam_Logo2.png"
                 alt="Svayam Natural"
-                width={240}
-                height={84}
-                className="mb-5 h-[5.25rem] w-auto brightness-0 invert"
+                width={550}
+                height={192}
+                className="mx-auto mb-4 h-[12rem] w-auto max-w-full brightness-0 invert md:mx-0"
               />
             )}
-            <p
-              className={`mb-2 font-accent text-lg italic ${
-                isLight ? "text-clay" : "text-gold/60"
-              }`}
-            >
-              Where Nature Meets Tradition
-            </p>
-            <p
-              className={`max-w-xs text-sm leading-relaxed ${
-                isLight ? "text-clay-light" : "text-sand/35"
-              }`}
-            >
-              Handcrafted Ayurvedic products made with ethically sourced
-              ingredients, rooted in centuries of Indian wellness wisdom.
-            </p>
-
-            {/* Social icons */}
-            <div className="mt-8 flex gap-3">
-              {socials.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  aria-label={social.label}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 hover:-translate-y-0.5 ${
-                    isLight
-                      ? "border-neutral-300 text-clay-light hover:border-gold/50 hover:text-gold-dark"
-                      : "border-sand/10 text-sand/40 hover:border-gold/50 hover:text-gold hover:shadow-[0_4px_20px_rgba(194,162,93,0.15)]"
-                  }`}
-                >
-                  <social.icon className="h-[18px] w-[18px]" />
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Link columns */}
           {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title} className="lg:col-span-2">
+            <div key={title} className="flex w-full flex-col items-center gap-4 md:items-start lg:col-span-2">
               <h3
-                className={`mb-6 text-[11px] font-semibold uppercase tracking-[0.2em] ${
+                className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${
                   isLight ? "text-forest" : "text-gold/70"
                 }`}
               >
                 {title}
               </h3>
-              <ul className="space-y-3.5">
+              <ul className="flex flex-col items-center gap-3 md:items-start">
                 {links.map((link) => (
                   <li key={link.label}>
                     <Link
@@ -161,23 +126,23 @@ export default function Footer() {
           ))}
 
           {/* Newsletter hint */}
-          <div className="lg:col-span-2">
+          <div className="flex w-full max-w-xs flex-col items-center gap-4 md:max-w-none md:items-start lg:col-span-2">
             <h3
-              className={`mb-6 text-[11px] font-semibold uppercase tracking-[0.2em] ${
+              className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${
                 isLight ? "text-forest" : "text-gold/70"
               }`}
             >
               Stay Updated
             </h3>
             <p
-              className={`mb-4 text-sm leading-relaxed ${
+              className={`text-sm leading-relaxed ${
                 isLight ? "text-clay-light" : "text-sand/35"
               }`}
             >
               Be the first to know about new products, rituals, and exclusive
               offers.
             </p>
-            <div className="flex">
+            <div className="flex w-full">
               <input
                 type="email"
                 placeholder="Your email"
@@ -198,6 +163,37 @@ export default function Footer() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Tagline — below grid, wraps on small screens */}
+        <p className="mt-14 text-center">
+          <span className={`font-accent text-lg italic ${isLight ? "text-clay" : "text-gold/60"}`}>
+            Where Nature Meets Tradition
+          </span>
+          <span className={`mx-2 ${isLight ? "text-clay-light" : "text-sand/35"}`}>—</span>
+          <span className={`text-sm leading-relaxed ${isLight ? "text-clay-light" : "text-sand/35"}`}>
+            Handcrafted Ayurvedic products made with ethically sourced ingredients, rooted in centuries of Indian wellness wisdom.
+          </span>
+        </p>
+
+        {/* Social links — centered below tagline */}
+        <div className="mt-6 flex justify-center gap-3">
+          {socials.map((social) => (
+            <a
+              key={social.label}
+              href={social.href}
+              aria-label={social.label}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 hover:-translate-y-0.5 ${
+                isLight
+                  ? "border-neutral-300 text-clay-light hover:border-gold/50 hover:text-gold-dark"
+                  : "border-sand/10 text-sand/40 hover:border-gold/50 hover:text-gold hover:shadow-[0_4px_20px_rgba(194,162,93,0.15)]"
+              }`}
+            >
+              <social.icon className="h-[18px] w-[18px]" />
+            </a>
+          ))}
         </div>
       </div>
 
