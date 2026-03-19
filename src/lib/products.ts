@@ -379,7 +379,7 @@ export function getProductBySlug(slug: string): Product | undefined {
   return products.find((p) => p.slug === slug);
 }
 
-export function getProductsBySlugs(slugs: string[]): Product[] {
+export function getProductsBySlugs(slugs: string[] | readonly string[]): Product[] {
   return slugs
     .map((slug) => products.find((p) => p.slug === slug))
     .filter((p): p is Product => p !== undefined);

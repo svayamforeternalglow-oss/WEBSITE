@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBagIcon, UserIcon } from "./icons";
+import { ShoppingBagIcon, UserIcon, HeartIcon } from "./icons";
 import { useCartStore } from "@/lib/cart";
+import { useWishlistStore } from "@/lib/wishlist";
+import { useAuthStore } from "@/lib/auth";
 
 interface NavChild {
   label: string;
@@ -39,16 +41,23 @@ export default function Navbar() {
   const hasDarkHero =
     pathname === "/" || pathname === "/products/chandraprabha-night-nectar";
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
   const dropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
   const itemCount = useCartStore((s) => s.getItemCount());
   const openCart = useCartStore((s) => s.openCart);
+  
+  const wishlistCount = useWishlistStore((s) => s.items.length);
+
+  const { isAuthenticated, username, logout } = useAuthStore();
 
   const solid = !hasDarkHero || scrolled;
 
   useEffect(() => {
+    setMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -167,6 +176,22 @@ export default function Navbar() {
 
         {/* Desktop Actions */}
         <div className="hidden items-center gap-2 lg:flex">
+          <Link
+            href="/wishlist"
+            className={`group relative flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
+              solid
+                ? "text-forest/50 hover:bg-forest/[0.04] hover:text-gold-dark"
+                : "text-sand/60 hover:bg-sand/[0.06] hover:text-gold"
+            }`}
+            aria-label="Wishlist"
+          >
+            <HeartIcon className="h-5 w-5" />
+            {mounted && wishlistCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-forest">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
           <button
             onClick={openCart}
             className={`group relative flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
@@ -177,23 +202,54 @@ export default function Navbar() {
             aria-label="Cart"
           >
             <ShoppingBagIcon className="h-[22px] w-[22px]" />
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-forest">
                 {itemCount}
               </span>
             )}
           </button>
-          <Link
-            href="/login"
-            className={`ml-2 inline-flex items-center gap-2 rounded-full border px-5 py-2 text-[12px] font-semibold tracking-[0.1em] transition-all duration-300 ${
-              solid
-                ? "border-forest/20 text-forest hover:border-forest hover:bg-forest hover:text-sand"
-                : "border-gold/40 text-gold hover:border-gold hover:bg-gold hover:text-forest"
-            }`}
-          >
-            <UserIcon className="h-3.5 w-3.5" />
-            Sign In
-          </Link>
+          
+          {isAuthenticated ? (
+            <div className="flex items-center gap-4">
+              <span className={`text-[12px] font-medium tracking-wider ${solid ? "text-forest" : "text-sand"}`}>
+                Hi, {username}
+              </span>
+              <div className="group relative">
+                <Link
+                  href="/my-orders"
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[11px] font-semibold tracking-[0.1em] transition-all duration-300 ${
+                    solid
+                      ? "border-forest/20 text-forest hover:bg-forest/5"
+                      : "border-gold/40 text-gold hover:bg-gold/10"
+                  }`}
+                >
+                  My Orders
+                </Link>
+              </div>
+              <button
+                onClick={logout}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[11px] font-semibold tracking-[0.1em] transition-all duration-300 ${
+                  solid
+                    ? "border-forest/20 text-forest hover:bg-forest hover:text-sand"
+                    : "border-gold/40 text-gold hover:bg-gold hover:text-forest"
+                }`}
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className={`ml-2 inline-flex items-center gap-2 rounded-full border px-5 py-2 text-[12px] font-semibold tracking-[0.1em] transition-all duration-300 ${
+                solid
+                  ? "border-forest/20 text-forest hover:border-forest hover:bg-forest hover:text-sand"
+                  : "border-gold/40 text-gold hover:border-gold hover:bg-gold hover:text-forest"
+              }`}
+            >
+              <UserIcon className="h-3.5 w-3.5" />
+              Sign In
+            </Link>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -293,27 +349,57 @@ export default function Navbar() {
               )}
             </div>
           ))}
-          <div className="mt-6 flex items-center gap-4">
-            <button
-              onClick={() => { setMobileOpen(false); openCart(); }}
-              className="relative flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 text-gold transition-all hover:bg-gold hover:text-forest"
-              aria-label="Cart"
-            >
-              <ShoppingBagIcon className="h-5 w-5" />
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-bold text-forest">
-                  {itemCount}
+          <div className="mt-6 flex flex-col items-center gap-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/wishlist"
+                onClick={() => setMobileOpen(false)}
+                className="relative flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 text-gold transition-all hover:bg-gold hover:text-forest"
+                aria-label="Wishlist"
+              >
+                <HeartIcon className="h-5 w-5" />
+                {mounted && wishlistCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-bold text-forest">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+              <button
+                onClick={() => { setMobileOpen(false); openCart(); }}
+                className="relative flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 text-gold transition-all hover:bg-gold hover:text-forest"
+                aria-label="Cart"
+              >
+                <ShoppingBagIcon className="h-5 w-5" />
+                {mounted && itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-bold text-forest">
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+            </div>
+            
+            {isAuthenticated ? (
+              <div className="flex flex-col items-center gap-3">
+                <span className="text-sm font-medium tracking-wider text-sand">
+                  Hi, {username}
                 </span>
-              )}
-            </button>
-            <Link
-              href="/login"
-              onClick={() => setMobileOpen(false)}
-              className="inline-flex items-center gap-2 rounded-full bg-gold px-7 py-3 text-sm font-semibold tracking-wider text-forest"
-            >
-              <UserIcon className="h-4 w-4" />
-              Sign In
-            </Link>
+                <button
+                  onClick={() => { logout(); setMobileOpen(false); }}
+                  className="rounded-full border border-gold/40 px-8 py-2 text-xs font-semibold tracking-widest text-gold transition-all hover:bg-gold hover:text-forest"
+                >
+                  LOGOUT
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="inline-flex items-center gap-2 rounded-full bg-gold px-7 py-3 text-sm font-semibold tracking-wider text-forest"
+              >
+                <UserIcon className="h-4 w-4" />
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </div>

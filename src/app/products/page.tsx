@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import SectionHeader from "@/components/SectionHeader";
 import ProductCard from "@/components/ProductCard";
 import {
@@ -9,8 +10,20 @@ import {
   products,
 } from "@/lib/products";
 
-export default function ProductsPage() {
-  const [activeCategory, setActiveCategory] = useState("all");
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const categoryParam = searchParams.get("category");
+  
+  const [activeCategory, setActiveCategory] = useState(
+    categoryParam || "all"
+  );
+
+  useEffect(() => {
+    if (categoryParam) {
+      setActiveCategory(categoryParam);
+    }
+  }, [categoryParam]);
 
   const displayedProducts =
     activeCategory === "all"
@@ -20,8 +33,14 @@ export default function ProductsPage() {
             ?.slugs ?? []
         );
 
+  const handleCategoryChange = (catId: string) => {
+    setActiveCategory(catId);
+    // Optionally update URL so it remains shareable
+    router.push(`/products${catId === 'all' ? '' : `?category=${catId}`}`);
+  };
+
   return (
-    <section className="bg-neutral-100 pt-28 pb-24">
+    <section className="bg-neutral-100 pt-28 pb-24 min-h-screen">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
         <SectionHeader
           title="Our Products"
@@ -33,7 +52,7 @@ export default function ProductsPage() {
           {PRODUCTS_PAGE_CATEGORIES.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => handleCategoryChange(cat.id)}
               className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
                 activeCategory === cat.id
                   ? "bg-forest text-sand"
@@ -51,7 +70,21 @@ export default function ProductsPage() {
             <ProductCard key={product.slug} product={product} />
           ))}
         </div>
+        
+        {displayedProducts.length === 0 && (
+          <div className="text-center text-clay py-12">
+            No products found in this category.
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-neutral-100 pt-28 pb-24 text-center text-forest">Loading products...</div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

@@ -80,6 +80,7 @@ export default function HeroSlider() {
             sizes="100vw"
             className={`object-cover ${i === current ? "animate-kenBurns" : ""}`}
             priority={i === 0}
+            loading={i === 0 ? "eager" : "lazy"}
           />
           {/* Multi-layer gradient for depth */}
           <div className="absolute inset-0 bg-gradient-to-r from-forest-dark/95 via-forest-dark/80 to-forest-dark/40" />

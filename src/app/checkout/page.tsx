@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/cart';
+import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
 import { api } from '@/lib/api';
 import { openRazorpayCheckout } from '@/lib/razorpay';
@@ -53,6 +54,7 @@ interface VerifyResponse {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { isAuthenticated, token } = useAuthStore();
   const { items, getSubtotal, getShipping, getTax, getTotal, clearCart } = useCartStore();
   const { addToast } = useToastStore();
 
@@ -104,8 +106,14 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setLoading(true);
     try {
-      const body = {
-        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      const orderData = {
+        orderItems: items.map((i) => ({ 
+          product: i.productId,
+          productId: i.productId,
+          slug: i.slug,
+          qty: i.quantity,
+          quantity: i.quantity 
+        })),
         shippingAddress: {
           fullName: shipping.fullName,
           email: shipping.email,
@@ -115,30 +123,38 @@ export default function CheckoutPage() {
           state: shipping.state,
           pincode: shipping.pincode,
         },
+        paymentMethod: 'Razorpay',
+        totalAmount: getTotal()
       };
 
-      const { data } = await api.post<OrderResponse>('/orders/guest/create', body);
+      // If authenticated, use private endpoint, otherwise use guest endpoint
+      const endpoint = isAuthenticated ? '/orders' : '/orders/guest/create';
+      const response = await api.post<any>(endpoint, isAuthenticated ? orderData : { items: orderData.orderItems.map(i => ({ ...i, slug: items.find(ci => ci.productId === i.productId)?.slug })), shippingAddress: orderData.shippingAddress }, token || undefined);
+      
+      const data = response.data || response;
 
       await openRazorpayCheckout({
-        orderId: data.orderNumber,
-        razorpayOrderId: data.razorpayOrderId,
-        amount: data.amount,
-        razorpayKeyId: data.razorpayKeyId,
+        orderId: data.orderNumber || data._id,
+        razorpayOrderId: data.razorpayOrderId || (data.paymentStatus && data.paymentStatus.razorpayOrderId),
+        amount: data.amount || data.totalAmount,
+        razorpayKeyId: data.razorpayKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SSZQo0ldhC6rPT',
         customerName: shipping.fullName,
         customerEmail: shipping.email,
         customerPhone: shipping.phone,
-        onSuccess: async (response) => {
+        onSuccess: async (razorpayResponse) => {
           try {
-            await api.post<VerifyResponse>('/orders/guest/verify-payment', {
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-            });
+            const verifyEndpoint = isAuthenticated ? '/orders/verify-payment' : '/orders/guest/verify-payment';
+            await api.post<any>(verifyEndpoint, {
+              razorpayOrderId: razorpayResponse.razorpay_order_id,
+              razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+              razorpaySignature: razorpayResponse.razorpay_signature,
+            }, token || undefined);
 
             clearCart();
             addToast('Payment successful! Order confirmed.', 'success');
-            router.push(`/order-success?order=${data.orderNumber}`);
-          } catch {
+            router.push(`/order-success?order=${data.orderNumber || data._id}`);
+          } catch (err) {
+            console.error("Verification error:", err);
             addToast('Payment verification failed. Contact support if charged.', 'error', 8000);
           }
           setLoading(false);

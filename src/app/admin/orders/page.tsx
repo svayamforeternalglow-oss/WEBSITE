@@ -22,6 +22,7 @@ interface Order {
   payment: { method: string; status: string; razorpayPaymentId?: string };
   status: string;
   createdAt: string;
+  estimatedDelivery?: string | null;
   tracking?: { carrier?: string; trackingNumber?: string; trackingUrl?: string };
 }
 
@@ -443,6 +444,43 @@ export default function AdminOrdersPage() {
                   )}
                 </div>
               )}
+              {/* Estimated Delivery Date */}
+              <div>
+                <p className="text-xs font-semibold uppercase text-clay">Estimated Delivery</p>
+                {selectedOrder.estimatedDelivery ? (
+                  <p className="mt-1 text-sm font-medium text-forest">
+                    📅 {new Date(selectedOrder.estimatedDelivery).toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-sm text-clay">Not set</p>
+                )}
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="date"
+                    id="est-delivery-date"
+                    defaultValue={selectedOrder.estimatedDelivery ? new Date(selectedOrder.estimatedDelivery).toISOString().slice(0, 10) : ''}
+                    min={new Date().toISOString().slice(0, 10)}
+                    className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-forest outline-none focus:border-gold"
+                  />
+                  <button
+                    onClick={async () => {
+                      const dateInput = document.getElementById('est-delivery-date') as HTMLInputElement;
+                      if (!dateInput?.value) return;
+                      try {
+                        await api.patch(`/orders/admin/${selectedOrder._id}/status`, { estimatedDelivery: dateInput.value }, token || undefined);
+                        addToast('Delivery date updated!', 'success');
+                        fetchOrders();
+                        setSelectedOrder({ ...selectedOrder, estimatedDelivery: dateInput.value });
+                      } catch (err) {
+                        addToast('Failed to update delivery date', 'error');
+                      }
+                    }}
+                    className="rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-forest hover:bg-gold-dark"
+                  >
+                    Set Date
+                  </button>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2 pt-2">
                 {selectedOrder.payment.status === 'completed' && !selectedOrder.tracking?.trackingNumber && (
                   <button

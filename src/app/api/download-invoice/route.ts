@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,17 +37,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const blob = await res.blob();
-    const resContentType = res.headers.get("content-type") || "application/pdf";
-    const contentDisposition =
-      res.headers.get("content-disposition") ||
-      `attachment; filename="invoice-${orderId}.pdf"`;
+    const body = await res.text();
+    const resContentType = res.headers.get("content-type") || "text/html";
 
-    return new NextResponse(blob, {
+    return new NextResponse(body, {
       status: 200,
       headers: {
         "Content-Type": resContentType,
-        "Content-Disposition": contentDisposition,
       },
     });
   } catch (error) {

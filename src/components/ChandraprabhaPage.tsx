@@ -1,8 +1,8 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/products";
+import AddToCartButton from "./AddToCartButton";
+import WishlistButton from "./WishlistButton";
 
 interface ChandraprabhaPageProps {
   product: Product;
@@ -160,12 +160,11 @@ export default function ChandraprabhaPage({ product }: ChandraprabhaPageProps) {
 
             {/* CTA */}
             <div className="flex flex-wrap gap-4">
-              <button className="rounded-lg bg-gradient-to-r from-[#B0C4DE] to-[#8BA4C4] px-10 py-4 text-sm font-bold uppercase tracking-wider text-[#0B1026] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#B0C4DE]/20">
-                Add to Cart
-              </button>
-              <button className="rounded-lg border-2 border-[#B0C4DE]/20 px-8 py-4 text-sm font-bold uppercase tracking-wider text-[#B0C4DE] transition-all hover:border-[#B0C4DE]/50 hover:text-white">
-                Add to Wishlist
-              </button>
+              <AddToCartButton
+                product={product}
+                className="from-[#B0C4DE] to-[#8BA4C4] !text-[#0B1026]"
+              />
+              <WishlistButton product={product} />
             </div>
           </div>
         </div>
@@ -364,9 +363,11 @@ export default function ChandraprabhaPage({ product }: ChandraprabhaPageProps) {
             of the night.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button className="rounded-lg bg-gradient-to-r from-[#B0C4DE] to-[#8BA4C4] px-10 py-4 text-sm font-bold uppercase tracking-wider text-[#0B1026] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#B0C4DE]/20">
-              Add to Cart — ₹{product.price}
-            </button>
+            <AddToCartButton
+              product={product}
+              variant="cta"
+              className="from-[#B0C4DE] to-[#8BA4C4] !text-[#0B1026] shadow-[#B0C4DE]/20"
+            />
             <Link
               href="/products"
               className="rounded-lg border-2 border-[#B0C4DE]/20 px-8 py-4 text-sm font-bold uppercase tracking-wider text-[#B0C4DE] transition-all hover:border-[#B0C4DE]/50 hover:text-white"

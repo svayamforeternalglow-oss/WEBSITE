@@ -4,6 +4,7 @@ import { products, getProductBySlug } from "@/lib/products";
 import StorySection from "@/components/StorySection";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import AddToCartButton from "@/components/AddToCartButton";
+import WishlistButton from "@/components/WishlistButton";
 import ChandraprabhaPage from "@/components/ChandraprabhaPage";
 import SuryakantiPage from "@/components/SuryakantiPage";
 import ProductImageHero from "./ProductImageHero";
@@ -146,12 +147,9 @@ export default async function ProductPage({
             </div>
             )}
 
-            {/* CTA */}
             <div className="flex flex-wrap gap-4">
               {!isComingSoon && <AddToCartButton product={product} />}
-              <button className="rounded-lg border-2 border-forest/20 px-8 py-4 text-sm font-bold uppercase tracking-wider text-forest transition-all hover:border-gold hover:text-gold-dark">
-                Add to Wishlist
-              </button>
+              <WishlistButton product={product} showText />
             </div>
           </div>
         </div>

@@ -1,8 +1,8 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/products";
+import AddToCartButton from "./AddToCartButton";
+import WishlistButton from "./WishlistButton";
 
 interface SuryakantiPageProps {
   product: Product;
@@ -123,12 +123,11 @@ export default function SuryakantiPage({ product }: SuryakantiPageProps) {
 
             {/* CTA */}
             <div className="flex flex-wrap gap-4">
-              <button className="rounded-lg bg-gradient-to-r from-[#E8A317] to-[#D4910E] px-10 py-4 text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-[#E8A317]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#E8A317]/40">
-                Add to Cart
-              </button>
-              <button className="rounded-lg border-2 border-[#E8A317]/30 px-8 py-4 text-sm font-bold uppercase tracking-wider text-[#3D2B1F] transition-all hover:border-[#E8A317] hover:text-[#E8A317]">
-                Add to Wishlist
-              </button>
+              <AddToCartButton
+                product={product}
+                className="from-[#E8A317] to-[#D4910E] shadow-[#E8A317]/25 hover:shadow-[#E8A317]/40 !text-white"
+              />
+              <WishlistButton product={product} />
             </div>
           </div>
         </div>
@@ -392,9 +391,11 @@ export default function SuryakantiPage({ product }: SuryakantiPageProps) {
             — your daily ritual of sun-kissed protection and glow.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button className="rounded-lg bg-gradient-to-r from-[#E8A317] to-[#D4910E] px-10 py-4 text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-[#E8A317]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#E8A317]/40">
-              Add to Cart — ₹{product.price}
-            </button>
+            <AddToCartButton
+              product={product}
+              variant="cta"
+              className="from-[#E8A317] to-[#D4910E] shadow-[#E8A317]/25 hover:shadow-[#E8A317]/40 !text-white"
+            />
             <Link
               href="/products"
               className="rounded-lg border-2 border-[#3D2B1F]/20 px-8 py-4 text-sm font-bold uppercase tracking-wider text-[#3D2B1F] transition-all hover:border-[#E8A317] hover:text-[#E8A317]"
