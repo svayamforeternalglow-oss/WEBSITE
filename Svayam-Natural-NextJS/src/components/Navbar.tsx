@@ -23,15 +23,34 @@ interface NavItem {
 const navLinks: NavItem[] = [
   { label: "Radiance Rituals", href: "/radiance-rituals" },
   {
-    label: "Our Products",
+    label: "Categories",
     href: "/products",
     children: [
-      { label: "Hair Care", href: "/products?category=hair-care" },
-      { label: "Skin Care", href: "/products?category=skin-care" },
-      { label: "Beauty", href: "/products?category=beauty-products" },
-      { label: "Natural Food", href: "/products?category=natural-food" },
-      { label: "Wellness", href: "/products?category=wellness" },
       { label: "All Products", href: "/products" },
+      { label: "Best selling kits", href: "/products?category=kits" },
+      { label: "Face", href: "/products?category=face" },
+      { label: "Lip Balm", href: "/products?category=lip-balm" },
+      { label: "Body Care", href: "/products?category=body-care" },
+      { label: "Hair care", href: "/products?category=hair-care" },
+      { label: "Food", href: "/products?category=food" },
+      { label: "Detox", href: "/products?category=detox" },
+    ],
+  },
+  {
+    label: "Explore Products",
+    href: "/products",
+    children: [
+      { label: "Kesh Samraksha", href: "/products/kesh-samraksha" },
+      { label: "Hibiscus Hair Gel", href: "/products/hibiscus-hair-gel" },
+      { label: "Lavanyam Face Pack", href: "/products/lavanyam-facepack" },
+      { label: "Suryakanti Day Cream", href: "/products/suryakanti-day-cream" },
+      { label: "Chandraprabha Night Nectar", href: "/products/chandraprabha-night-nectar" },
+      { label: "Gentle Body Lotion", href: "/products/glowup-night-gel" },
+      { label: "Rose Lip Balm", href: "/products/rose-lip-balm" },
+      { label: "Tejasamrit Ritual", href: "/products/tejasamrit" },
+      { label: "Triphala Detox Tea", href: "/products/triphala-detox" },
+      { label: "Gulkand Preserve", href: "/products/gulkand" },
+      { label: "Abhyanga Udvartana", href: "/products/abhyanga-udvartana" },
     ],
   },
 ];
@@ -43,9 +62,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
-  const dropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const itemCount = useCartStore((s) => s.getItemCount());
   const openCart = useCartStore((s) => s.openCart);
@@ -78,15 +95,6 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const handleDropdownEnter = () => {
-    if (dropdownTimeout.current) clearTimeout(dropdownTimeout.current);
-    setDropdownOpen(true);
-  };
-
-  const handleDropdownLeave = () => {
-    dropdownTimeout.current = setTimeout(() => setDropdownOpen(false), 150);
-  };
-
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
@@ -118,17 +126,15 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Nav — centered */}
-        <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
+        <ul className="hidden flex-1 items-center justify-center gap-1 px-4 lg:flex">
           {navLinks.map((link) => (
             <li
-              key={link.href}
-              className="relative"
-              onMouseEnter={link.children ? handleDropdownEnter : undefined}
-              onMouseLeave={link.children ? handleDropdownLeave : undefined}
+              key={link.label}
+              className="group relative"
             >
               <Link
                 href={link.href}
-                className={`group relative flex items-center gap-1 rounded-lg px-4 py-2 text-[13px] font-medium tracking-[0.06em] transition-all duration-300 ${
+                className={`relative flex items-center gap-1 rounded-lg px-4 py-2 text-[13px] font-medium tracking-[0.06em] transition-all duration-300 ${
                   solid
                     ? "text-forest/60 hover:text-forest"
                     : "text-sand/70 hover:text-sand"
@@ -137,7 +143,7 @@ export default function Navbar() {
                 {link.label}
                 {link.children && (
                   <svg
-                    className={`h-3 w-3 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
+                    className="h-3 w-3 transition-transform duration-200 group-hover:rotate-180"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -158,11 +164,7 @@ export default function Navbar() {
               {/* Dropdown */}
               {link.children && (
                 <div
-                  className={`absolute left-0 top-full pt-2 transition-all duration-200 ${
-                    dropdownOpen
-                      ? "pointer-events-auto translate-y-0 opacity-100"
-                      : "pointer-events-none -translate-y-2 opacity-0"
-                  }`}
+                  className="absolute left-1/2 top-full -translate-x-1/2 pt-2 transition-all duration-200 pointer-events-none translate-y-2 opacity-0 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100"
                 >
                   <div className="min-w-[200px] rounded-xl border border-neutral-300 bg-white/[0.98] py-2 shadow-[0_12px_40px_rgba(0,0,0,0.1)] backdrop-blur-xl">
                     {link.children.map((child) => (
@@ -318,7 +320,7 @@ export default function Navbar() {
         </div>
         <div className="flex flex-1 flex-col items-center justify-center gap-1 pb-20">
           {navLinks.map((link, i) => (
-            <div key={link.href} className="flex flex-col items-center">
+            <div key={link.label} className="flex flex-col items-center">
               {link.children ? (
                 <>
                   <button

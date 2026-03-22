@@ -39,9 +39,9 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group relative flex h-full flex-col rounded-2xl border border-neutral-300 bg-white p-4 transition-all duration-400 hover:-translate-y-1.5 hover:border-gold/30 hover:shadow-[0_20px_50px_rgba(194,162,93,0.08)]">
+    <div className="group relative flex h-full flex-col rounded-2xl border border-neutral-300 bg-white p-3 sm:p-4 transition-all duration-400 hover:-translate-y-1.5 hover:border-gold/30 hover:shadow-[0_20px_50px_rgba(194,162,93,0.08)]">
       {/* Wishlist Button - Overlay */}
-      <div className="absolute right-6 top-6 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-6 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
         <WishlistButton product={product} />
       </div>
 
@@ -53,8 +53,8 @@ export default function ProductCard({ product }: { product: Product }) {
               src={product.image}
               alt={product.name}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-              className="object-contain p-6 transition-transform duration-600 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
+              className="object-contain p-4 sm:p-6 transition-transform duration-600 group-hover:scale-105"
             />
           </div>
           {discount > 0 && (

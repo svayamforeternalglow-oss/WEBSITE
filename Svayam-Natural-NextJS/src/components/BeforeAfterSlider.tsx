@@ -64,7 +64,7 @@ export default function BeforeAfterSlider() {
         <div className="mx-auto max-w-4xl">
           <div
             ref={containerRef}
-            className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl shadow-lg"
+            className="relative aspect-square sm:aspect-[4/3] md:aspect-[3/2] w-full overflow-hidden rounded-2xl shadow-lg"
             onPointerMove={handleContainerPointerMove}
             onPointerLeave={() => {
               if (isDraggingRef.current) isDraggingRef.current = false;
@@ -84,7 +84,6 @@ export default function BeforeAfterSlider() {
               />
               <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: "url(https://images.unsplash.com/photo-1512496015851-a1cbf5c56cc1?auto=format&fit=crop&q=80&w=1200)" }}
               />
             </div>
 
@@ -102,7 +101,6 @@ export default function BeforeAfterSlider() {
               />
               <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105"
-                style={{ backgroundImage: "url(https://images.unsplash.com/photo-1512496015851-a1cbf5c56cc1?auto=format&fit=crop&q=80&w=1200&sat=20&con=20&brightness=10)" }}
               />
             </div>
 
