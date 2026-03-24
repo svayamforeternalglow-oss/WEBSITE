@@ -65,12 +65,12 @@ export default function Footer() {
       />
 
       <div className="relative mx-auto max-w-7xl px-6 py-20 lg:px-10">
-        <div className="grid place-items-center gap-14 text-center md:place-items-start md:grid-cols-2 md:text-left lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-y-12 gap-x-8 text-left sm:grid-cols-2 lg:grid-cols-12">
           {/* Brand */}
           <div className="-mt-2 w-full md:-ml-2 lg:col-span-4">
             {isLight ? (
               <div
-                className="mx-auto mb-4 h-[12rem] w-[36rem] max-w-full bg-forest md:mx-0"
+                className="mb-6 h-20 w-[18rem] max-w-full bg-forest md:h-[12rem] md:w-[36rem]"
                 style={{
                   maskImage: "url(/Svayam_Logo2.png)",
                   WebkitMaskImage: "url(/Svayam_Logo2.png)",
@@ -90,14 +90,14 @@ export default function Footer() {
                 alt="Svayam Natural"
                 width={550}
                 height={192}
-                className="mx-auto mb-4 h-[12rem] w-auto max-w-full brightness-0 invert md:mx-0"
+                className="mb-6 h-20 w-auto max-w-full brightness-0 invert md:h-[12rem] md:mx-0"
               />
             )}
           </div>
 
           {/* Link columns */}
           {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title} className="flex w-full flex-col items-center gap-4 md:items-start lg:col-span-2">
+            <div key={title} className="flex w-full flex-col items-start gap-4 lg:col-span-2">
               <h3
                 className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${
                   isLight ? "text-forest" : "text-gold/70"
@@ -105,7 +105,7 @@ export default function Footer() {
               >
                 {title}
               </h3>
-              <ul className="flex flex-col items-center gap-3 md:items-start">
+              <ul className="flex flex-col items-start gap-3">
                 {links.map((link) => (
                   <li key={link.label}>
                     <Link
@@ -126,7 +126,7 @@ export default function Footer() {
           ))}
 
           {/* Newsletter hint */}
-          <div className="flex w-full max-w-xs flex-col items-center gap-4 md:max-w-none md:items-start lg:col-span-2">
+          <div className="flex w-full flex-col items-start gap-4 sm:max-w-none lg:col-span-2">
             <h3
               className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${
                 isLight ? "text-forest" : "text-gold/70"
@@ -166,7 +166,7 @@ export default function Footer() {
         </div>
 
         {/* Tagline — below grid, wraps on small screens */}
-        <p className="mt-14 text-center">
+        <p className="mt-14 text-left md:text-center">
           <span className={`font-accent text-lg italic ${isLight ? "text-clay" : "text-gold/60"}`}>
             Where Nature Meets Tradition
           </span>
@@ -177,7 +177,7 @@ export default function Footer() {
         </p>
 
         {/* Social links — centered below tagline */}
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-6 flex justify-start md:justify-center gap-3">
           {socials.map((social) => (
             <a
               key={social.label}

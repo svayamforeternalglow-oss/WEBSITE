@@ -62,7 +62,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   
   const itemCount = useCartStore((s) => s.getItemCount());
   const openCart = useCartStore((s) => s.openCart);
@@ -98,7 +98,9 @@ export default function Navbar() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
-        solid
+        mobileOpen
+          ? "bg-forest"
+          : solid
           ? "bg-white/[0.97] shadow-[0_1px_20px_rgba(0,0,0,0.08)] backdrop-blur-xl"
           : "bg-transparent"
       }`}
@@ -324,7 +326,7 @@ export default function Navbar() {
               {link.children ? (
                 <>
                   <button
-                    onClick={() => setMobileProductsOpen(!mobileProductsOpen)}
+                    onClick={() => setOpenSubmenu(openSubmenu === link.label ? null : link.label)}
                     className="flex items-center gap-2 py-3 text-center text-lg font-medium tracking-[0.1em] text-sand/70 transition-all duration-300 hover:text-gold"
                     style={{
                       transitionDelay: mobileOpen ? `${i * 60}ms` : "0ms",
@@ -336,7 +338,7 @@ export default function Navbar() {
                   >
                     {link.label}
                     <svg
-                      className={`h-4 w-4 transition-transform duration-200 ${mobileProductsOpen ? "rotate-180" : ""}`}
+                      className={`h-4 w-4 transition-transform duration-200 ${openSubmenu === link.label ? "rotate-180" : ""}`}
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -347,7 +349,7 @@ export default function Navbar() {
                   </button>
                   <div
                     className={`flex flex-col items-center gap-0.5 overflow-hidden transition-all duration-300 ${
-                      mobileProductsOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                      openSubmenu === link.label ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                     }`}
                   >
                     {link.children.map((child) => (
