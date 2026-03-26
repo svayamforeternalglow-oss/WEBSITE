@@ -120,11 +120,54 @@ export default function HomePage() {
       {/* Hero */}
       <HeroSlider />
 
-      {/* Before & After Transformation */}
-      <BeforeAfterSlider />
-
       {/* Shop by Concern */}
       <ShopByConcern />
+
+      {/* Featured Products */}
+      <section className="bg-sand py-28" id="featured">
+        <div className="mx-auto max-w-7xl px-6 lg:px-10">
+          <AnimateOnScroll animation="fadeInUp">
+            <div className="mb-16 text-center">
+              <h2 className="font-heading text-4xl font-bold text-forest md:text-5xl lg:text-6xl">
+                Featured Products
+              </h2>
+              <div className="mx-auto mt-5 flex items-center justify-center gap-3">
+                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-gold/30" />
+                <div className="h-1.5 w-1.5 rounded-full bg-gold/50" />
+                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-gold/30" />
+              </div>
+              <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-clay-light">
+                Our most loved formulations, chosen by thousands of happy customers.
+              </p>
+            </div>
+          </AnimateOnScroll>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredProducts.map((product, i) => (
+              <AnimateOnScroll
+                key={product.slug}
+                animation="fadeInUp"
+                delay={i * 100}
+              >
+                <ProductCard product={product} />
+              </AnimateOnScroll>
+            ))}
+          </div>
+          <AnimateOnScroll animation="fadeIn" delay={500}>
+            <div className="mt-14 text-center">
+              <Link
+                href="/products"
+                className="group inline-flex items-center gap-3 rounded-full border border-forest/20 px-8 py-3.5 text-sm font-semibold uppercase tracking-wider text-forest transition-all duration-300 hover:border-forest hover:bg-forest hover:text-sand"
+              >
+                View All Products
+                <ArrowLongRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </AnimateOnScroll>
+        </div>
+      </section>
+
+      {/* Seasonal Must-Haves */}
+      <SeasonalPicks />
 
       {/* Categories */}
       <section className="relative bg-cream py-28" id="categories">
@@ -176,51 +219,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Products */}
-      <section className="bg-sand py-28" id="featured">
-        <div className="mx-auto max-w-7xl px-6 lg:px-10">
-          <AnimateOnScroll animation="fadeInUp">
-            <div className="mb-16 text-center">
-              <h2 className="font-heading text-4xl font-bold text-forest md:text-5xl lg:text-6xl">
-                Featured Products
-              </h2>
-              <div className="mx-auto mt-5 flex items-center justify-center gap-3">
-                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-gold/30" />
-                <div className="h-1.5 w-1.5 rounded-full bg-gold/50" />
-                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-gold/30" />
-              </div>
-              <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-clay-light">
-                Our most loved formulations, chosen by thousands of happy customers.
-              </p>
-            </div>
-          </AnimateOnScroll>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product, i) => (
-              <AnimateOnScroll
-                key={product.slug}
-                animation="fadeInUp"
-                delay={i * 100}
-              >
-                <ProductCard product={product} />
-              </AnimateOnScroll>
-            ))}
-          </div>
-          <AnimateOnScroll animation="fadeIn" delay={500}>
-            <div className="mt-14 text-center">
-              <Link
-                href="/products"
-                className="group inline-flex items-center gap-3 rounded-full border border-forest/20 px-8 py-3.5 text-sm font-semibold uppercase tracking-wider text-forest transition-all duration-300 hover:border-forest hover:bg-forest hover:text-sand"
-              >
-                View All Products
-                <ArrowLongRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-            </div>
-          </AnimateOnScroll>
-        </div>
-      </section>
-
-      {/* Seasonal Must-Haves */}
-      <SeasonalPicks />
+      {/* Before & After Transformation */}
+      <BeforeAfterSlider />
 
       {/* About / Philosophy */}
       <section className="relative overflow-hidden bg-neutral-100 py-28" id="about">

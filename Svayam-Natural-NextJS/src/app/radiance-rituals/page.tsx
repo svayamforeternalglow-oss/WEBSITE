@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import SectionHeader from "@/components/SectionHeader";
@@ -128,24 +129,17 @@ export default function RadianceRitualsPage() {
           </AnimateOnScroll>
 
           <div className="grid items-start gap-12 lg:grid-cols-5 lg:gap-16">
-            {/* Photo placeholder */}
+            {/* Photo */}
             <div className="lg:col-span-2">
               <AnimateOnScroll animation="fadeIn" delay={100}>
-                <div className="relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-3xl bg-gradient-to-br from-forest/10 via-sage/30 to-gold/10">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-forest/10">
-                      <svg className="h-10 w-10 text-forest/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                        <circle cx="12" cy="8" r="4" />
-                        <path d="M5 20c0-4 3.5-7 7-7s7 3 7 7" />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-medium text-forest/50">
-                      Chaitanya Tambat
-                    </p>
-                    <p className="mt-1 text-xs text-clay-light">
-                      Founder & Chief Instructor
-                    </p>
-                  </div>
+                <div className="relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-3xl bg-neutral-200">
+                  <Image
+                    src="/images/tambat.jpeg"
+                    alt="Chaitanya Tambat - Founder"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                  />
                 </div>
               </AnimateOnScroll>
             </div>
@@ -337,11 +331,15 @@ export default function RadianceRitualsPage() {
 
           <AnimateOnScroll animation="fadeIn" delay={150}>
             <div className="mx-auto max-w-3xl rounded-3xl border border-neutral-300 bg-white p-10 text-center md:p-14">
-              <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-forest/10 to-sage/30">
-                <svg className="h-12 w-12 text-forest/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M5 20c0-4 3.5-7 7-7s7 3 7 7" />
-                </svg>
+              <div className="mx-auto mb-6 relative h-24 w-24 overflow-hidden rounded-full border border-gold/20 shadow-lg">
+                <Image
+                  src="/images/chaitanya-profile.png"
+                  alt="Chaitanya Tambat"
+                  fill
+                  className="object-cover"
+                  style={{ objectPosition: '40% 15%' }}
+                  sizes="96px"
+                />
               </div>
               <h3 className="mb-1 font-heading text-2xl font-bold text-forest">
                 Chaitanya Tambat

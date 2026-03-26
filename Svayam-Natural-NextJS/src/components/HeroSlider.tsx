@@ -7,27 +7,27 @@ import { ArrowLongRightIcon } from "./icons";
 
 const slides = [
   {
-    image: "/images/hero1.png",
-    title: "Svayam",
-    subtitle: "For Eternal Glow",
-    description: "Rediscover your natural Beauty",
+    image: "/images/logo-gold.png",
+    title: "Svayam Natural",
+    subtitle: "Pure • Luxurious • Spiritual",
+    description: "Rediscover your eternal beauty with our gold-standard Ayurvedic rituals.",
     cta: { label: "Explore Collection", href: "#featured" },
   },
   {
-    image: "/images/kesh-samraksha.png",
-    title: "Hair Care",
-    subtitle: "Nature\u2019s Finest for Your Hair",
+    image: "/images/lifestyle-pamper.png",
+    title: "Weekend Rituals",
+    subtitle: "Amplify Your Glow",
     description:
-      "Ayurvedic formulations with Bhringraj, Amla & Hibiscus that transform your hair from root to tip.",
-    cta: { label: "Shop Hair Care", href: "/products?category=hair-care" },
+      "Indulge in our curated 'Weekend Pamper' sets designed for holistic restoration.",
+    cta: { label: "Shop Kits", href: "/products?category=kits" },
   },
   {
-    image: "/images/lavanyam-face-pack.png",
-    title: "Skin Care",
-    subtitle: "Radiance from Within",
+    image: "/images/tarunya-toner.png",
+    title: "Tarunya Rose",
+    subtitle: "The Essence of Freshness",
     description:
-      "Traditional recipes with turmeric, sandalwood & saffron that reveal your skin\u2019s natural luminosity.",
-    cta: { label: "Shop Skin Care", href: "/products?category=skin-care" },
+      "Handcrafted rose water from the sacred gardens of Pushkar, preserved at peak potency.",
+    cta: { label: "Explore Skin Care", href: "/products?category=skin-care" },
   },
 ];
 
@@ -93,7 +93,7 @@ export default function HeroSlider() {
       <div className="pointer-events-none absolute bottom-1/4 right-1/4 -z-0 h-[400px] w-[400px] rounded-full bg-gold/[0.04] blur-[100px]" />
 
       {/* Content */}
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-28 pb-20 text-center md:text-left lg:px-10">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 pt-32 pb-24 text-center md:text-left lg:px-10">
         <div className="mx-auto max-w-2xl md:mx-0">
           {slides.map((slide, i) => (
             <div
@@ -113,7 +113,7 @@ export default function HeroSlider() {
               </div>
 
               {/* Title with glow effect */}
-              <h1 className="hero-title mb-8 font-heading text-5xl font-bold leading-[1.1] md:text-7xl lg:text-8xl">
+              <h1 className="hero-title mb-6 sm:mb-8 font-heading text-4xl sm:text-5xl font-bold leading-[1.1] md:text-7xl lg:text-8xl">
                 {slide.title === "Svayam" ? (
                   <span className="hero-glow-text relative inline-block text-white">
                     Svayam
@@ -125,7 +125,7 @@ export default function HeroSlider() {
               </h1>
 
               {/* Description */}
-              <p className="mx-auto mb-12 max-w-md text-base leading-relaxed text-sand/60 md:mx-0 md:text-lg">
+              <p className="mx-auto mb-10 sm:mb-12 max-w-md text-sm sm:text-base leading-relaxed text-sand/60 md:mx-0 md:text-lg">
                 {slide.description}
               </p>
 
@@ -143,8 +143,8 @@ export default function HeroSlider() {
       </div>
 
       {/* Slide indicators with progress bar — centered on mobile */}
-      <div className="absolute inset-x-0 bottom-12 z-10 mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 px-6 md:flex-row md:justify-between lg:px-10">
-        <div className="flex items-center justify-center gap-6">
+      <div className="absolute inset-x-0 bottom-8 sm:bottom-12 z-10 mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 px-4 sm:px-6 md:flex-row md:justify-between lg:px-10">
+        <div className="flex items-center justify-center gap-4 sm:gap-6">
           {slides.map((_, i) => (
             <button
               key={i}

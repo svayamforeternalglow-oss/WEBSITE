@@ -64,7 +64,7 @@ export default function BeforeAfterSlider() {
         <div className="mx-auto max-w-4xl">
           <div
             ref={containerRef}
-            className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl shadow-lg"
+            className="relative aspect-square sm:aspect-[4/3] md:aspect-[3/2] w-full overflow-hidden rounded-2xl shadow-lg"
             onPointerMove={handleContainerPointerMove}
             onPointerLeave={() => {
               if (isDraggingRef.current) isDraggingRef.current = false;
@@ -72,39 +72,21 @@ export default function BeforeAfterSlider() {
           >
             {/* Before image (left side - full width, clipped) */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{
                 clipPath: `inset(0 ${100 - position}% 0 0)`,
+                backgroundImage: "url('/images/after.jpeg')",
               }}
-            >
-              {/* Placeholder: duller skin tone gradient (works without images) */}
-              <div
-                className="absolute inset-0 bg-gradient-to-br from-stone-400/90 via-amber-200/80 to-stone-300/90"
-                aria-hidden
-              />
-              <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: "url(https://images.unsplash.com/photo-1512496015851-a1cbf5c56cc1?auto=format&fit=crop&q=80&w=1200)" }}
-              />
-            </div>
+            />
 
             {/* After image (right side - full width, clipped) */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{
                 clipPath: `inset(0 0 0 ${position}%)`,
+                backgroundImage: "url('/images/before.jpeg')",
               }}
-            >
-              {/* Placeholder: glowing radiant gradient (works without images) */}
-              <div
-                className="absolute inset-0 bg-gradient-to-br from-amber-100 via-rose-50/90 to-amber-50"
-                aria-hidden
-              />
-              <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105"
-                style={{ backgroundImage: "url(https://images.unsplash.com/photo-1512496015851-a1cbf5c56cc1?auto=format&fit=crop&q=80&w=1200&sat=20&con=20&brightness=10)" }}
-              />
-            </div>
+            />
 
             {/* Labels */}
             <div className="pointer-events-none absolute left-4 top-4 z-10">

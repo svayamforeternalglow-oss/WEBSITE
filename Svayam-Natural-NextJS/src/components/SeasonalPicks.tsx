@@ -74,7 +74,7 @@ export default function SeasonalPicks() {
           {seasonProducts.map((product) => (
             <div
               key={product.slug}
-              className="min-w-[280px] max-w-[300px] flex-shrink-0 snap-start"
+              className="min-w-[240px] sm:min-w-[280px] max-w-[300px] flex-shrink-0 snap-start"
             >
               <ProductCard product={product} />
             </div>
