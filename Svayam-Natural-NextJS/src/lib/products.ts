@@ -182,7 +182,7 @@ export const products: Product[] = [
   },
   {
     slug: 'glowup-night-gel',
-    name: 'Gentle Body Lotion',
+    name: 'Soumya - The touch of silk Body lotion',
     tagline: 'Lightweight Care for Luminous Mornings',
     description: 'Lightweight body lotion that hydrates without clogging pores. Contains niacinamide and tea tree oil.',
     story: 'Created specifically for India\'s humid climate, GlowUp is the answer for those who want nighttime skincare without the heaviness. We combined niacinamide — the scientifically proven pore minimizer — with tea tree oil from the organic plantations of Nilgiris. It\'s the gel that works while you sleep, so oily skin finally gets the care it deserves.',

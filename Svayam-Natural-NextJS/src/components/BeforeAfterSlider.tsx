@@ -72,37 +72,21 @@ export default function BeforeAfterSlider() {
           >
             {/* Before image (left side - full width, clipped) */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{
                 clipPath: `inset(0 ${100 - position}% 0 0)`,
+                backgroundImage: "url('/images/after.jpeg')",
               }}
-            >
-              {/* Placeholder: duller skin tone gradient (works without images) */}
-              <div
-                className="absolute inset-0 bg-gradient-to-br from-stone-400/90 via-amber-200/80 to-stone-300/90"
-                aria-hidden
-              />
-              <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              />
-            </div>
+            />
 
             {/* After image (right side - full width, clipped) */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{
                 clipPath: `inset(0 0 0 ${position}%)`,
+                backgroundImage: "url('/images/before.jpeg')",
               }}
-            >
-              {/* Placeholder: glowing radiant gradient (works without images) */}
-              <div
-                className="absolute inset-0 bg-gradient-to-br from-amber-100 via-rose-50/90 to-amber-50"
-                aria-hidden
-              />
-              <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105"
-              />
-            </div>
+            />
 
             {/* Labels */}
             <div className="pointer-events-none absolute left-4 top-4 z-10">

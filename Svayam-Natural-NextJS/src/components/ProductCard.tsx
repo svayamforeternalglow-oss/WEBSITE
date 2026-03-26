@@ -98,10 +98,10 @@ export default function ProductCard({ product }: { product: Product }) {
             {!isComingSoon ? (
               <button
                 onClick={handleQuickAdd}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-clay-light transition-all duration-300 hover:bg-gold hover:text-forest group-hover:bg-gold/20 group-hover:text-gold-dark"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-forest text-white transition-all duration-300 hover:bg-gold hover:text-forest shadow-md"
                 title="Add to Cart"
               >
-                <ShoppingBagIcon className="h-4 w-4" />
+                <ShoppingBagIcon className="h-5 w-5" />
               </button>
             ) : (
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-clay-light">

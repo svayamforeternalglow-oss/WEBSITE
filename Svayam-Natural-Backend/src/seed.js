@@ -76,7 +76,7 @@ const products = [
     concern: 'anti-ageing',
   },
   {
-    title: 'Gentle Body Lotion',
+    title: 'Soumya - The touch of silk Body lotion',
     slug: 'glowup-night-gel',
     description: 'Lightweight body lotion that hydrates without clogging pores. Contains niacinamide and tea tree oil.',
     price: 595,
