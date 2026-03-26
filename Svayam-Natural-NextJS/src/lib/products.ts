@@ -13,6 +13,7 @@ export interface Product {
   weight: string;
   sku: string;
   image: string;
+  images?: string[];
   badges: string[];
   concerns?: string[];
   ingredients: { name: string; icon: string; description: string }[];
@@ -42,7 +43,8 @@ export const products: Product[] = [
     originalPrice: 699,
     weight: '100g',
     sku: 'SN-HC-KSH-100',
-    image: '/images/kesh-samraksha.png',
+    image: '/images/kesh-samraksha/1.jpeg',
+    images: ['/images/kesh-samraksha/1.jpeg', '/images/kesh-samraksha/2.jpeg', '/images/kesh-samraksha/3.jpeg'],
     badges: ['5 Potent Herbs', 'All Hair Types', 'Salon Shine', 'No Chemicals'],
     concerns: ['dry-skin'],
     ingredients: [
@@ -102,7 +104,8 @@ export const products: Product[] = [
     originalPrice: 699,
     weight: '100g',
     sku: 'SN-SC-LAV-100',
-    image: '/images/lavanyam-face-pack.png',
+    image: '/images/lavanyam/1.jpeg',
+    images: ['/images/lavanyam/1.jpeg', '/images/lavanyam/2.jpeg', '/images/lavanyam/3.jpeg'],
     badges: ['Pure Organic', 'Radiant Glow', 'All Skin Types', 'No Chemicals'],
     concerns: ['pigmentation', 'glow-radiance'],
     ingredients: [
@@ -308,7 +311,8 @@ export const products: Product[] = [
     originalPrice: 599,
     weight: '200g',
     sku: 'SN-NF-GKD-200',
-    image: '/images/gulkand.png',
+    image: '/images/gulkand/1.jpeg',
+    images: ['/images/gulkand/1.jpeg', '/images/gulkand/2.jpeg'],
     badges: ['Sun-Cured', 'Natural Coolant', 'No Preservatives', 'Traditional Recipe'],
     concerns: [],
     ingredients: [
@@ -336,7 +340,8 @@ export const products: Product[] = [
     originalPrice: 849,
     weight: '200ml',
     sku: 'SN-WL-ABH-200',
-    image: '/images/abhyanga-udvartana-new.png',
+    image: '/images/abhyanga/1.jpeg',
+    images: ['/images/abhyanga/1.jpeg', '/images/abhyanga/2.jpeg', '/images/abhyanga/3.jpeg'],
     badges: ['Ayurvedic Formula', 'Warming', 'Detoxifying', 'Improves Circulation'],
     concerns: ['dry-skin'],
     ingredients: [
@@ -358,7 +363,7 @@ export const products: Product[] = [
   { slug: 'hair-care-kit', name: 'Hair care kit', tagline: 'Complete hair care solution', description: 'Everything you need for healthy hair.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-KIT-HC', image: '/images/hibiscus-gel-marketing.png', badges: [], ingredients: [], benefits: [] },
   { slug: 'tejasamrit-golden-latte-family-pack', name: 'Tejasamrit Golden latte family pack', tagline: 'Share the ritual', description: 'Family pack of Tejasamrit Golden latte.', story: '', category: 'beauty-products', theme: 'beauty', price: 0, originalPrice: 0, weight: '', sku: 'SN-KIT-TGL', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
   { slug: 'royal-bathing-kit', name: 'Royal bathing kit', tagline: 'Luxury bath ritual', description: 'Premium bathing essentials.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-KIT-RB', image: '/images/abhyanga-udvartana-new.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'autea', name: 'Autea', tagline: 'Ayurvedic wellness tea', description: 'Natural wellness tea blend.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-AUT', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
+  { slug: 'autea', name: 'Autea', tagline: 'Ayurvedic wellness tea', description: 'Natural wellness tea blend.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-AUT', image: '/images/autea/1.jpeg', images: ['/images/autea/1.jpeg', '/images/autea/2.jpeg'], badges: [], ingredients: [], benefits: [] },
   { slug: 'face-polishing-scrub', name: 'Face polishing scrub', tagline: 'Gentle exfoliation', description: 'Face scrub for smooth, glowing skin.', story: '', category: 'skin-care', theme: 'skincare', price: 0, originalPrice: 0, weight: '', sku: 'SN-SC-FPS', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
   { slug: 'tarunya-rose-toner', name: 'Tarunya Rose Toner', tagline: 'Refreshing rose toner', description: 'Gentle rose toner for balanced skin.', story: '', category: 'skin-care', theme: 'skincare', price: 0, originalPrice: 0, weight: '', sku: 'SN-SC-TRT', image: '/images/tarunya-toner.png', badges: [], ingredients: [], benefits: [] },
   { slug: 'kumkumadi-lip-balm', name: 'Kumkumadi lip balm', tagline: 'Luxury lip care', description: 'Nourishing lip balm with Kumkumadi.', story: '', category: 'beauty-products', theme: 'beauty', price: 0, originalPrice: 0, weight: '', sku: 'SN-BP-KLB', image: '/images/kumkumadi-lip-balm.png', badges: [], ingredients: [], benefits: [] },
@@ -370,7 +375,7 @@ export const products: Product[] = [
   { slug: 'triphala-natural-soap', name: 'Triphala Natural Soap', tagline: 'Purifying cleanse', description: 'Triphala-infused natural soap.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-TNS', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
   { slug: 'keshvardhini-hair-oil', name: 'Keshvardhini hair oil', tagline: 'Hair growth elixir', description: 'Traditional hair oil for growth.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-KVO', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
   { slug: 'bhruhshakti-roll-on', name: 'Bhruhshakti roll on', tagline: 'Eyebrow care', description: 'Natural eyebrow roll-on.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-BSR', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'kesh-shuddhi', name: 'Kesh shuddhi', tagline: 'Scalp cleansing', description: 'Scalp cleansing formulation.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-KSH', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
+  { slug: 'kesh-shuddhi', name: 'Kesh shuddhi', tagline: 'Scalp cleansing', description: 'Scalp cleansing formulation.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-KSH', image: '/images/shudhi/1.jpeg', images: ['/images/shudhi/1.jpeg', '/images/shudhi/2.jpeg', '/images/shudhi/3.jpeg'], badges: [], ingredients: [], benefits: [] },
   { slug: 'swarnahairdra-turmeric', name: 'Swarnahairdra Stone grounded 100% pure turmeric', tagline: 'Pure turmeric', description: 'Stone-ground pure turmeric powder.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-SHT', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
   { slug: 'sonamoti-wheat', name: "Sonamoti Wheat – Nature's Gift", tagline: 'Natural wheat', description: 'Premium wheat product.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-SMW', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
 ];

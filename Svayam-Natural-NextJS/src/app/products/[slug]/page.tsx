@@ -66,7 +66,7 @@ export default async function ProductPage({
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2 lg:px-10">
           {/* Product Image with zoom hover */}
           <div className="relative mx-auto w-full max-w-md lg:order-2">
-            <ProductImageHero image={product.image} name={product.name} />
+            <ProductImageHero image={product.image} images={product.images} name={product.name} />
             <div
               className="absolute -inset-4 -z-10 rounded-3xl opacity-40 blur-3xl"
               style={{
