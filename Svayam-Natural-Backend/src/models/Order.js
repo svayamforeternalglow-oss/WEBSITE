@@ -63,6 +63,27 @@ const orderSchema = new mongoose.Schema({
   },
   estimatedDelivery: {
     type: Date
+  },
+  // Shiprocket integration fields
+  shiprocketOrderId: {
+    type: String,
+    default: ''
+  },
+  shiprocketShipmentId: {
+    type: String,
+    default: ''
+  },
+  awbCode: {
+    type: String,
+    default: ''
+  },
+  labelUrl: {
+    type: String,
+    default: ''
+  },
+  courierName: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true

@@ -5,6 +5,7 @@ import ConditionalNavbar from "@/components/ConditionalNavbar";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import CartDrawer from "@/components/CartDrawer";
 import ToastContainer from "@/components/Toast";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -50,6 +51,7 @@ export default function RootLayout({
         <ConditionalFooter />
         <CartDrawer />
         <ToastContainer />
+        <WhatsAppFloat />
       </body>
     </html>
   );

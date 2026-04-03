@@ -11,6 +11,7 @@ interface Product {
   title?: string;
   slug?: string;
   category: string;
+  concern?: string;
   price: number;
   originalPrice?: number;
   stock?: number;
@@ -22,13 +23,14 @@ interface Product {
   inStock?: boolean;
   isLowStock?: boolean;
   description?: string;
-  concern?: string;
   images?: string[];
 }
 
-interface ProductsResponse {
-  success: boolean;
-  data: Product[] | { products: Product[]; pagination: { total: number } };
+interface TaxonomyItem {
+  _id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
 }
 
 export default function AdminProductsPage() {
@@ -38,6 +40,8 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [categories, setCategories] = useState<TaxonomyItem[]>([]);
+  const [concerns, setConcerns] = useState<TaxonomyItem[]>([]);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,20 +49,20 @@ export default function AdminProductsPage() {
   const [formData, setFormData] = useState({
     title: '',
     price: 0,
+    originalPrice: 0,
     inventory: 0,
     category: '',
     concern: '',
     description: '',
-    images: '' // Comma separated for now
+    images: '',
+    isActive: true,
+    isFeatured: false,
   });
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get<any>('/products');
-      
-      // api.get returns parsed JSON directly. Backend returns a plain array.
-      // Handle both direct array and wrapped responses.
       if (Array.isArray(res)) {
          setProducts(res);
       } else if (res && Array.isArray(res.data)) {
@@ -75,7 +79,20 @@ export default function AdminProductsPage() {
     }
   }, [addToast]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  const fetchTaxonomy = useCallback(async () => {
+    try {
+      const [cats, cons] = await Promise.all([
+        api.get<TaxonomyItem[]>('/taxonomy/categories'),
+        api.get<TaxonomyItem[]>('/taxonomy/concerns'),
+      ]);
+      setCategories(Array.isArray(cats) ? cats : []);
+      setConcerns(Array.isArray(cons) ? cons : []);
+    } catch {
+      // Taxonomy fetch is non-critical
+    }
+  }, []);
+
+  useEffect(() => { fetchProducts(); fetchTaxonomy(); }, [fetchProducts, fetchTaxonomy]);
 
   const updateStock = async (id: string, newStock: number) => {
     if (!token) return;
@@ -100,10 +117,32 @@ export default function AdminProductsPage() {
     }
   };
 
+  const toggleFeatured = async (product: Product) => {
+    if (!token) return;
+    try {
+      await api.put(`/products/${product._id}`, { isFeatured: !product.isFeatured }, token);
+      addToast(`${product.title || product.name} ${product.isFeatured ? 'removed from' : 'added to'} featured`, 'success');
+      fetchProducts();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to update', 'error');
+    }
+  };
+
+  const toggleActive = async (product: Product) => {
+    if (!token) return;
+    try {
+      await api.put(`/products/${product._id}`, { isActive: !product.isActive }, token);
+      addToast(`${product.title || product.name} ${product.isActive ? 'deactivated' : 'activated'}`, 'success');
+      fetchProducts();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to update', 'error');
+    }
+  };
+
   const openAddModal = () => {
     setEditingProduct(null);
     setFormData({
-      title: '', price: 0, inventory: 0, category: '', concern: '', description: '', images: ''
+      title: '', price: 0, originalPrice: 0, inventory: 0, category: '', concern: '', description: '', images: '', isActive: true, isFeatured: false,
     });
     setIsModalOpen(true);
   };
@@ -113,11 +152,14 @@ export default function AdminProductsPage() {
     setFormData({
       title: p.title || p.name || '',
       price: p.price || 0,
+      originalPrice: p.originalPrice || 0,
       inventory: p.inventory !== undefined ? p.inventory : (p.stock || 0),
       category: p.category || '',
       concern: p.concern || '',
       description: p.description || '',
-      images: p.images ? p.images.join(', ') : ''
+      images: p.images ? p.images.join(', ') : '',
+      isActive: p.isActive !== undefined ? p.isActive : true,
+      isFeatured: p.isFeatured || false,
     });
     setIsModalOpen(true);
   };
@@ -136,9 +178,6 @@ export default function AdminProductsPage() {
         await api.put(`/products/${editingProduct._id}`, payload, token);
         addToast('Product updated successfully', 'success');
       } else {
-        // Since POST /products in backend ignores body and creates a sample, 
-        // we must call POST then immediately PUT, OR we assume the backend takes the body.
-        // Let's assume the backend was fixed to take the body or we will fix it next.
         await api.post('/products', payload, token); 
         addToast('Product created successfully', 'success');
       }
@@ -159,15 +198,21 @@ export default function AdminProductsPage() {
 
   return (
     <div>
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      <div className="mb-8 grid gap-4 sm:grid-cols-4">
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-clay">Total Products</p>
           <p className="mt-1 font-heading text-3xl font-bold text-forest">{products.length}</p>
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-clay">In Stock</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Active</p>
           <p className="mt-1 font-heading text-3xl font-bold text-green-600">
-            {products.filter((p) => (p.inventory !== undefined ? p.inventory : p.stock) || 0 > 0).length}
+            {products.filter((p) => p.isActive !== false).length}
+          </p>
+        </div>
+        <div className="rounded-xl border border-neutral-300 bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Featured</p>
+          <p className="mt-1 font-heading text-3xl font-bold text-gold-dark">
+            {products.filter((p) => p.isFeatured).length}
           </p>
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
@@ -195,23 +240,25 @@ export default function AdminProductsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-neutral-300 bg-white">
-        <table className="w-full min-w-[800px] text-left text-sm">
+        <table className="w-full min-w-[900px] text-left text-sm">
           <thead>
             <tr className="border-b border-neutral-300 bg-forest text-sand">
-              <th className="px-5 py-3.5 font-medium">Image</th>
-              <th className="px-5 py-3.5 font-medium">Product</th>
-              <th className="px-5 py-3.5 font-medium">Category</th>
-              <th className="px-5 py-3.5 font-medium">Price</th>
-              <th className="px-5 py-3.5 font-medium">Stock</th>
-              <th className="px-5 py-3.5 font-medium text-right">Actions</th>
+              <th className="px-4 py-3.5 font-medium">Image</th>
+              <th className="px-4 py-3.5 font-medium">Product</th>
+              <th className="px-4 py-3.5 font-medium">Category</th>
+              <th className="px-4 py-3.5 font-medium">Price</th>
+              <th className="px-4 py-3.5 font-medium">Stock</th>
+              <th className="px-4 py-3.5 font-medium text-center">Active</th>
+              <th className="px-4 py-3.5 font-medium text-center">Featured</th>
+              <th className="px-4 py-3.5 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="border-b border-neutral-200">
-                  {[...Array(6)].map((_, j) => (
-                    <td key={j} className="px-5 py-4">
+                  {[...Array(8)].map((_, j) => (
+                    <td key={j} className="px-4 py-4">
                       <div className="h-4 w-20 rounded bg-neutral-200 animate-shimmer" />
                     </td>
                   ))}
@@ -219,7 +266,7 @@ export default function AdminProductsPage() {
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-clay">No products found</td>
+                <td colSpan={8} className="px-5 py-12 text-center text-clay">No products found</td>
               </tr>
             ) : (
               filtered.map((product) => {
@@ -228,24 +275,47 @@ export default function AdminProductsPage() {
                 const image = product.images && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg';
                 
                 return (
-                  <tr key={product._id} className="border-b border-neutral-200 transition-colors hover:bg-neutral-100/50">
-                    <td className="px-5 py-3">
+                  <tr key={product._id} className={`border-b border-neutral-200 transition-colors hover:bg-neutral-100/50 ${product.isActive === false ? 'opacity-50' : ''}`}>
+                    <td className="px-4 py-3">
                       <div className="h-12 w-12 overflow-hidden rounded-md border border-neutral-200 bg-neutral-50">
                         <img src={image} alt={title} className="h-full w-full object-cover" />
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <p className="font-semibold text-forest">{title}</p>
                       <p className="text-xs text-clay max-w-[250px] truncate">{product.description}</p>
                     </td>
-                    <td className="px-5 py-4 text-clay">{product.category}</td>
-                    <td className="px-5 py-4 font-semibold text-forest">₹{product.price}</td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4 text-clay">{product.category}</td>
+                    <td className="px-4 py-4">
+                      <span className="font-semibold text-forest">₹{product.price}</span>
+                      {product.originalPrice && product.originalPrice > product.price && (
+                        <span className="ml-1 text-xs text-clay-light line-through">₹{product.originalPrice}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4">
                       <span className={`font-semibold ${stock <= 5 ? 'text-red-600' : stock <= 15 ? 'text-amber-600' : 'text-green-600'}`}>
                         {stock}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-4 py-4 text-center">
+                      <button
+                        onClick={() => toggleActive(product)}
+                        className={`h-6 w-11 rounded-full transition-colors ${product.isActive !== false ? 'bg-green-500' : 'bg-neutral-300'} relative`}
+                        title={product.isActive !== false ? 'Active — click to deactivate' : 'Inactive — click to activate'}
+                      >
+                        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${product.isActive !== false ? 'left-[22px]' : 'left-0.5'}`} />
+                      </button>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <button
+                        onClick={() => toggleFeatured(product)}
+                        className={`text-lg transition-transform hover:scale-110 ${product.isFeatured ? 'text-gold' : 'text-neutral-300 hover:text-gold/50'}`}
+                        title={product.isFeatured ? 'Featured — click to remove' : 'Not featured — click to feature'}
+                      >
+                        ★
+                      </button>
+                    </td>
+                    <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => {
@@ -303,7 +373,7 @@ export default function AdminProductsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-sm font-semibold text-forest mb-1">Price (₹) *</label>
                   <input 
@@ -314,7 +384,16 @@ export default function AdminProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-forest mb-1">Stock / Inventory *</label>
+                  <label className="block text-sm font-semibold text-forest mb-1">MRP (₹)</label>
+                  <input 
+                    type="number" min="0" step="0.01"
+                    value={formData.originalPrice} 
+                    onChange={e => setFormData({...formData, originalPrice: Number(e.target.value)})}
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-forest mb-1">Stock *</label>
                   <input 
                     required type="number" min="0"
                     value={formData.inventory} 
@@ -327,28 +406,57 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-forest mb-1">Category *</label>
-                  <input 
-                    required type="text"
-                    value={formData.category} 
-                    onChange={e => setFormData({...formData, category: e.target.value})}
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                  />
+                  {categories.length > 0 ? (
+                    <select
+                      required
+                      value={formData.category}
+                      onChange={e => setFormData({...formData, category: e.target.value})}
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                    >
+                      <option value="">Select category</option>
+                      {categories.map(c => (
+                        <option key={c._id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input 
+                      required type="text"
+                      placeholder="e.g. hair-care"
+                      value={formData.category} 
+                      onChange={e => setFormData({...formData, category: e.target.value})}
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-forest mb-1">Concern</label>
-                  <input 
-                    type="text"
-                    value={formData.concern} 
-                    onChange={e => setFormData({...formData, concern: e.target.value})}
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                  />
+                  {concerns.length > 0 ? (
+                    <select
+                      value={formData.concern}
+                      onChange={e => setFormData({...formData, concern: e.target.value})}
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                    >
+                      <option value="">Select concern</option>
+                      {concerns.map(c => (
+                        <option key={c._id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input 
+                      type="text"
+                      placeholder="e.g. Acne"
+                      value={formData.concern} 
+                      onChange={e => setFormData({...formData, concern: e.target.value})}
+                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                    />
+                  )}
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-forest mb-1">Description</label>
                 <textarea 
-                  rows={4}
+                  rows={3}
                   value={formData.description} 
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
@@ -358,12 +466,36 @@ export default function AdminProductsPage() {
               <div>
                 <label className="block text-sm font-semibold text-forest mb-1">Image URLs (comma separated)</label>
                 <textarea 
-                  rows={3}
+                  rows={2}
                   placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                   value={formData.images} 
                   onChange={e => setFormData({...formData, images: e.target.value})}
                   className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-clay outline-none focus:border-gold"
                 />
+              </div>
+
+              {/* Toggle switches */}
+              <div className="flex items-center gap-8 pt-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, isActive: !formData.isActive})}
+                    className={`h-6 w-11 rounded-full transition-colors ${formData.isActive ? 'bg-green-500' : 'bg-neutral-300'} relative`}
+                  >
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${formData.isActive ? 'left-[22px]' : 'left-0.5'}`} />
+                  </button>
+                  <span className="text-sm font-medium text-forest">Active</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, isFeatured: !formData.isFeatured})}
+                    className={`h-6 w-11 rounded-full transition-colors ${formData.isFeatured ? 'bg-gold' : 'bg-neutral-300'} relative`}
+                  >
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${formData.isFeatured ? 'left-[22px]' : 'left-0.5'}`} />
+                  </button>
+                  <span className="text-sm font-medium text-forest">Featured</span>
+                </label>
               </div>
 
               <div className="pt-4 border-t border-neutral-200 flex justify-end gap-3">

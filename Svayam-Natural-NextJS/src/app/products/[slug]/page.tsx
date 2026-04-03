@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { products, getProductBySlug } from "@/lib/products";
+import { products, getProductBySlug as getStaticProduct } from "@/lib/products";
+import { fetchProductBySlug } from "@/lib/productApi";
 import StorySection from "@/components/StorySection";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import AddToCartButton from "@/components/AddToCartButton";
@@ -20,13 +21,19 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  // Try API first for live data, fall back to static
+  const apiProduct = await fetchProductBySlug(slug);
+  const staticProduct = getStaticProduct(slug);
+  const product = apiProduct || staticProduct;
   if (!product) return { title: "Product Not Found" };
   return {
-    title: `${product.name} — ${product.tagline}`,
+    title: `${product.name} — ${product.tagline || ''}`,
     description: product.description,
   };
 }
+
+// ISR: revalidate every 60 seconds for live data
+export const revalidate = 60;
 
 export default async function ProductPage({
   params,
@@ -34,14 +41,20 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  
+  // Fetch from API (live data merged with editorial), fall back to static
+  const apiProduct = await fetchProductBySlug(slug);
+  const staticProduct = getStaticProduct(slug);
+  const product = apiProduct || staticProduct;
+  
   if (!product) notFound();
 
+  // Special pages for premium products
   if (slug === "chandraprabha-night-nectar") {
-    return <ChandraprabhaPage product={product} />;
+    return <ChandraprabhaPage product={product as any} />;
   }
   if (slug === "suryakanti-day-cream") {
-    return <SuryakantiPage product={product} />;
+    return <SuryakantiPage product={product as any} />;
   }
 
   const discount =
@@ -50,7 +63,13 @@ export default async function ProductPage({
           ((product.originalPrice - product.price) / product.originalPrice) * 100
         )
       : 0;
-  const isComingSoon = product.price === 0;
+  
+  // Out of stock: explicitly inactive or no inventory
+  const inventory = 'inventory' in product ? (product as any).inventory : undefined;
+  const isActive = 'isActive' in product ? (product as any).isActive : true;
+  const isOutOfStock = 
+    isActive === false ||
+    (inventory !== undefined && inventory <= 0);
 
   return (
     <article className={`theme-${product.theme}`}>
@@ -83,17 +102,19 @@ export default async function ProductPage({
             <h1 className="mb-4 font-heading text-4xl font-bold text-forest md:text-5xl lg:text-6xl">
               {product.name}
             </h1>
-            <p className="mb-6 font-accent text-xl italic text-clay">
-              {product.tagline}
-            </p>
+            {product.tagline && (
+              <p className="mb-6 font-accent text-xl italic text-clay">
+                {product.tagline}
+              </p>
+            )}
             <p className="mb-8 max-w-lg leading-relaxed text-clay-light">
               {product.description}
             </p>
 
             {/* Badges */}
-            {product.badges.length > 0 && (
+            {'badges' in product && product.badges && product.badges.length > 0 && (
             <div className="mb-8 flex flex-wrap gap-3">
-              {product.badges.map((badge) => (
+              {product.badges.map((badge: string) => (
                 <span
                   key={badge}
                   className="rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 text-xs font-semibold text-gold-dark"
@@ -106,12 +127,6 @@ export default async function ProductPage({
 
             {/* Pricing */}
             <div className="mb-8 flex items-baseline gap-4">
-              {isComingSoon ? (
-                <span className="font-heading text-xl font-semibold text-clay-light">
-                  Coming soon
-                </span>
-              ) : (
-                <>
               <span className="font-heading text-4xl font-bold text-forest">
                 ₹{product.price}
               </span>
@@ -125,12 +140,10 @@ export default async function ProductPage({
                   </span>
                 </>
               )}
-                </>
-              )}
             </div>
 
             {/* SKU & Weight */}
-            {(product.sku || product.weight) && (
+            {('sku' in product || 'weight' in product) && (product.sku || product.weight) && (
             <div className="mb-8 flex gap-6 text-sm text-clay-light">
               {product.sku && (
               <span>
@@ -148,7 +161,7 @@ export default async function ProductPage({
             )}
 
             <div className="flex flex-wrap gap-4">
-              {!isComingSoon && <AddToCartButton product={product} />}
+              {!isOutOfStock && <AddToCartButton product={product} />}
               <WishlistButton product={product} showText />
             </div>
           </div>
@@ -165,8 +178,8 @@ export default async function ProductPage({
       )}
 
       {/* Key Ingredients */}
-      {product.ingredients.length > 0 && (
-      <section className="bg-neutral-100 py-24">
+      {'ingredients' in product && product.ingredients && product.ingredients.length > 0 && (
+      <section className="bg-neutral-100 py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <AnimateOnScroll animation="fadeInUp">
             <div className="mb-16 text-center">
@@ -181,7 +194,7 @@ export default async function ProductPage({
             </div>
           </AnimateOnScroll>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {product.ingredients.map((ing, i) => (
+            {product.ingredients.map((ing: { name: string; icon: string; description: string }, i: number) => (
               <AnimateOnScroll
                 key={ing.name}
                 animation="fadeInUp"
@@ -206,8 +219,8 @@ export default async function ProductPage({
       )}
 
       {/* Benefits */}
-      {product.benefits.length > 0 && (
-      <section className="bg-white py-24">
+      {'benefits' in product && product.benefits && product.benefits.length > 0 && (
+      <section className="bg-white py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <AnimateOnScroll animation="fadeInUp">
             <div className="mb-16 text-center">
@@ -218,7 +231,7 @@ export default async function ProductPage({
             </div>
           </AnimateOnScroll>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {product.benefits.map((b, i) => (
+            {product.benefits.map((b: { title: string; description: string; icon: string }, i: number) => (
               <AnimateOnScroll
                 key={b.title}
                 animation="fadeInUp"
@@ -242,7 +255,7 @@ export default async function ProductPage({
 
       {/* How to Use */}
       {product.howToUse && (
-        <section className="bg-forest py-20">
+        <section className="bg-forest py-16 sm:py-20">
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-10">
             <AnimateOnScroll animation="fadeInUp">
               <h2 className="mb-8 font-heading text-3xl font-bold text-sand md:text-4xl">
@@ -258,7 +271,7 @@ export default async function ProductPage({
       )}
 
       {/* Bottom CTA */}
-      <section className="bg-neutral-200 py-20">
+      <section className="bg-neutral-200 py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-6 text-center lg:px-10">
           <AnimateOnScroll animation="fadeInUp">
             <h2 className="mb-6 font-heading text-3xl font-bold text-forest md:text-4xl">
@@ -269,7 +282,7 @@ export default async function ProductPage({
               daily ritual.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              {!isComingSoon && <AddToCartButton product={product} variant="cta" />}
+              {!isOutOfStock && <AddToCartButton product={product} variant="cta" />}
               <Link
                 href="/products"
                 className="rounded-lg border-2 border-forest/20 px-8 py-4 text-sm font-bold uppercase tracking-wider text-forest transition-all hover:border-gold hover:text-gold-dark"

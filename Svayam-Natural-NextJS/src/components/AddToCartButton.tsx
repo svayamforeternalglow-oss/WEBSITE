@@ -2,10 +2,19 @@
 
 import { useCartStore } from '@/lib/cart';
 import { useToastStore } from '@/lib/toast';
-import type { Product } from '@/lib/products';
+
+interface CartProductData {
+  slug: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  image: string;
+  weight?: string;
+  sku?: string;
+}
 
 interface Props {
-  product: Product;
+  product: CartProductData;
   variant?: 'primary' | 'cta';
   className?: string;
 }
@@ -23,8 +32,8 @@ export default function AddToCartButton({ product, variant = 'primary', classNam
       price: product.price,
       originalPrice: product.originalPrice,
       image: product.image,
-      weight: product.weight,
-      sku: product.sku,
+      weight: product.weight || '',
+      sku: product.sku || '',
     });
     addToast(`${product.name} added to cart`, 'success');
     openCart();

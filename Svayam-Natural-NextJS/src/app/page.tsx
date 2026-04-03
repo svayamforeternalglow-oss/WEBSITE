@@ -20,6 +20,9 @@ import {
   ArrowLongRightIcon,
 } from "@/components/icons";
 import { products } from "@/lib/products";
+import { fetchFeaturedProducts, type MergedProduct } from "@/lib/productApi";
+
+export const revalidate = 60;
 
 const categories = [
   {
@@ -28,7 +31,7 @@ const categories = [
     description:
       "Time-tested Ayurvedic formulations for radiant, healthy skin and timeless beauty.",
     icon: SparklesIcon,
-    href: "/products?category=skin-care",
+    href: "/products?category=face",
     accent: "from-gold/10 to-gold/[0.02]",
   },
   {
@@ -37,7 +40,7 @@ const categories = [
     description:
       "Natural food and wellness products for holistic well-being and inner balance.",
     icon: DropletIcon,
-    href: "/products?category=natural-food",
+    href: "/products?category=food",
     accent: "from-sage/20 to-sage/[0.03]",
   },
 ];
@@ -105,15 +108,17 @@ const testimonials = [
   },
 ];
 
-export default function HomePage() {
-  const featuredProducts = products.filter((p) =>
-    [
-      "kesh-samraksha",
-      "lavanyam-facepack",
-      "suryakanti-day-cream",
-      "tejasamrit",
-    ].includes(p.slug)
-  );
+export default async function HomePage() {
+  // Fetch featured products from API (randomized, in-stock)
+  let featuredProducts: MergedProduct[] = [];
+  try {
+    featuredProducts = await fetchFeaturedProducts(4);
+  } catch {
+    // Fallback to static featured products
+    featuredProducts = products
+      .filter((p) => ["kesh-samraksha", "lavanyam-facepack", "suryakanti-day-cream", "tejasamrit"].includes(p.slug))
+      .map(p => ({ ...p, _id: '', inventory: 0, isActive: true, isFeatured: true, concerns: p.concerns || [], badges: p.badges || [], ingredients: p.ingredients || [], benefits: p.benefits || [] } as unknown as MergedProduct));
+  }
 
   return (
     <>
@@ -124,7 +129,7 @@ export default function HomePage() {
       <ShopByConcern />
 
       {/* Featured Products */}
-      <section className="bg-sand py-28" id="featured">
+      <section className="bg-sand py-16 sm:py-20 lg:py-28" id="featured">
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <AnimateOnScroll animation="fadeInUp">
             <div className="mb-16 text-center">
@@ -170,7 +175,7 @@ export default function HomePage() {
       <SeasonalPicks />
 
       {/* Categories */}
-      <section className="relative bg-cream py-28" id="categories">
+      <section className="relative bg-cream py-16 sm:py-20 lg:py-28" id="categories">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--color-gold)_0%,transparent_70%)] opacity-[0.03]" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-10">
           <AnimateOnScroll animation="fadeInUp">
@@ -223,7 +228,7 @@ export default function HomePage() {
       <BeforeAfterSlider />
 
       {/* About / Philosophy */}
-      <section className="relative overflow-hidden bg-neutral-100 py-28" id="about">
+      <section className="relative overflow-hidden bg-neutral-100 py-16 sm:py-20 lg:py-28" id="about">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--color-sage)_0%,transparent_60%)] opacity-[0.08]" />
         <div className="pointer-events-none absolute -right-40 -top-40 h-[400px] w-[400px] rounded-full bg-gold/[0.03] blur-[100px]" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-10">
@@ -252,7 +257,7 @@ export default function HomePage() {
       </section>
 
       {/* Features / Why Choose Us */}
-      <section className="relative bg-neutral-100 py-28">
+      <section className="relative bg-neutral-100 py-16 sm:py-20 lg:py-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--color-sage)_0%,transparent_70%)] opacity-[0.06]" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-10">
           <AnimateOnScroll animation="fadeInUp">
@@ -286,7 +291,7 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-cream py-28">
+      <section className="bg-cream py-16 sm:py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <AnimateOnScroll animation="fadeInUp">
             <SectionHeader
@@ -339,7 +344,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="relative overflow-hidden bg-sand py-28">
+      <section className="relative overflow-hidden bg-sand py-16 sm:py-20 lg:py-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--color-sage)_0%,transparent_60%)] opacity-[0.08]" />
         <div className="pointer-events-none absolute -left-40 -top-40 h-[400px] w-[400px] rounded-full bg-gold/[0.04] blur-[100px]" />
         <div className="pointer-events-none absolute -bottom-20 -right-20 h-[300px] w-[300px] rounded-full bg-sage/[0.06] blur-[80px]" />

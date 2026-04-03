@@ -21,7 +21,7 @@ export interface Product {
   howToUse?: string;
 }
 
-const CATEGORY_THEMES: Record<string, ProductTheme> = {
+export const CATEGORY_THEMES: Record<string, ProductTheme> = {
   'hair-care': 'herbal',
   'skin-care': 'skincare',
   'body-care': 'skincare',
@@ -405,3 +405,8 @@ export const PRODUCTS_PAGE_CATEGORIES = [
   { id: "food", label: "Food", slugs: ["swarnahairdra-turmeric", "gulkand", "sonamoti-wheat", "autea", "tejasamrit"] },
   { id: "detox", label: "Detox", slugs: ["triphala-detox", "autea", "tejasamrit"] },
 ] as const;
+
+/** Slug → editorial data map for merge with backend commerce data */
+export const editorialBySlug: Record<string, Product> = Object.fromEntries(
+  products.map((p) => [p.slug, p])
+);

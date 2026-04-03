@@ -3,12 +3,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon, ShoppingBagIcon } from "./icons";
-import type { Product } from "@/lib/products";
 import WishlistButton from "./WishlistButton";
 import { useCartStore } from "@/lib/cart";
 import { useToastStore } from "@/lib/toast";
 
-export default function ProductCard({ product }: { product: Product }) {
+export interface ProductCardData {
+  slug: string;
+  name: string;
+  tagline?: string;
+  description?: string;
+  category: string;
+  price: number;
+  originalPrice: number;
+  inventory?: number;
+  isActive?: boolean;
+  weight?: string;
+  sku?: string;
+  image: string;
+  images?: string[];
+}
+
+export default function ProductCard({ product }: { product: ProductCardData }) {
   const addItem = useCartStore((s) => s.addItem);
   const openCart = useCartStore((s) => s.openCart);
   const addToast = useToastStore((s) => s.addToast);
@@ -19,7 +34,13 @@ export default function ProductCard({ product }: { product: Product }) {
           ((product.originalPrice - product.price) / product.originalPrice) * 100
         )
       : 0;
-  const isComingSoon = product.price === 0;
+  
+  // Out of stock: explicitly inactive or no inventory
+  const isOutOfStock =
+    product.isActive === false ||
+    (product.inventory !== undefined && product.inventory <= 0);
+
+  const canAddToCart = !isOutOfStock && product.price > 0;
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -31,8 +52,8 @@ export default function ProductCard({ product }: { product: Product }) {
       price: product.price,
       originalPrice: product.originalPrice,
       image: product.image,
-      weight: product.weight,
-      sku: product.sku,
+      weight: product.weight || '',
+      sku: product.sku || '',
     });
     addToast(`${product.name} added to cart`, "success");
     openCart();
@@ -53,7 +74,7 @@ export default function ProductCard({ product }: { product: Product }) {
               src={product.image}
               alt={product.name}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
               className="object-contain p-4 sm:p-6 transition-transform duration-600 group-hover:scale-105"
             />
           </div>
@@ -62,9 +83,14 @@ export default function ProductCard({ product }: { product: Product }) {
               {discount}% OFF
             </span>
           )}
+          {isOutOfStock && (
+            <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-[10px] font-bold tracking-wider text-white">
+              OUT OF STOCK
+            </span>
+          )}
         </div>
 
-        {/* Info — flex-grow so the price row stays at the bottom */}
+        {/* Info */}
         <div className="flex flex-1 flex-col px-1 pb-1">
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-clay-light">
             {product.category.replace(/-/g, " ")}
@@ -73,36 +99,32 @@ export default function ProductCard({ product }: { product: Product }) {
             {product.name}
           </h3>
           <p className="mb-auto line-clamp-2 text-[13px] leading-relaxed text-clay-light/80">
-            {product.tagline}
+            {product.tagline || product.description}
           </p>
           <div className="mt-4 flex items-center justify-between pt-2">
             <div className="flex items-baseline gap-2">
-              {isComingSoon ? (
-                <span className="text-sm font-semibold text-clay-light">
-                  Coming soon
+              <span className="text-lg font-bold text-forest">
+                ₹{product.price}
+              </span>
+              {product.originalPrice > product.price && (
+                <span className="text-xs text-clay-light/60 line-through">
+                  ₹{product.originalPrice}
                 </span>
-              ) : (
-                <>
-                  <span className="text-lg font-bold text-forest">
-                    ₹{product.price}
-                  </span>
-                  {product.originalPrice > product.price && (
-                    <span className="text-xs text-clay-light/60 line-through">
-                      ₹{product.originalPrice}
-                    </span>
-                  )}
-                </>
               )}
             </div>
             
-            {!isComingSoon ? (
+            {canAddToCart ? (
               <button
                 onClick={handleQuickAdd}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-forest text-white transition-all duration-300 hover:bg-gold hover:text-forest shadow-md"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-forest text-white transition-all duration-300 hover:bg-gold hover:text-forest shadow-md"
                 title="Add to Cart"
               >
                 <ShoppingBagIcon className="h-5 w-5" />
               </button>
+            ) : isOutOfStock ? (
+              <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-[10px] font-semibold text-clay-light">
+                Sold Out
+              </span>
             ) : (
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-clay-light">
                 <ArrowRightIcon className="h-3.5 w-3.5" />

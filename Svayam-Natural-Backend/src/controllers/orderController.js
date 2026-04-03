@@ -3,6 +3,47 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import shiprocket from '../services/shiprocketService.js';
+
+// Helper: Auto-generate Shiprocket Shipment
+async function autoGenerateShipment(order) {
+  if (!order.shiprocketOrderId && shiprocket.isEnabled) {
+    try {
+      const srResult = await shiprocket.createOrder(order);
+      order.shiprocketOrderId = srResult.order_id?.toString() || '';
+      order.shiprocketShipmentId = srResult.shipment_id?.toString() || '';
+
+      if (srResult.shipment_id) {
+        const awbResult = await shiprocket.generateAWB(srResult.shipment_id);
+        const awbData = awbResult?.response?.data;
+        if (awbData) {
+          order.awbCode = awbData.awb_code || '';
+          order.courierName = awbData.courier_name || 'Courier';
+        }
+        
+        try {
+          const labelResult = await shiprocket.generateLabel(srResult.shipment_id);
+          if (labelResult?.label_url) {
+            order.labelUrl = labelResult.label_url;
+          }
+        } catch (labelErr) {
+          console.error("Auto label generation error:", labelErr.message);
+        }
+      }
+    } catch (err) {
+      console.error('Auto Shiprocket generation error:', err.message);
+    }
+  }
+
+  // Mock fallback if Shiprocket failed or is disabled
+  if (!order.awbCode) {
+    order.awbCode = `AWB-${Math.floor(Math.random() * 1000000000)}`;
+    order.courierName = 'Standard Delivery';
+  }
+  order.trackingNumber = order.awbCode;
+  
+  return order;
+}
 
 // Helper: resolve a product from a cart item (try slug first, then ObjectId)
 async function resolveProduct(item) {
@@ -270,6 +311,7 @@ export const updateOrderStatus = async (req, res) => {
     
     if (order.trackingStatus === 'Shipped' && !order.shippedAt) {
       order.shippedAt = Date.now();
+      await autoGenerateShipment(order);
     } else if (order.trackingStatus === 'Delivered' && !order.deliveredAt) {
       order.deliveredAt = Date.now();
       if (!order.shippedAt) order.shippedAt = Date.now(); 
@@ -555,8 +597,8 @@ export const downloadBulkInvoices = async (req, res) => {
     for (const order of orders) {
       if(order.trackingStatus !== 'Shipped' && order.trackingStatus !== 'Delivered') {
         order.trackingStatus = 'Shipped';
-        order.trackingNumber = `AWB-${Math.floor(Math.random() * 1000000000)}`;
         order.shippedAt = Date.now();
+        await autoGenerateShipment(order);
         await order.save();
       }
 

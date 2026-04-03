@@ -58,6 +58,8 @@ import orderRoutes from './routes/orderRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import shippingRoutes from './routes/shippingRoutes.js';
+import taxonomyRoutes from './routes/taxonomyRoutes.js';
+import siteConfigRoutes from './routes/siteConfigRoutes.js';
 
 // Routes
 app.use('/api/v1/users', userRoutes);
@@ -66,6 +68,8 @@ app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/shipping', shippingRoutes);
+app.use('/api/v1/taxonomy', taxonomyRoutes);
+app.use('/api/v1/site-config', siteConfigRoutes);
 
 app.get('/', (req, res) => {
   res.send('Svayam-Natural API is running...');

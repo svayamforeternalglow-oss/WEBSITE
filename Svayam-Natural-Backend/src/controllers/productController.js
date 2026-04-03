@@ -1,18 +1,76 @@
 import Product from '../models/Product.js';
 
-// @desc    Fetch all products
+// @desc    Fetch all products (with optional search, category, concern, featured, active filters)
 // @route   GET /api/v1/products
 // @access  Public
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find({});
+    const query = {};
+
+    // Active filter (default: show only active for public, show all for admin)
+    if (req.query.active === 'true') {
+      query.isActive = true;
+    } else if (req.query.active === 'false') {
+      query.isActive = false;
+    }
+    // If no active param, return all (admin needs to see inactive too)
+
+    // Category filter
+    if (req.query.category) {
+      query.category = { $regex: new RegExp(`^${req.query.category}$`, 'i') };
+    }
+
+    // Concern filter
+    if (req.query.concern) {
+      query.concern = { $regex: new RegExp(req.query.concern, 'i') };
+    }
+
+    // Featured filter
+    if (req.query.featured === 'true') {
+      query.isFeatured = true;
+      query.isActive = true;
+      query.inventory = { $gt: 0 };
+    }
+
+    // Text search
+    if (req.query.search) {
+      query.$text = { $search: req.query.search };
+    }
+
+    let productsQuery = Product.find(query);
+
+    // If text search, sort by text score for relevance
+    if (req.query.search) {
+      productsQuery = productsQuery
+        .select({ score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' } });
+    } else if (req.query.featured === 'true') {
+      // Randomize featured products
+      const count = parseInt(req.query.limit) || 8;
+      const products = await Product.aggregate([
+        { $match: query },
+        { $sample: { size: count } }
+      ]);
+      return res.json(products);
+    } else {
+      productsQuery = productsQuery.sort({ createdAt: -1 });
+    }
+
+    // Pagination
+    if (req.query.limit) {
+      const limit = parseInt(req.query.limit);
+      const page = parseInt(req.query.page) || 1;
+      productsQuery = productsQuery.skip((page - 1) * limit).limit(limit);
+    }
+
+    const products = await productsQuery;
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Fetch single product
+// @desc    Fetch single product by ID
 // @route   GET /api/v1/products/:id
 // @access  Public
 export const getProductById = async (req, res) => {
@@ -29,25 +87,44 @@ export const getProductById = async (req, res) => {
   }
 };
 
+// @desc    Fetch single product by slug
+// @route   GET /api/v1/products/by-slug/:slug
+// @access  Public
+export const getProductBySlug = async (req, res) => {
+  try {
+    const product = await Product.findOne({ slug: req.params.slug });
+
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(404).json({ message: 'Product not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Create a product
 // @route   POST /api/v1/products
 // @access  Private/Admin
 export const createProduct = async (req, res) => {
   try {
-    const { title, slug, price, originalPrice, description, images, category, concern, inventory } = req.body;
+    const { title, slug, price, originalPrice, description, images, category, concern, inventory, isActive, isFeatured } = req.body;
     
     const productTitle = title || 'Sample name';
     
     const product = new Product({
       title: productTitle,
       slug: slug || productTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now(),
-      price: price || 0,
-      originalPrice: originalPrice || 0,
+      price: price !== undefined ? price : 0,
+      originalPrice: originalPrice !== undefined ? originalPrice : 0,
       description: description || 'Sample description',
       images: images && images.length > 0 ? images : ['/images/sample.jpg'],
       category: category || 'General',
       concern: concern || 'General',
-      inventory: inventory || 0,
+      inventory: inventory !== undefined ? inventory : 0,
+      isActive: isActive !== undefined ? isActive : true,
+      isFeatured: isFeatured !== undefined ? isFeatured : false,
     });
 
     const createdProduct = await product.save();
@@ -61,21 +138,24 @@ export const createProduct = async (req, res) => {
 // @route   PUT /api/v1/products/:id
 // @access  Private/Admin
 export const updateProduct = async (req, res) => {
-  const { title, slug, price, originalPrice, description, images, category, concern, inventory } = req.body;
+  const { title, slug, price, originalPrice, description, images, category, concern, inventory, isActive, isFeatured } = req.body;
 
   try {
     const product = await Product.findById(req.params.id);
 
     if (product) {
-      product.title = title || product.title;
-      product.slug = slug || product.slug;
-      product.price = price || product.price;
-      product.originalPrice = originalPrice || product.originalPrice;
-      product.description = description || product.description;
-      product.images = images || product.images;
-      product.category = category || product.category;
-      product.concern = concern || product.concern;
-      product.inventory = inventory || product.inventory;
+      // Use explicit undefined checks so 0 and false are valid values
+      if (title !== undefined) product.title = title;
+      if (slug !== undefined) product.slug = slug;
+      if (price !== undefined) product.price = price;
+      if (originalPrice !== undefined) product.originalPrice = originalPrice;
+      if (description !== undefined) product.description = description;
+      if (images !== undefined) product.images = images;
+      if (category !== undefined) product.category = category;
+      if (concern !== undefined) product.concern = concern;
+      if (inventory !== undefined) product.inventory = inventory;
+      if (isActive !== undefined) product.isActive = isActive;
+      if (isFeatured !== undefined) product.isFeatured = isFeatured;
 
       const updatedProduct = await product.save();
       res.json(updatedProduct);
