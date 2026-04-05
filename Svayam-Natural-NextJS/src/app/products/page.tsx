@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import SectionHeader from "@/components/SectionHeader";
 import ProductCard from "@/components/ProductCard";
+import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { fetchProducts, type MergedProduct } from "@/lib/productApi";
 import { PRODUCTS_PAGE_CATEGORIES } from "@/lib/products";
 
@@ -121,32 +122,14 @@ function ProductsContent() {
 
         {/* Search Bar */}
         <div className="mb-8 flex justify-center">
-          <div className="relative w-full max-w-lg">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full rounded-full border border-neutral-300 bg-white px-6 py-3 pl-12 text-sm outline-none transition-all focus:border-gold focus:shadow-[0_0_0_3px_rgba(194,162,93,0.1)]"
-            />
-            <svg
-              className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-clay-light"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-            </svg>
-            {searchQuery && (
-              <button
-                onClick={() => { setSearchQuery(""); updateUrl(activeCategory, activeConcern, ""); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-clay-light hover:text-forest"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          <SearchAutocomplete
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onClear={() => {
+              setSearchQuery("");
+              updateUrl(activeCategory, activeConcern, "");
+            }}
+          />
         </div>
 
         {/* Active concern badge */}

@@ -445,10 +445,8 @@ export default function RadianceRitualsPage() {
                       </li>
                     ))}
                   </ul>
-                  <a
-                    href={plan.registerLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/coming-soon"
                     className={`block w-full rounded-lg py-3 text-center text-sm font-bold uppercase tracking-wider transition-all duration-300 ${
                       plan.popular
                         ? "bg-gold text-forest hover:bg-gold-dark"
@@ -456,7 +454,7 @@ export default function RadianceRitualsPage() {
                     }`}
                   >
                     Register
-                  </a>
+                  </Link>
                 </div>
               </AnimateOnScroll>
             ))}
@@ -486,7 +484,7 @@ export default function RadianceRitualsPage() {
               the Radiance Rituals family.
             </p>
             <a
-              href="https://chat.whatsapp.com/PLACEHOLDER"
+              href="https://chat.whatsapp.com/DTjOmrm04O6FxXMVzFY4ep"
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex items-center gap-3 rounded-full bg-[#25D366] px-10 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(37,211,102,0.3)]"

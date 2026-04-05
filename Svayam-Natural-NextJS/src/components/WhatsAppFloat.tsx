@@ -22,7 +22,7 @@ export default function WhatsAppFloat() {
         }
       } catch {
         // Fallback hardcoded
-        setLink('https://chat.whatsapp.com/DTjOmrm04O6FxXMVzFY4ep?mode=gi_t');
+        setLink('https://chat.whatsapp.com/DTjOmrm04O6FxXMVzFY4ep');
       }
     })();
 
