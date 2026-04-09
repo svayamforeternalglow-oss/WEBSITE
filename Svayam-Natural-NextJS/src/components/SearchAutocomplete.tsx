@@ -27,7 +27,7 @@ export default function SearchAutocomplete({
 
   // Fetch suggestions when user types
   const fetchSuggestions = useCallback(async (query: string) => {
-    if (query.trim().length < 2) {
+    if (query.trim().length < 1) {
       setSuggestions([]);
       setShowDropdown(false);
       return;
@@ -125,7 +125,7 @@ export default function SearchAutocomplete({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => {
-          if (suggestions.length > 0 && value.trim().length >= 2) {
+          if (suggestions.length > 0 && value.trim().length >= 1) {
             setShowDropdown(true);
           }
         }}
@@ -283,7 +283,7 @@ export default function SearchAutocomplete({
       )}
 
       {/* No results message */}
-      {showDropdown && suggestions.length === 0 && !loading && value.trim().length >= 2 && (
+      {showDropdown && suggestions.length === 0 && !loading && value.trim().length >= 1 && (
         <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-neutral-300 bg-white px-6 py-8 text-center shadow-[0_12px_48px_rgba(0,0,0,0.12)] animate-fadeIn">
           <svg
             className="mx-auto mb-3 h-8 w-8 text-clay-light/50"

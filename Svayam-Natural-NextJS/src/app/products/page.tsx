@@ -51,22 +51,26 @@ function ProductsContent() {
       const result = await fetchProducts({
         search: searchQuery || undefined,
         category: categoryForApi || undefined,
-        concern: activeConcern || undefined,
+        // We filter concern client-side based on our rich editorial data mapped to each product
         active: true,
       });
 
-      // For categories that use slug-based filtering (kits, detox), filter client-side
+      let filtered = result;
+      // 1. Filter by Concern Client-Side
+      if (activeConcern) {
+        filtered = filtered.filter(p => p.concerns && p.concerns.includes(activeConcern));
+      }
+
+      // 2. Filter by Categories requiring slug matching
       if (activeCategory !== "all" && !categoryForApi) {
         const catConfig = PRODUCTS_PAGE_CATEGORIES.find(c => c.id === activeCategory);
         if (catConfig && catConfig.slugs.length > 0) {
           const slugSet = new Set<string>(catConfig.slugs as unknown as string[]);
-          setProducts(result.filter(p => slugSet.has(p.slug)));
-        } else {
-          setProducts(result);
+          filtered = filtered.filter(p => slugSet.has(p.slug));
         }
-      } else {
-        setProducts(result);
       }
+      
+      setProducts(filtered);
     } catch (err) {
       console.error("Failed to fetch products:", err);
       setProducts([]);

@@ -56,6 +56,10 @@ import { editorialBySlug, CATEGORY_THEMES, type ProductTheme } from './products'
 export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedProduct[] {
   return backendProducts.map((bp) => {
     const editorial = editorialBySlug[bp.slug];
+    // Parse comma-separated concerns from backend into array
+    const backendConcerns = bp.concern
+      ? bp.concern.split(',').map(c => c.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')).filter(Boolean)
+      : [];
     return {
       _id: bp._id,
       slug: bp.slug,
@@ -77,7 +81,8 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
       weight: editorial?.weight || '',
       sku: editorial?.sku || '',
       badges: editorial?.badges || [],
-      concerns: editorial?.concerns || [],
+      // Prefer backend concerns if they exist, otherwise fall back to editorial
+      concerns: backendConcerns.length > 0 ? backendConcerns : (editorial?.concerns || []),
       ingredients: editorial?.ingredients || [],
       benefits: editorial?.benefits || [],
       howToUse: editorial?.howToUse,

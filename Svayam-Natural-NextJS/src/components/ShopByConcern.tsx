@@ -3,20 +3,18 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import SectionHeader from "./SectionHeader";
 import AnimateOnScroll from "./AnimateOnScroll";
 import { api } from "@/lib/api";
 
-// Static fallback concerns
 const STATIC_CONCERNS = [
-  { name: "Acne & Blemishes", slug: "acne-blemishes", image: "/images/concerns/acne-blemishes.png" },
-  { name: "Anti-Aging", slug: "anti-aging", image: "/images/concerns/anti-aging.png" },
-  { name: "Skin Hydration", slug: "skin-hydration", image: "/images/concerns/skin-hydration.png" },
-  { name: "Skin Brightening", slug: "skin-brightening", image: "/images/concerns/skin-brightening.png" },
+  { name: "Pigmentation", slug: "pigmentation", image: "/images/concerns/skin-brightening.png" },
+  { name: "Anti-ageing", slug: "anti-ageing", image: "/images/concerns/anti-aging.png" },
+  { name: "Hair Fall", slug: "hair-fall", image: "/images/concerns/dandruff.png" },
   { name: "Hair Growth", slug: "hair-growth", image: "/images/concerns/hair-growth.png" },
-  { name: "Dandruff", slug: "dandruff", image: "/images/concerns/dandruff.png" },
-  { name: "Dark Circles", slug: "dark-circles", image: "/images/concerns/dark-circles.png" },
-  { name: "Detox & Wellness", slug: "detox-wellness", image: "/images/concerns/detox-wellness.png" },
+  { name: "Night Care", slug: "night-care", image: "/images/chandraprabha-night-necter.png" },
+  { name: "Oil & Acne Control", slug: "oil-acne-control", image: "/images/concerns/acne-blemishes.png" },
+  { name: "Dry Skin", slug: "dry-skin", image: "/images/concerns/skin-hydration.png" },
+  { name: "Glow & Radiance", slug: "glow-radiance", image: "/images/tejasamrit.png" },
 ];
 
 interface ConcernItem {
@@ -24,6 +22,7 @@ interface ConcernItem {
   slug: string;
   image: string;
   _id?: string;
+  isActive?: boolean;
 }
 
 export default function ShopByConcern() {
@@ -34,7 +33,7 @@ export default function ShopByConcern() {
     (async () => {
       try {
         const data = await api.get<ConcernItem[]>('/taxonomy/concerns?active=true');
-        const fetched = Array.isArray(data) ? data : [];
+        const fetched = Array.isArray(data) ? data.filter(c => c.isActive !== false) : [];
         if (!cancelled && fetched.length > 0) {
           setConcerns(fetched);
         }
@@ -46,38 +45,55 @@ export default function ShopByConcern() {
   }, []);
 
   return (
-    <section className="bg-cream py-16 sm:py-20 lg:py-28" id="concerns">
-      <div className="mx-auto max-w-7xl px-6 lg:px-10">
+    <section className="bg-[#f5f2eb] py-16 sm:py-20 lg:py-24" id="concerns">
+      <div className="mx-auto max-w-[1400px] px-6 lg:px-10">
         <AnimateOnScroll animation="fadeInUp">
-          <SectionHeader
-            title="Shop By Concern"
-            subtitle="Find the perfect products for your specific needs"
-          />
+          <div className="mb-12">
+            <h2 className="font-heading text-4xl sm:text-5xl lg:text-[44px] font-bold text-forest mb-4 tracking-tight">
+              Special Care for Special Needs
+            </h2>
+            <h3 className="font-sans text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#b39568]">
+              SHOP BY CONCERN
+            </h3>
+          </div>
         </AnimateOnScroll>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
-          {concerns.map((concern, i) => (
-            <AnimateOnScroll key={concern.slug} animation="fadeInUp" delay={i * 80}>
-              <Link
-                href={`/products?concern=${concern.slug}`}
-                className="group relative flex flex-col items-center overflow-hidden rounded-2xl border border-neutral-300 bg-white p-4 transition-all duration-300 hover:-translate-y-1.5 hover:border-gold/40 hover:shadow-lg sm:p-6"
-              >
-                <div className="relative mb-4 h-20 w-20 overflow-hidden rounded-full border-2 border-neutral-200 bg-neutral-100 transition-all duration-300 group-hover:border-gold/50 sm:h-24 sm:w-24">
-                  <Image
-                    src={concern.image || '/images/placeholder.jpg'}
-                    alt={concern.name}
-                    fill
-                    sizes="96px"
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                </div>
-                <h3 className="text-center font-heading text-sm font-semibold text-forest transition-colors duration-300 group-hover:text-gold-dark sm:text-base">
-                  {concern.name}
-                </h3>
-              </Link>
-            </AnimateOnScroll>
-          ))}
+        
+        <div className="relative mt-8">
+          {/* Scrollable container for mobile/tablet, flex wrap or simple flex for desktop */}
+          <div className="flex overflow-x-auto pb-6 pt-2 hide-scrollbar gap-4 sm:gap-6 lg:justify-between">
+            {concerns.map((concern, i) => (
+              <AnimateOnScroll key={concern.slug} animation="fadeInUp" delay={i * 50}>
+                <Link
+                  href={`/products?concern=${concern.slug}`}
+                  className="group flex flex-col items-center gap-4 transition-all duration-300 flex-shrink-0"
+                >
+                  <div className="relative h-[110px] w-[110px] sm:h-[130px] sm:w-[130px] lg:h-[140px] lg:w-[140px] xl:h-[155px] xl:w-[155px] rounded-[32px] overflow-hidden bg-white shadow-[0_4px_15px_rgb(0,0,0,0.05)] transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_12px_30px_rgb(0,0,0,0.12)]">
+                    <Image
+                      src={concern.image || '/images/placeholder.jpg'}
+                      alt={concern.name}
+                      fill
+                      sizes="(max-width: 768px) 110px, 155px"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    />
+                  </div>
+                  <h3 className="text-center font-heading text-[13px] sm:text-[15px] font-medium text-forest transition-colors duration-300 group-hover:text-[#b39568] px-1 max-w-[140px]">
+                    {concern.name}
+                  </h3>
+                </Link>
+              </AnimateOnScroll>
+            ))}
+          </div>
         </div>
       </div>
+      <style jsx global>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </section>
   );
 }

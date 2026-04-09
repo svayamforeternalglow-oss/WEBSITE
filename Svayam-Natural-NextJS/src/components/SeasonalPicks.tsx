@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import ProductCard from "@/components/ProductCard";
 import SectionHeader from "@/components/SectionHeader";
+import ProductCarousel from "@/components/ProductCarousel";
 import { fetchProductsBySlugs, type MergedProduct } from "@/lib/productApi";
 import { getProductBySlug as getStaticProduct } from "@/lib/products";
 
@@ -121,32 +122,13 @@ export default function SeasonalPicks() {
         </div>
       </div>
 
-      {/* Scrollable row extends to viewport edge with fade gradients */}
-      <div className="relative">
-        {/* Left fade */}
-        <div
-          className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-neutral-100 to-transparent"
-          aria-hidden
-        />
-        {/* Right fade */}
-        <div
-          className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-neutral-100 to-transparent"
-          aria-hidden
-        />
-
-        <div
-          className="flex gap-6 overflow-x-auto px-6 pb-4 pt-2 snap-x snap-mandatory lg:px-10 [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
+      {/* Premium Product Carousel */}
+      <div className="mx-auto max-w-7xl px-6 lg:px-10">
+        <ProductCarousel>
           {products.map((product) => (
-            <div
-              key={product.slug}
-              className="min-w-[240px] sm:min-w-[280px] max-w-[300px] flex-shrink-0 snap-start"
-            >
-              <ProductCard product={product} />
-            </div>
+            <ProductCard key={product.slug} product={product} />
           ))}
-        </div>
+        </ProductCarousel>
       </div>
     </section>
   );

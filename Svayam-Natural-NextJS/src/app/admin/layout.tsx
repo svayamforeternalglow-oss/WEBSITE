@@ -10,6 +10,7 @@ const sidebarLinks = [
   { label: 'Dashboard', href: '/admin', icon: '📊' },
   { label: 'Orders', href: '/admin/orders', icon: '📦' },
   { label: 'Products', href: '/admin/products', icon: '🧴' },
+  { label: 'Concerns', href: '/admin/concerns', icon: '🎯' },
   { label: 'Site Settings', href: '/admin/settings', icon: '⚙️' },
 ];
 

@@ -40,8 +40,29 @@ export function loadRazorpayScript(): Promise<boolean> {
       resolve(true);
       return;
     }
+    
+    // Check if script is already injected
+    if (document.getElementById('razorpay-checkout-js')) {
+      // Assuming it will load shortly if not already
+      const checkInterval = setInterval(() => {
+        if (window.Razorpay) {
+          clearInterval(checkInterval);
+          resolve(true);
+        }
+      }, 100);
+      
+      // Auto-resolve false after 5 seconds to prevent hanging
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        if (!window.Razorpay) resolve(false);
+      }, 5000);
+      return;
+    }
+
     const script = document.createElement('script');
+    script.id = 'razorpay-checkout-js';
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.crossOrigin = 'anonymous';
     script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);

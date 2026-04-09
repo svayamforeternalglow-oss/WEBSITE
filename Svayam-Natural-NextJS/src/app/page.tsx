@@ -1,10 +1,12 @@
 import Link from "next/link";
 import HeroSlider from "@/components/HeroSlider";
+import HomeSearch from "@/components/HomeSearch";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import ShopByConcern from "@/components/ShopByConcern";
 import SeasonalPicks from "@/components/SeasonalPicks";
 import SectionHeader from "@/components/SectionHeader";
 import ProductCard from "@/components/ProductCard";
+import ProductCarousel from "@/components/ProductCarousel";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 import {
   LeafIcon,
@@ -122,6 +124,9 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Search Bar (Top of Home Page) */}
+      <HomeSearch />
+
       {/* Hero */}
       <HeroSlider />
 
@@ -146,16 +151,12 @@ export default async function HomePage() {
               </p>
             </div>
           </AnimateOnScroll>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product, i) => (
-              <AnimateOnScroll
-                key={product.slug}
-                animation="fadeInUp"
-                delay={i * 100}
-              >
-                <ProductCard product={product} />
-              </AnimateOnScroll>
-            ))}
+          <div className="relative mt-8">
+            <ProductCarousel>
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.slug} product={product} />
+              ))}
+            </ProductCarousel>
           </div>
           <AnimateOnScroll animation="fadeIn" delay={500}>
             <div className="mt-14 text-center">

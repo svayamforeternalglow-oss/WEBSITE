@@ -246,6 +246,7 @@ export default function AdminProductsPage() {
               <th className="px-4 py-3.5 font-medium">Image</th>
               <th className="px-4 py-3.5 font-medium">Product</th>
               <th className="px-4 py-3.5 font-medium">Category</th>
+              <th className="px-4 py-3.5 font-medium">Concern</th>
               <th className="px-4 py-3.5 font-medium">Price</th>
               <th className="px-4 py-3.5 font-medium">Stock</th>
               <th className="px-4 py-3.5 font-medium text-center">Active</th>
@@ -286,6 +287,15 @@ export default function AdminProductsPage() {
                       <p className="text-xs text-clay max-w-[250px] truncate">{product.description}</p>
                     </td>
                     <td className="px-4 py-4 text-clay">{product.category}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap gap-1 max-w-[180px]">
+                        {product.concern ? product.concern.split(',').map(c => c.trim()).filter(Boolean).map((c, i) => (
+                          <span key={i} className="inline-block rounded-full bg-gold/10 border border-gold/20 px-2 py-0.5 text-[10px] font-medium text-gold-dark whitespace-nowrap">
+                            {c}
+                          </span>
+                        )) : <span className="text-xs text-clay">—</span>}
+                      </div>
+                    </td>
                     <td className="px-4 py-4">
                       <span className="font-semibold text-forest">₹{product.price}</span>
                       {product.originalPrice && product.originalPrice > product.price && (
@@ -429,26 +439,49 @@ export default function AdminProductsPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-forest mb-1">Concern</label>
+                  <label className="block text-sm font-semibold text-forest mb-1">Concerns</label>
                   {concerns.length > 0 ? (
-                    <select
-                      value={formData.concern}
-                      onChange={e => setFormData({...formData, concern: e.target.value})}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                    >
-                      <option value="">Select concern</option>
-                      {concerns.map(c => (
-                        <option key={c._id} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
+                    <div className="max-h-40 overflow-y-auto rounded-lg border border-neutral-300 p-2 space-y-1">
+                      {concerns.map(c => {
+                        const selected = formData.concern.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                        const isChecked = selected.includes(c.name.toLowerCase());
+                        return (
+                          <label key={c._id} className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-neutral-50 cursor-pointer text-sm">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                let updated: string[];
+                                if (isChecked) {
+                                  updated = selected.filter(s => s !== c.name.toLowerCase());
+                                } else {
+                                  updated = [...selected, c.name];
+                                }
+                                // Rebuild with proper casing by matching concern names
+                                const properCased = updated.map(u => {
+                                  const match = concerns.find(cn => cn.name.toLowerCase() === u.toLowerCase());
+                                  return match ? match.name : u;
+                                });
+                                setFormData({...formData, concern: properCased.join(', ')});
+                              }}
+                              className="rounded border-neutral-300 text-gold accent-gold"
+                            />
+                            <span className="text-forest">{c.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <input 
                       type="text"
-                      placeholder="e.g. Acne"
+                      placeholder="e.g. Acne, Dry Skin"
                       value={formData.concern} 
                       onChange={e => setFormData({...formData, concern: e.target.value})}
                       className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
                     />
+                  )}
+                  {formData.concern && (
+                    <p className="mt-1 text-xs text-clay">Selected: {formData.concern}</p>
                   )}
                 </div>
               </div>
