@@ -59,24 +59,24 @@ export default function ShopByConcern() {
         </AnimateOnScroll>
         
         <div className="relative mt-8">
-          {/* Scrollable container for mobile/tablet, flex wrap or simple flex for desktop */}
-          <div className="flex overflow-x-auto pb-6 pt-2 hide-scrollbar gap-4 sm:gap-6 lg:justify-between">
+          {/* Mobile: Scrollable row | Desktop: Responsive grid */}
+          <div className="flex lg:grid lg:grid-cols-4 xl:grid-cols-8 overflow-x-auto lg:overflow-visible pb-6 pt-2 hide-scrollbar gap-4 sm:gap-6 lg:gap-4 lg:justify-items-center">
             {concerns.map((concern, i) => (
               <AnimateOnScroll key={concern.slug} animation="fadeInUp" delay={i * 50}>
                 <Link
                   href={`/products?concern=${concern.slug}`}
-                  className="group flex flex-col items-center gap-4 transition-all duration-300 flex-shrink-0"
+                  className="group flex flex-col items-center gap-4 transition-all duration-300 flex-shrink-0 lg:flex-shrink"
                 >
-                  <div className="relative h-[110px] w-[110px] sm:h-[130px] sm:w-[130px] lg:h-[140px] lg:w-[140px] xl:h-[155px] xl:w-[155px] rounded-[32px] overflow-hidden bg-white shadow-[0_4px_15px_rgb(0,0,0,0.05)] transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_12px_30px_rgb(0,0,0,0.12)]">
+                  <div className="relative h-[110px] w-[110px] sm:h-[130px] sm:w-[130px] lg:h-[120px] lg:w-[120px] xl:h-[145px] xl:w-[145px] rounded-[32px] overflow-hidden bg-white shadow-[0_4px_15px_rgb(0,0,0,0.05)] transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_12px_30px_rgb(0,0,0,0.12)]">
                     <Image
                       src={concern.image || '/images/placeholder.jpg'}
                       alt={concern.name}
                       fill
-                      sizes="(max-width: 768px) 110px, 155px"
+                      sizes="(max-width: 768px) 110px, 145px"
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                     />
                   </div>
-                  <h3 className="text-center font-heading text-[13px] sm:text-[15px] font-medium text-forest transition-colors duration-300 group-hover:text-[#b39568] px-1 max-w-[140px]">
+                  <h3 className="text-center font-heading text-[13px] sm:text-[14px] lg:text-[15px] font-medium text-forest transition-colors duration-300 group-hover:text-[#b39568] px-1 max-w-[140px] leading-tight">
                     {concern.name}
                   </h3>
                 </Link>
