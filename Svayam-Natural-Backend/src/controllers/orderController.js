@@ -31,7 +31,7 @@ async function autoGenerateShipment(order) {
         }
       }
     } catch (err) {
-      console.error('Auto Shiprocket generation error:', err.message);
+      console.error(`Auto Shiprocket Error [OrderId: ${order._id}]:`, err.message);
     }
   }
 

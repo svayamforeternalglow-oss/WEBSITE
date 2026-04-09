@@ -159,3 +159,70 @@ export const deleteConcern = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get products for a specific concern
+// @route   GET /api/v1/taxonomy/concerns/:id/products
+// @access  Private/Admin
+export const getConcernProducts = async (req, res) => {
+  try {
+    const concern = await Concern.findById(req.params.id);
+    if (!concern) {
+      return res.status(404).json({ message: 'Concern not found' });
+    }
+
+    const products = await Product.find({
+      concern: { $regex: new RegExp(`(^|,\\s*)${concern.name}(\\s*,|$)`, 'i') }
+    }).sort({ title: 1 });
+
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update product assignments for a concern (add/remove products)
+// @route   PUT /api/v1/taxonomy/concerns/:id/products
+// @access  Private/Admin
+export const updateConcernProducts = async (req, res) => {
+  try {
+    const concern = await Concern.findById(req.params.id);
+    if (!concern) {
+      return res.status(404).json({ message: 'Concern not found' });
+    }
+
+    const { addProductIds = [], removeProductIds = [] } = req.body;
+
+    // Add concern name to products
+    if (addProductIds.length > 0) {
+      const productsToAdd = await Product.find({ _id: { $in: addProductIds } });
+      for (const product of productsToAdd) {
+        const existing = product.concern ? product.concern.split(',').map(c => c.trim()).filter(Boolean) : [];
+        if (!existing.some(c => c.toLowerCase() === concern.name.toLowerCase())) {
+          existing.push(concern.name);
+          product.concern = existing.join(', ');
+          await product.save();
+        }
+      }
+    }
+
+    // Remove concern name from products
+    if (removeProductIds.length > 0) {
+      const productsToRemove = await Product.find({ _id: { $in: removeProductIds } });
+      for (const product of productsToRemove) {
+        const existing = product.concern ? product.concern.split(',').map(c => c.trim()).filter(Boolean) : [];
+        const filtered = existing.filter(c => c.toLowerCase() !== concern.name.toLowerCase());
+        product.concern = filtered.join(', ') || 'General';
+        await product.save();
+      }
+    }
+
+    // Return updated product list for this concern
+    const updatedProducts = await Product.find({
+      concern: { $regex: new RegExp(`(^|,\\s*)${concern.name}(\\s*,|$)`, 'i') }
+    }).sort({ title: 1 });
+
+    res.json({ message: 'Products updated', products: updatedProducts });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

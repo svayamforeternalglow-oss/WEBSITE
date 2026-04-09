@@ -8,6 +8,8 @@ import {
   createConcern,
   updateConcern,
   deleteConcern,
+  getConcernProducts,
+  updateConcernProducts,
 } from '../controllers/taxonomyController.js';
 import { protect, admin } from '../middlewares/authMiddleware.js';
 
@@ -31,4 +33,10 @@ router.route('/concerns/:id')
   .put(protect, admin, updateConcern)
   .delete(protect, admin, deleteConcern);
 
+// Concern-product assignments
+router.route('/concerns/:id/products')
+  .get(protect, admin, getConcernProducts)
+  .put(protect, admin, updateConcernProducts);
+
 export default router;
+

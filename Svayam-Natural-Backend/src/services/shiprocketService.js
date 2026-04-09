@@ -14,7 +14,6 @@ class ShiprocketService {
   get isEnabled() {
     return process.env.SHIPROCKET_ENABLED === 'true';
   }
-
   async getToken() {
     if (cachedToken && Date.now() < tokenExpiry) {
       return cachedToken;
@@ -22,14 +21,19 @@ class ShiprocketService {
 
     if (!this.isEnabled) return 'mock-token';
 
-    const response = await axios.post(`${SHIPROCKET_BASE}/auth/login`, {
-      email: process.env.SHIPROCKET_EMAIL,
-      password: process.env.SHIPROCKET_PASSWORD,
-    });
+    try {
+      const response = await axios.post(`${SHIPROCKET_BASE}/auth/login`, {
+        email: process.env.SHIPROCKET_EMAIL,
+        password: process.env.SHIPROCKET_PASSWORD,
+      });
 
-    cachedToken = response.data.token;
-    tokenExpiry = Date.now() + 9 * 24 * 60 * 60 * 1000; // 9 days
-    return cachedToken;
+      cachedToken = response.data.token;
+      tokenExpiry = Date.now() + 9 * 24 * 60 * 60 * 1000; // 9 days
+      return cachedToken;
+    } catch (err) {
+      console.error('Shiprocket Login Error:', err.response?.data?.message || err.message);
+      throw err;
+    }
   }
 
   async request(method, endpoint, data = null) {
@@ -37,19 +41,26 @@ class ShiprocketService {
       return this._mockResponse(endpoint, data);
     }
 
-    const token = await this.getToken();
-    const config = {
-      method,
-      url: `${SHIPROCKET_BASE}${endpoint}`,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    };
-    if (data) config.data = data;
+    try {
+      const token = await this.getToken();
+      const config = {
+        method,
+        url: `${SHIPROCKET_BASE}${endpoint}`,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      if (data) config.data = data;
 
-    const response = await axios(config);
-    return response.data;
+      const response = await axios(config);
+      return response.data;
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.response?.data?.errors || err.message;
+      console.error(`Shiprocket API Error [${endpoint}]:`, errorMsg);
+      // Re-throw so controllers can handle or report it
+      throw new Error(errorMsg);
+    }
   }
 
   /**

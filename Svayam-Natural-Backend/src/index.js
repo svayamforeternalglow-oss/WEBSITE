@@ -16,13 +16,19 @@ connectDB();
 const app = express();
 
 // Security middlewares
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false, // API doesn't need CSP, and it can interfere with some gateways
+}));
 
 // Dynamic CORS configuration
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URL?.replace('https://', 'https://www.'),
   process.env.FRONTEND_URL?.replace('https://www.', 'https://'),
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://checkout.razorpay.com'
 ].filter(Boolean).map(url => url.replace(/\/$/, ''));
 
 app.use(cors({

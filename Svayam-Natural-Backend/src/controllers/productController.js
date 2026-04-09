@@ -32,18 +32,23 @@ export const getProducts = async (req, res) => {
       query.inventory = { $gt: 0 };
     }
 
-    // Text search
+    // Text search — use regex prefix for short queries, $text for longer
     if (req.query.search) {
-      query.$text = { $search: req.query.search };
+      const searchTerm = req.query.search.trim();
+      if (searchTerm.length < 3) {
+        // Short queries: prefix match on title (case-insensitive)
+        query.title = { $regex: new RegExp(`^${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i') };
+      } else {
+        // Longer queries: also use regex for partial/prefix matching
+        query.title = { $regex: new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
+      }
     }
 
     let productsQuery = Product.find(query);
 
-    // If text search, sort by text score for relevance
+    // If text search, sort alphabetically by title
     if (req.query.search) {
-      productsQuery = productsQuery
-        .select({ score: { $meta: 'textScore' } })
-        .sort({ score: { $meta: 'textScore' } });
+      productsQuery = productsQuery.sort({ title: 1 });
     } else if (req.query.featured === 'true') {
       // Randomize featured products
       const count = parseInt(req.query.limit) || 8;
