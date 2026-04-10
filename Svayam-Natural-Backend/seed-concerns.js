@@ -12,9 +12,9 @@ const concernSchema = new mongoose.Schema({
 const Concern = mongoose.model('Concern', concernSchema);
 
 const concerns = [
-  { name: "Pigmentation", slug: "pigmentation", image: "/images/concerns/skin-brightening.png" },
-  { name: "Anti-ageing", slug: "anti-ageing", image: "/images/concerns/anti-aging.png" },
-  { name: "Hair Fall", slug: "hair-fall", image: "/images/concerns/dandruff.png" },
+  { name: "Pigmentation", slug: "pigmentation", image: "/images/pigmnetation.png" },
+  { name: "Anti Aging", slug: "anti-aging", image: "/images/aging.png" },
+  { name: "Hair Fall", slug: "hair-fall", image: "/images/hairfall.png" },
   { name: "Hair Growth", slug: "hair-growth", image: "/images/concerns/hair-growth.png" },
   { name: "Night Care", slug: "night-care", image: "/images/chandraprabha-night-necter.png" },
   { name: "Oil & Acne Control", slug: "oil-acne-control", image: "/images/concerns/acne-blemishes.png" },

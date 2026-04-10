@@ -7,9 +7,9 @@ import AnimateOnScroll from "./AnimateOnScroll";
 import { api } from "@/lib/api";
 
 const STATIC_CONCERNS = [
-  { name: "Pigmentation", slug: "pigmentation", image: "/images/concerns/skin-brightening.png" },
-  { name: "Anti-ageing", slug: "anti-ageing", image: "/images/concerns/anti-aging.png" },
-  { name: "Hair Fall", slug: "hair-fall", image: "/images/concerns/dandruff.png" },
+  { name: "Pigmentation", slug: "pigmentation", image: "/images/pigmnetation.png" },
+  { name: "Anti Aging", slug: "anti-aging", image: "/images/aging.png" },
+  { name: "Hair Fall", slug: "hair-fall", image: "/images/hairfall.png" },
   { name: "Hair Growth", slug: "hair-growth", image: "/images/concerns/hair-growth.png" },
   { name: "Night Care", slug: "night-care", image: "/images/chandraprabha-night-necter.png" },
   { name: "Oil & Acne Control", slug: "oil-acne-control", image: "/images/concerns/acne-blemishes.png" },
@@ -33,8 +33,14 @@ export default function ShopByConcern() {
     (async () => {
       try {
         const data = await api.get<ConcernItem[]>('/taxonomy/concerns?active=true');
-        const fetched = Array.isArray(data) ? data.filter(c => c.isActive !== false) : [];
+        let fetched = Array.isArray(data) ? data.filter(c => c.isActive !== false) : [];
         if (!cancelled && fetched.length > 0) {
+          const orderMap = new Map(STATIC_CONCERNS.map((c, i) => [c.slug, i]));
+          fetched = fetched.sort((a, b) => {
+            const indexA = orderMap.has(a.slug) ? orderMap.get(a.slug)! : 999;
+            const indexB = orderMap.has(b.slug) ? orderMap.get(b.slug)! : 999;
+            return indexA - indexB;
+          });
           setConcerns(fetched);
         }
       } catch {
