@@ -106,30 +106,31 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setLoading(true);
     try {
-      const orderData = {
-        orderItems: items.map((i) => ({ 
-          product: i.productId,
-          productId: i.productId,
-          slug: i.slug,
-          qty: i.quantity,
-          quantity: i.quantity 
-        })),
-        shippingAddress: {
-          fullName: shipping.fullName,
-          email: shipping.email,
-          phone: shipping.phone,
-          address: shipping.address,
-          city: shipping.city,
-          state: shipping.state,
-          pincode: shipping.pincode,
-        },
-        paymentMethod: 'Razorpay',
-        totalAmount: getTotal()
+      const cartItems = items.map((i) => ({ 
+        product: i.productId,
+        productId: i.productId,
+        slug: i.slug,
+        qty: i.quantity,
+        quantity: i.quantity 
+      }));
+
+      const shippingAddress = {
+        fullName: shipping.fullName,
+        email: shipping.email,
+        phone: shipping.phone,
+        address: shipping.address,
+        city: shipping.city,
+        state: shipping.state,
+        pincode: shipping.pincode,
       };
 
       // If authenticated, use private endpoint, otherwise use guest endpoint
       const endpoint = isAuthenticated ? '/orders' : '/orders/guest/create';
-      const response = await api.post<any>(endpoint, isAuthenticated ? orderData : { items: orderData.orderItems.map(i => ({ ...i, slug: items.find(ci => ci.productId === i.productId)?.slug })), shippingAddress: orderData.shippingAddress }, token || undefined);
+      const body = isAuthenticated
+        ? { orderItems: cartItems, shippingAddress, paymentMethod: 'Razorpay', totalAmount: getTotal() }
+        : { items: cartItems, shippingAddress };
+
+      const response = await api.post<any>(endpoint, body, token || undefined);
       
       const data = response.data || response;
 

@@ -89,7 +89,7 @@ export async function openRazorpayCheckout(params: CheckoutParams) {
 
   const options: RazorpayOptions = {
     key: params.razorpayKeyId,
-    amount: params.amount,
+    amount: Math.round(params.amount * 100), // Rupees → Paise (informational when order_id is set)
     currency: 'INR',
     name: 'Svayam Natural',
     description: `Order #${params.orderId}`,
