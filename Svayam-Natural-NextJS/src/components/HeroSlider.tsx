@@ -7,27 +7,32 @@ import { ArrowLongRightIcon } from "./icons";
 
 const slides = [
   {
-    image: "/images/logo-gold.png",
-    title: "Svayam Natural",
-    subtitle: "Pure • Luxurious • Spiritual",
-    description: "Rediscover your eternal beauty with our gold-standard Ayurvedic rituals.",
-    cta: { label: "Explore Collection", href: "#featured" },
+    image: "/images/suryakanti-day-creme.png",
+    subtitle: "Awaken Your Radiance",
+    title: "Suryakanti Day Cream",
+    description: "Nourish, protect, and illuminate your skin with the power of ancient botanicals and Kashmiri saffron.",
+    cta: { label: "Shop Now", href: "/products/suryakanti-day-cream" },
+  },
+  {
+    image: "/images/chandraprabha-night-necter.png",
+    subtitle: "Celestial Overnight Repair",
+    title: "Chandraprabha Night Nectar",
+    description: "Restore, illuminate and rejuvenate your skin while you sleep with our sacred Kumkumadi elixir.",
+    cta: { label: "Discover the Magic", href: "/products/chandraprabha-night-nectar" },
+  },
+  {
+    image: "/images/kesh-samraksha/1.jpeg",
+    subtitle: "The Secret to Luscious Locks",
+    title: "Kesh Samraksha",
+    description: "Nourishing hair pack enriched with 5 potent Ayurvedic herbs to promote hair growth and salon-worthy shine.",
+    cta: { label: "Transform Your Hair", href: "/products/kesh-samraksha" },
   },
   {
     image: "/images/lifestyle-pamper.png",
-    title: "Weekend Rituals",
-    subtitle: "Amplify Your Glow",
-    description:
-      "Indulge in our curated 'Weekend Pamper' sets designed for holistic restoration.",
-    cta: { label: "Shop Kits", href: "/products?category=kits" },
-  },
-  {
-    image: "/images/tarunya-toner.png",
-    title: "Tarunya Rose",
-    subtitle: "The Essence of Freshness",
-    description:
-      "Handcrafted rose water from the sacred gardens of Pushkar, preserved at peak potency.",
-    cta: { label: "Explore Skin Care", href: "/products?category=skin-care" },
+    subtitle: "Your Complete Rituals",
+    title: "Best Selling Kits",
+    description: "Experience the ultimate self-care routines perfectly curated to bring balance and glow to your life.",
+    cta: { label: "Explore Kits", href: "/products?category=kits" },
   },
 ];
 
@@ -112,16 +117,8 @@ export default function HeroSlider() {
                 </span>
               </div>
 
-              {/* Title with glow effect */}
-              <h1 className="hero-title mb-6 sm:mb-8 font-heading text-4xl sm:text-5xl font-bold leading-[1.1] md:text-7xl lg:text-8xl">
-                {slide.title === "Svayam" ? (
-                  <span className="hero-glow-text relative inline-block text-white">
-                    Svayam
-                    <span className="pointer-events-none absolute -inset-x-4 -inset-y-2 -z-10 rounded-2xl bg-gold/[0.06] blur-2xl" />
-                  </span>
-                ) : (
-                  <span className="text-sand">{slide.title}</span>
-                )}
+              <h1 className="hero-title mb-6 sm:mb-8 font-heading text-4xl sm:text-5xl font-bold leading-[1.1] md:text-6xl lg:text-7xl">
+                <span className="text-sand">{slide.title}</span>
               </h1>
 
               {/* Description */}

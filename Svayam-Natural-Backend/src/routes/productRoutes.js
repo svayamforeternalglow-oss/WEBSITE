@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getProducts,
   getProductById,
+  getProductBySlug,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -14,6 +15,10 @@ const router = express.Router();
 router.route('/')
   .get(getProducts)
   .post(protect, admin, createProduct);
+
+// Slug-based lookup (must be before :id to avoid conflicts)
+router.route('/by-slug/:slug')
+  .get(getProductBySlug);
 
 router.route('/:id')
   .get(getProductById)

@@ -271,6 +271,33 @@ export default function AdminOrdersPage() {
           onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
           className="rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gold"
         />
+        <button
+          onClick={() => {
+            if (!token) return;
+            const params = new URLSearchParams();
+            if (dateFrom) params.set('dateFrom', dateFrom);
+            if (dateTo) params.set('dateTo', dateTo);
+            if (statusFilter) params.set('status', statusFilter);
+            const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/admin/export/phones?${params}`;
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'customer-phones.csv';
+            // Need to fetch with auth header
+            fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+              .then(r => r.blob())
+              .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                a.href = blobUrl;
+                a.click();
+                URL.revokeObjectURL(blobUrl);
+                addToast('Phone export downloaded', 'success');
+              })
+              .catch(() => addToast('Failed to export phones', 'error'));
+          }}
+          className="rounded-lg border border-gold bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold-dark transition-colors hover:bg-gold/20"
+        >
+          📱 Export Phones
+        </button>
       </div>
 
       {/* Orders Table */}

@@ -16,13 +16,19 @@ connectDB();
 const app = express();
 
 // Security middlewares
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false, // API doesn't need CSP, and it can interfere with some gateways
+}));
 
 // Dynamic CORS configuration
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URL?.replace('https://', 'https://www.'),
   process.env.FRONTEND_URL?.replace('https://www.', 'https://'),
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://checkout.razorpay.com'
 ].filter(Boolean).map(url => url.replace(/\/$/, ''));
 
 app.use(cors({
@@ -58,6 +64,8 @@ import orderRoutes from './routes/orderRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import shippingRoutes from './routes/shippingRoutes.js';
+import taxonomyRoutes from './routes/taxonomyRoutes.js';
+import siteConfigRoutes from './routes/siteConfigRoutes.js';
 
 // Routes
 app.use('/api/v1/users', userRoutes);
@@ -66,6 +74,8 @@ app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/shipping', shippingRoutes);
+app.use('/api/v1/taxonomy', taxonomyRoutes);
+app.use('/api/v1/site-config', siteConfigRoutes);
 
 app.get('/', (req, res) => {
   res.send('Svayam-Natural API is running...');

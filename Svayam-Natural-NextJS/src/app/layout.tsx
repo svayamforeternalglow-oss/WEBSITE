@@ -5,6 +5,8 @@ import ConditionalNavbar from "@/components/ConditionalNavbar";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import CartDrawer from "@/components/CartDrawer";
 import ToastContainer from "@/components/Toast";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
+import TopBanner from "@/components/TopBanner";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -45,11 +47,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable} ${cormorant.variable}`}>
       <body className="antialiased">
+        <TopBanner />
         <ConditionalNavbar />
         <main>{children}</main>
         <ConditionalFooter />
         <CartDrawer />
         <ToastContainer />
+        <WhatsAppFloat />
       </body>
     </html>
   );

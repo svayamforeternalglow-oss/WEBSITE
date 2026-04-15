@@ -2,11 +2,17 @@
 
 import { useWishlistStore } from '@/lib/wishlist';
 import { useToastStore } from '@/lib/toast';
-import type { Product } from '@/lib/products';
 import { HeartIcon } from './icons';
 
+interface WishlistProductData {
+  slug: string;
+  name: string;
+  price: number;
+  image: string;
+}
+
 interface Props {
-  product: Product;
+  product: WishlistProductData;
   className?: string;
   showText?: boolean;
 }

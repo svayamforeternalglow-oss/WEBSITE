@@ -15,7 +15,7 @@ const productSchema = new mongoose.Schema({
   description: {
     type: String,
     required: [true, 'Please add a description'],
-    maxlength: [1000, 'Description cannot be more than 1000 characters']
+    maxlength: [2000, 'Description cannot be more than 2000 characters']
   },
   price: {
     type: Number,
@@ -44,10 +44,26 @@ const productSchema = new mongoose.Schema({
   concern: {
     type: String,
     required: [true, 'Please define a concern (e.g., Acne, Aging)']
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
 });
+
+// Text index for search
+productSchema.index({ title: 'text', description: 'text' });
+// Compound indexes for common queries
+productSchema.index({ category: 1, isActive: 1 });
+productSchema.index({ concern: 1, isActive: 1 });
+productSchema.index({ slug: 1 });
+productSchema.index({ isFeatured: 1, isActive: 1, inventory: 1 });
 
 const Product = mongoose.model('Product', productSchema);
 

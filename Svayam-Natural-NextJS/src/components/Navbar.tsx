@@ -56,9 +56,6 @@ const navLinks: NavItem[] = [
 ];
 
 export default function Navbar() {
-  const pathname = usePathname();
-  const hasDarkHero =
-    pathname === "/" || pathname === "/products/chandraprabha-night-nectar";
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -71,7 +68,9 @@ export default function Navbar() {
 
   const { isAuthenticated, username, logout } = useAuthStore();
 
-  const solid = !hasDarkHero || scrolled;
+  // Since Navbar is 'sticky' and takes up flow space rather than overlapping absolute heroes,
+  // it should always be solid to guarantee text contrast against the page background.
+  const solid = true;
 
   useEffect(() => {
     setMounted(true);
@@ -97,7 +96,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
+      className={`sticky inset-x-0 top-0 z-50 transition-all duration-500 ${
         mobileOpen
           ? "bg-forest"
           : solid
@@ -115,16 +114,49 @@ export default function Navbar() {
       />
 
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-5 lg:px-8 lg:py-0.5">
-        {/* Logo — left-aligned on mobile, proper tap target */}
-        <Link href="/" className="flex min-h-[44px] flex-shrink-0 items-center" aria-label="Svayam Natural - Home">
+        {/* Mobile Left: Hamburger + Logo */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <button
+            className="relative flex h-10 w-10 items-center justify-center -ml-2"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+          >
+            <div className="flex w-5 flex-col items-start gap-[5px]">
+              <span className={`h-[1.5px] transition-all duration-300 ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-5 translate-y-[6.5px] rotate-45" : "w-5"}`} />
+              <span className={`h-[1.5px] transition-all duration-300 ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-0 opacity-0" : "w-4"}`} />
+              <span className={`h-[1.5px] transition-all duration-300 ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-5 -translate-y-[6.5px] -rotate-45" : "w-3"}`} />
+            </div>
+          </button>
+
+          <Link href="/" className="flex min-h-[40px] items-center gap-1.5" aria-label="Svayam Natural - Home">
+            <Image
+              src="/Svayam_Logo4.png"
+              alt=""
+              width={140}
+              height={49}
+              className="h-7 w-auto transition-all duration-300"
+              priority
+            />
+            <span className={`block font-heading text-[16px] font-bold tracking-wider ${solid ? 'text-forest' : 'text-sand'}`}>
+              Svayam Natural
+            </span>
+          </Link>
+        </div>
+
+        {/* Desktop Logo */}
+        <Link href="/" className="hidden lg:flex min-h-[44px] flex-shrink-0 items-center gap-2" aria-label="Svayam Natural - Home">
           <Image
             src="/Svayam_Logo4.png"
             alt=""
             width={420}
             height={147}
-            className="h-10 w-auto max-w-[180px] transition-all duration-300 sm:h-12 sm:max-w-[220px] lg:h-[6rem] lg:max-w-none"
+            className="h-12 w-auto max-w-none"
             priority
           />
+          <span className={`block font-heading text-xl font-bold tracking-wider ${solid ? 'text-forest' : 'text-sand'}`}>
+            Svayam Natural
+          </span>
         </Link>
 
         {/* Desktop Nav — centered */}
@@ -264,31 +296,32 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Toggle */}
-        <button
-          className="relative flex h-10 w-10 items-center justify-center lg:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-          aria-expanded={mobileOpen}
-        >
-          <div className="flex w-5 flex-col items-end gap-[5px]">
-            <span
-              className={`h-[1.5px] transition-all duration-300 ${
-                solid ? "bg-forest" : "bg-gold"
-              } ${mobileOpen ? "w-5 translate-y-[6.5px] rotate-45" : "w-5"}`}
-            />
-            <span
-              className={`h-[1.5px] w-3.5 transition-all duration-300 ${
-                solid ? "bg-forest" : "bg-gold"
-              } ${mobileOpen ? "w-0 opacity-0" : ""}`}
-            />
-            <span
-              className={`h-[1.5px] transition-all duration-300 ${
-                solid ? "bg-forest" : "bg-gold"
-              } ${mobileOpen ? "w-5 -translate-y-[6.5px] -rotate-45" : "w-4"}`}
-            />
-          </div>
-        </button>
+        {/* Mobile Right Actions */}
+        <div className="flex items-center gap-3 lg:hidden">
+          <Link href="/products" className={`relative flex h-8 w-8 items-center justify-center transition-all ${solid ? "text-forest/80" : "text-sand/90"}`} aria-label="Search">
+            <svg className="h-[20px] w-[20px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+          </Link>
+
+          <Link href="/wishlist" className={`relative flex h-8 w-8 items-center justify-center transition-all ${solid ? "text-forest/80" : "text-sand/90"}`} aria-label="Wishlist">
+            <HeartIcon className="h-[20px] w-[20px]" />
+            {mounted && wishlistCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gold text-[9px] font-bold text-forest">{wishlistCount}</span>
+            )}
+          </Link>
+
+          <button onClick={openCart} className={`relative flex h-8 w-8 items-center justify-center transition-all ${solid ? "text-forest/80" : "text-sand/90"}`} aria-label="Cart">
+            <ShoppingBagIcon className="h-[20px] w-[20px]" />
+            {mounted && itemCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gold text-[9px] font-bold text-forest">{itemCount}</span>
+            )}
+          </button>
+          
+          <Link href={isAuthenticated ? "/my-orders" : "/login"} className={`relative flex h-8 w-8 items-center justify-center transition-all ${solid ? "text-forest/80" : "text-sand/90"}`} aria-label="Profile">
+            <UserIcon className="h-[20px] w-[20px]" />
+          </Link>
+        </div>
       </nav>
 
       {/* Mobile Menu — full-screen overlay, logo in same place (white washed) */}
@@ -383,34 +416,6 @@ export default function Navbar() {
             </div>
           ))}
           <div className="mt-6 flex flex-col items-center gap-4">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/wishlist"
-                onClick={() => setMobileOpen(false)}
-                className="relative flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 text-gold transition-all hover:bg-gold hover:text-forest"
-                aria-label="Wishlist"
-              >
-                <HeartIcon className="h-5 w-5" />
-                {mounted && wishlistCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-bold text-forest">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Link>
-              <button
-                onClick={() => { setMobileOpen(false); openCart(); }}
-                className="relative flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 text-gold transition-all hover:bg-gold hover:text-forest"
-                aria-label="Cart"
-              >
-                <ShoppingBagIcon className="h-5 w-5" />
-                {mounted && itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-bold text-forest">
-                    {itemCount}
-                  </span>
-                )}
-              </button>
-            </div>
-            
             {isAuthenticated ? (
               <div className="flex flex-col items-center gap-3">
                 <span className="text-sm font-medium tracking-wider text-sand">

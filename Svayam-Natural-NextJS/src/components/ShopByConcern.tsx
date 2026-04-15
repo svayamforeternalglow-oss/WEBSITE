@@ -1,94 +1,105 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import AnimateOnScroll from "@/components/AnimateOnScroll";
-import SectionHeader from "@/components/SectionHeader";
+import AnimateOnScroll from "./AnimateOnScroll";
+import { api } from "@/lib/api";
 
-const concerns = [
-  {
-    name: "Pigmentation",
-    slug: "pigmentation",
-    image: "/images/concern-pigmentation.png",
-  },
-  {
-    name: "Anti-ageing",
-    slug: "anti-ageing",
-    image: "/images/concern-anti-ageing.png",
-  },
-  {
-    name: "Hair Fall",
-    slug: "hair-fall",
-    image: "/images/concern-hair-fall.png",
-  },
-  {
-    name: "Hair Growth",
-    slug: "hair-growth",
-    image: "/images/lifestyle-pamper.png",
-  },
-  {
-    name: "Night Care",
-    slug: "night-care",
-    image: "/images/chandraprabha-night-necter.png",
-  },
-  {
-    name: "Oil & Acne Control",
-    slug: "oil-acne-control",
-    image: "/images/lavanyam-face-pack.png",
-  },
-  {
-    name: "Dry Skin",
-    slug: "dry-skin",
-    image: "/images/abhyanga-udvartana-1.jpeg",
-  },
-  {
-    name: "Glow & Radiance",
-    slug: "glow-radiance",
-    image: "/images/suryakanti-day-creme.png",
-  },
-] as const;
+const STATIC_CONCERNS = [
+  { name: "Pigmentation", slug: "pigmentation", image: "/images/pigmnetation.png" },
+  { name: "Anti Aging", slug: "anti-aging", image: "/images/aging.png" },
+  { name: "Hair Fall", slug: "hair-fall", image: "/images/hairfall.png" },
+  { name: "Hair Growth", slug: "hair-growth", image: "/images/concerns/hair-growth.png" },
+  { name: "Night Care", slug: "night-care", image: "/images/chandraprabha-night-necter.png" },
+  { name: "Oil & Acne Control", slug: "oil-acne-control", image: "/images/concerns/acne-blemishes.png" },
+  { name: "Dry Skin", slug: "dry-skin", image: "/images/concerns/skin-hydration.png" },
+  { name: "Glow & Radiance", slug: "glow-radiance", image: "/images/tejasamrit.png" },
+];
+
+interface ConcernItem {
+  name: string;
+  slug: string;
+  image: string;
+  _id?: string;
+  isActive?: boolean;
+}
 
 export default function ShopByConcern() {
+  const [concerns, setConcerns] = useState<ConcernItem[]>(STATIC_CONCERNS);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.get<ConcernItem[]>('/taxonomy/concerns?active=true');
+        let fetched = Array.isArray(data) ? data.filter(c => c.isActive !== false) : [];
+        if (!cancelled && fetched.length > 0) {
+          const orderMap = new Map(STATIC_CONCERNS.map((c, i) => [c.slug, i]));
+          fetched = fetched.sort((a, b) => {
+            const indexA = orderMap.has(a.slug) ? orderMap.get(a.slug)! : 999;
+            const indexB = orderMap.has(b.slug) ? orderMap.get(b.slug)! : 999;
+            return indexA - indexB;
+          });
+          setConcerns(fetched);
+        }
+      } catch {
+        // Keep static fallback
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   return (
-    <section className="bg-sand py-16 md:py-20 lg:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
-        <AnimateOnScroll>
-          <div className="mb-10 lg:mb-12">
-            <h2 className="font-heading text-3xl font-bold text-forest md:text-3xl lg:text-4xl text-center md:text-left">
+    <section className="bg-[#f5f2eb] py-16 sm:py-20 lg:py-24" id="concerns">
+      <div className="mx-auto max-w-[1400px] px-6 lg:px-10">
+        <AnimateOnScroll animation="fadeInUp">
+          <div className="mb-12">
+            <h2 className="font-heading text-4xl sm:text-5xl lg:text-[44px] font-bold text-forest mb-4 tracking-tight">
               Special Care for Special Needs
             </h2>
-            <div className="mt-3 flex items-center justify-center md:justify-start gap-3">
-              <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-gold/30 md:bg-gradient-to-r md:from-gold/30 md:to-transparent" />
-            </div>
-            <p className="mt-3 text-sm uppercase tracking-[0.25em] text-clay-light text-center md:text-left font-semibold">
-              Shop by Concern
-            </p>
+            <h3 className="font-sans text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#b39568]">
+              SHOP BY CONCERN
+            </h3>
           </div>
         </AnimateOnScroll>
-
-        <AnimateOnScroll delay={100}>
-          <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 sm:gap-6">
-            {concerns.map((concern) => (
-              <Link
-                key={concern.slug}
-                href={`/products?concern=${concern.slug}`}
-                className="group flex flex-col items-center text-center transition-all duration-300"
-              >
-                <div className="relative mb-3 aspect-square w-full max-w-[120px] overflow-hidden rounded-2xl shadow-sm transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_16px_48px_rgba(0,0,0,0.12)] bg-neutral-200">
-                  <Image
-                    src={concern.image}
-                    alt={concern.name}
-                    fill
-                    unoptimized
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                </div>
-                <h3 className="text-xs sm:text-sm font-medium leading-tight text-forest group-hover:text-gold-dark transition-colors duration-300">
-                  {concern.name}
-                </h3>
-              </Link>
+        
+        <div className="relative mt-8">
+          {/* Mobile: Scrollable row | Desktop: Responsive grid */}
+          <div className="flex lg:grid lg:grid-cols-4 xl:grid-cols-8 overflow-x-auto lg:overflow-visible pb-6 pt-2 hide-scrollbar gap-4 sm:gap-6 lg:gap-4 lg:justify-items-center">
+            {concerns.map((concern, i) => (
+              <AnimateOnScroll key={concern.slug} animation="fadeInUp" delay={i * 50}>
+                <Link
+                  href={`/products?concern=${concern.slug}`}
+                  className="group flex flex-col items-center gap-4 transition-all duration-300 flex-shrink-0 lg:flex-shrink"
+                >
+                  <div className="relative h-[110px] w-[110px] sm:h-[130px] sm:w-[130px] lg:h-[120px] lg:w-[120px] xl:h-[145px] xl:w-[145px] rounded-[32px] overflow-hidden bg-white shadow-[0_4px_15px_rgb(0,0,0,0.05)] transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_12px_30px_rgb(0,0,0,0.12)]">
+                    <Image
+                      src={concern.image || '/images/placeholder.jpg'}
+                      alt={concern.name}
+                      fill
+                      sizes="(max-width: 768px) 110px, 145px"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    />
+                  </div>
+                  <h3 className="text-center font-heading text-[13px] sm:text-[14px] lg:text-[15px] font-medium text-forest transition-colors duration-300 group-hover:text-[#b39568] px-1 max-w-[140px] leading-tight">
+                    {concern.name}
+                  </h3>
+                </Link>
+              </AnimateOnScroll>
             ))}
           </div>
-        </AnimateOnScroll>
+        </div>
       </div>
+      <style jsx global>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </section>
   );
 }
