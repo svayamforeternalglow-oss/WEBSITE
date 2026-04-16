@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { Suspense, useState, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useToastStore } from '@/lib/toast';
@@ -47,7 +47,7 @@ const normalizeStatusForStepper = (status: string): string => {
   return status;
 };
 
-export default function TrackOrderPage() {
+function TrackOrderContent() {
   const addToast = useToastStore((s) => s.addToast);
   const { isAuthenticated, token } = useAuthStore();
   const searchParams = useSearchParams();
@@ -250,5 +250,13 @@ export default function TrackOrderPage() {
         )}
       </div>
     </section>
+  );
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={<section className="min-h-screen bg-neutral-100 pt-28 pb-24"><div className="mx-auto max-w-3xl px-6 text-center text-forest">Loading tracking details...</div></section>}>
+      <TrackOrderContent />
+    </Suspense>
   );
 }
