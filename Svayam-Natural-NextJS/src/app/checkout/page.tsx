@@ -129,16 +129,21 @@ export default function CheckoutPage() {
         pincode: shipping.pincode,
       };
 
-      // If authenticated, use private endpoint, otherwise use guest endpoint
-      const endpoint = isAuthenticated ? '/orders' : '/orders/guest/create';
-      const body = isAuthenticated
+      const useAuthenticatedFlow = Boolean(isAuthenticated && token);
+      if (isAuthenticated && !token) {
+        console.warn('Auth state is true but token is missing. Falling back to guest checkout flow.');
+      }
+
+      const authToken = useAuthenticatedFlow ? token! : undefined;
+      const endpoint = useAuthenticatedFlow ? '/orders' : '/orders/guest/create';
+      const body = useAuthenticatedFlow
         ? { orderItems: cartItems, shippingAddress, paymentMethod: 'Razorpay', totalAmount: getTotal(), idempotencyKey }
         : { items: cartItems, shippingAddress, idempotencyKey };
 
       const response = await api.post<OrderResponse>(
         endpoint,
         body,
-        token || undefined,
+        authToken,
         { 'x-idempotency-key': idempotencyKey }
       );
       
@@ -155,13 +160,15 @@ export default function CheckoutPage() {
         customerPhone: shipping.phone,
         onSuccess: async (razorpayResponse) => {
           try {
-            const verifyEndpoint = isAuthenticated ? '/orders/verify-payment' : '/orders/guest/verify-payment';
+            const verifyEndpoint = useAuthenticatedFlow
+              ? '/orders/verify-payment'
+              : '/orders/guest/verify-payment';
             await api.post<{ success: boolean; message?: string }>(verifyEndpoint, {
               razorpayOrderId: razorpayResponse.razorpay_order_id,
               razorpayPaymentId: razorpayResponse.razorpay_payment_id,
               razorpaySignature: razorpayResponse.razorpay_signature,
-              ...(isAuthenticated ? {} : { guestEmail: shipping.email }),
-            }, token || undefined);
+              ...(useAuthenticatedFlow ? {} : { guestEmail: shipping.email }),
+            }, authToken);
 
             clearCart();
             addToast('Payment successful! Order confirmed.', 'success');
@@ -171,7 +178,7 @@ export default function CheckoutPage() {
             addToast('Payment captured but confirmation is pending. Redirecting to tracking.', 'warning', 8000);
             const trackingQuery = new URLSearchParams({
               id: orderRef,
-              ...(isAuthenticated ? {} : { email: shipping.email }),
+              ...(useAuthenticatedFlow ? {} : { email: shipping.email }),
             });
             router.push(`/track-order?${trackingQuery.toString()}`);
           }
