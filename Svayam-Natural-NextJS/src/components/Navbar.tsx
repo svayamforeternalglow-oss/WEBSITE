@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBagIcon, UserIcon, HeartIcon } from "./icons";
@@ -27,13 +26,22 @@ const navLinks: NavItem[] = [
     href: "/products",
     children: [
       { label: "All Products", href: "/products" },
-      { label: "Best selling kits", href: "/products?category=kits" },
+      { label: "Best Selling Kits", href: "/products?category=kits" },
       { label: "Face", href: "/products?category=face" },
       { label: "Lip Balm", href: "/products?category=lip-balm" },
+      { label: "Hair Care", href: "/products?category=hair-care" },
       { label: "Body Care", href: "/products?category=body-care" },
-      { label: "Hair care", href: "/products?category=hair-care" },
-      { label: "Food", href: "/products?category=food" },
+      { label: "Eat to Glow", href: "/products?category=food" },
       { label: "Detox", href: "/products?category=detox" },
+      { label: "Natural Food", href: "/products?category=natural-food" },
+    ],
+  },
+  {
+    label: "Svayam Collections",
+    href: "/products",
+    children: [
+      { label: "Svayam Soundarya", href: "/products?collection=soundarya" },
+      { label: "Svayam Swasthya", href: "/products?collection=swasthya" },
     ],
   },
   {
@@ -55,9 +63,32 @@ const navLinks: NavItem[] = [
   },
 ];
 
+type PersistHydrationStore = {
+  persist?: {
+    hasHydrated?: () => boolean;
+    onFinishHydration?: (listener: () => void) => () => void;
+  };
+};
+
+const subscribeHydration = (store: PersistHydrationStore, listener: () => void) => {
+  return store.persist?.onFinishHydration?.(listener) ?? (() => {});
+};
+
+const getHydrationSnapshot = (store: PersistHydrationStore) => {
+  return store.persist?.hasHydrated?.() ?? true;
+};
+
+const getHydrationServerSnapshot = () => false;
+
+const useStoreHydrated = (store: PersistHydrationStore) => {
+  return useSyncExternalStore(
+    (listener) => subscribeHydration(store, listener),
+    () => getHydrationSnapshot(store),
+    getHydrationServerSnapshot
+  );
+};
+
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   
@@ -67,17 +98,17 @@ export default function Navbar() {
   const wishlistCount = useWishlistStore((s) => s.items.length);
 
   const { isAuthenticated, username, logout } = useAuthStore();
+  const cartHydrated = useStoreHydrated(useCartStore as unknown as PersistHydrationStore);
+  const wishlistHydrated = useStoreHydrated(useWishlistStore as unknown as PersistHydrationStore);
+  const authHydrated = useStoreHydrated(useAuthStore as unknown as PersistHydrationStore);
+  const showCartCount = cartHydrated && itemCount > 0;
+  const showWishlistCount = wishlistHydrated && wishlistCount > 0;
+  const showAuthenticatedMenu = authHydrated && isAuthenticated;
+  const mobileProfileHref = showAuthenticatedMenu ? "/my-orders" : "/login";
 
   // Since Navbar is 'sticky' and takes up flow space rather than overlapping absolute heroes,
   // it should always be solid to guarantee text contrast against the page background.
   const solid = true;
-
-  useEffect(() => {
-    setMounted(true);
-    const onScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
@@ -230,7 +261,7 @@ export default function Navbar() {
             aria-label="Wishlist"
           >
             <HeartIcon className="h-5 w-5" />
-            {mounted && wishlistCount > 0 && (
+            {showWishlistCount && (
               <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-forest">
                 {wishlistCount}
               </span>
@@ -246,14 +277,14 @@ export default function Navbar() {
             aria-label="Cart"
           >
             <ShoppingBagIcon className="h-[22px] w-[22px]" />
-            {mounted && itemCount > 0 && (
+            {showCartCount && (
               <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-forest">
                 {itemCount}
               </span>
             )}
           </button>
           
-          {isAuthenticated ? (
+          {showAuthenticatedMenu ? (
             <div className="flex items-center gap-4">
               <span className={`text-[12px] font-medium tracking-wider ${solid ? "text-forest" : "text-sand"}`}>
                 Hi, {username}
@@ -306,19 +337,19 @@ export default function Navbar() {
 
           <Link href="/wishlist" className={`relative flex h-8 w-8 items-center justify-center transition-all ${solid ? "text-forest/80" : "text-sand/90"}`} aria-label="Wishlist">
             <HeartIcon className="h-[20px] w-[20px]" />
-            {mounted && wishlistCount > 0 && (
+            {showWishlistCount && (
               <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gold text-[9px] font-bold text-forest">{wishlistCount}</span>
             )}
           </Link>
 
           <button onClick={openCart} className={`relative flex h-8 w-8 items-center justify-center transition-all ${solid ? "text-forest/80" : "text-sand/90"}`} aria-label="Cart">
             <ShoppingBagIcon className="h-[20px] w-[20px]" />
-            {mounted && itemCount > 0 && (
+            {showCartCount && (
               <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gold text-[9px] font-bold text-forest">{itemCount}</span>
             )}
           </button>
           
-          <Link href={isAuthenticated ? "/my-orders" : "/login"} className={`relative flex h-8 w-8 items-center justify-center transition-all ${solid ? "text-forest/80" : "text-sand/90"}`} aria-label="Profile">
+          <Link href={mobileProfileHref} className={`relative flex h-8 w-8 items-center justify-center transition-all ${solid ? "text-forest/80" : "text-sand/90"}`} aria-label="Profile">
             <UserIcon className="h-[20px] w-[20px]" />
           </Link>
         </div>
@@ -416,7 +447,7 @@ export default function Navbar() {
             </div>
           ))}
           <div className="mt-6 flex flex-col items-center gap-4">
-            {isAuthenticated ? (
+            {showAuthenticatedMenu ? (
               <div className="flex flex-col items-center gap-3">
                 <span className="text-sm font-medium tracking-wider text-sand">
                   Hi, {username}

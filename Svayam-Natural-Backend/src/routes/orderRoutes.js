@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import {
   addOrderItems,
   getOrderById,
@@ -18,6 +19,16 @@ import { protect, admin } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
+const guestVerifyLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: 'Too many guest payment verification attempts. Please retry in a few minutes.',
+  },
+});
+
 // Authenticated order routes
 router.route('/').post(protect, addOrderItems);
 router.route('/verify-payment').post(protect, verifyPayment);
@@ -36,7 +47,7 @@ router.route('/:id/tracking').put(protect, admin, updateOrderTracking);
 
 // Guest order routes
 router.post('/guest/create', createGuestOrder);
-router.post('/guest/verify-payment', verifyGuestPayment);
+router.post('/guest/verify-payment', guestVerifyLimiter, verifyGuestPayment);
 
 // Webhook route
 router.post('/webhook', verifyWebhook);

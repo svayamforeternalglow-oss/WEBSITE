@@ -1,5 +1,7 @@
 import Product from '../models/Product.js';
 
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // @desc    Fetch all products (with optional search, category, concern, featured, active filters)
 // @route   GET /api/v1/products
 // @access  Public
@@ -17,12 +19,12 @@ export const getProducts = async (req, res) => {
 
     // Category filter
     if (req.query.category) {
-      query.category = { $regex: new RegExp(`^${req.query.category}$`, 'i') };
+      query.category = { $regex: new RegExp(`^${escapeRegex(req.query.category)}$`, 'i') };
     }
 
     // Concern filter
     if (req.query.concern) {
-      query.concern = { $regex: new RegExp(req.query.concern, 'i') };
+      query.concern = { $regex: new RegExp(escapeRegex(req.query.concern), 'i') };
     }
 
     // Featured filter
@@ -33,21 +35,21 @@ export const getProducts = async (req, res) => {
     }
 
     // Text search — use regex prefix for short queries, $text for longer
-    if (req.query.search) {
-      const searchTerm = req.query.search.trim();
+    const searchTerm = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    if (searchTerm) {
       if (searchTerm.length < 3) {
         // Short queries: prefix match on title (case-insensitive)
-        query.title = { $regex: new RegExp(`^${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i') };
+        query.title = { $regex: new RegExp(`^${escapeRegex(searchTerm)}`, 'i') };
       } else {
         // Longer queries: also use regex for partial/prefix matching
-        query.title = { $regex: new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
+        query.title = { $regex: new RegExp(escapeRegex(searchTerm), 'i') };
       }
     }
 
     let productsQuery = Product.find(query);
 
     // If text search, sort alphabetically by title
-    if (req.query.search) {
+    if (searchTerm) {
       productsQuery = productsQuery.sort({ title: 1 });
     } else if (req.query.featured === 'true') {
       // Randomize featured products

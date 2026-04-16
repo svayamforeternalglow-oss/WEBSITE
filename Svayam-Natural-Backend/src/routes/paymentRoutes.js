@@ -1,7 +1,7 @@
 import express from 'express';
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
 import { protect } from '../middlewares/authMiddleware.js';
+import Order from '../models/Order.js';
+import { verifyPayment as verifyOrderPayment } from '../controllers/orderController.js';
 
 const router = express.Router();
 
@@ -10,22 +10,33 @@ const router = express.Router();
 // @access  Private
 router.post('/razorpay', protect, async (req, res) => {
   try {
-    const instance = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    const { orderId } = req.body;
+    if (!orderId) {
+      return res.status(400).json({ message: 'orderId is required' });
+    }
+
+    const order = await Order.findOne({ _id: orderId, user: req.user._id })
+      .select('_id totalAmount paymentStatus')
+      .lean();
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (!order.paymentStatus?.razorpayOrderId) {
+      return res.status(400).json({ message: 'Payment order not initialized. Create order via /api/v1/orders first.' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Legacy compatibility response. Prefer /api/v1/orders for checkout.',
+      data: {
+        orderId: order._id,
+        razorpayOrderId: order.paymentStatus.razorpayOrderId,
+        amount: order.totalAmount,
+        razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      },
     });
-
-    const options = {
-      amount: req.body.amount * 100, // amount in smallest currency unit (paise)
-      currency: "INR",
-      receipt: `receipt_order_${Math.floor(Math.random() * 1000)}`,
-    };
-
-    const order = await instance.orders.create(options);
-
-    if (!order) return res.status(500).send("Some error occured");
-
-    res.json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -35,24 +46,13 @@ router.post('/razorpay', protect, async (req, res) => {
 // @route   POST /api/v1/payment/razorpay/verify
 // @access  Private
 router.post('/razorpay/verify', protect, async (req, res) => {
-  try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  req.body = {
+    razorpayOrderId: req.body.razorpayOrderId || req.body.razorpay_order_id,
+    razorpayPaymentId: req.body.razorpayPaymentId || req.body.razorpay_payment_id,
+    razorpaySignature: req.body.razorpaySignature || req.body.razorpay_signature,
+  };
 
-    const sign = razorpay_order_id + "|" + razorpay_payment_id;
-
-    const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(sign.toString())
-      .digest("hex");
-
-    if (razorpay_signature === expectedSign) {
-      return res.status(200).json({ message: "Payment verified successfully" });
-    } else {
-      return res.status(400).json({ message: "Invalid signature sent!" });
-    }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  return verifyOrderPayment(req, res);
 });
 
 export default router;

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useToastStore } from '@/lib/toast';
+import { useAuthStore } from '@/lib/auth';
 
 interface TimelineEntry {
   status: string;
@@ -39,32 +40,56 @@ const STEP_LABELS: Record<string, string> = {
   delivered: 'Delivered',
 };
 
+const normalizeStatusForStepper = (status: string): string => {
+  if (status === 'paid') {
+    return 'confirmed';
+  }
+  return status;
+};
+
 export default function TrackOrderPage() {
   const addToast = useToastStore((s) => s.addToast);
-  const [orderId, setOrderId] = useState('');
+  const { isAuthenticated, token } = useAuthStore();
+  const searchParams = useSearchParams();
+  const [orderId, setOrderId] = useState(() => searchParams.get('id') || '');
+  const [guestEmail, setGuestEmail] = useState(() => searchParams.get('email') || '');
   const [tracking, setTracking] = useState<TrackingData | null>(null);
   const [loading, setLoading] = useState(false);
+  const resolvedOrderId = orderId.trim();
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
-    if (!orderId.trim()) {
+    if (!resolvedOrderId) {
       addToast('Please enter an order ID', 'warning');
       return;
     }
+
+    if (!isAuthenticated && !guestEmail.trim()) {
+      addToast('Please enter the email used during checkout', 'warning');
+      return;
+    }
+
     setLoading(true);
     setTracking(null);
     try {
-      const res = await api.get<{ data: TrackingData }>(`/shipping/track/${orderId.trim()}`);
+      const endpoint = isAuthenticated
+        ? `/shipping/track/${resolvedOrderId}`
+        : `/shipping/track/${resolvedOrderId}?email=${encodeURIComponent(guestEmail.trim())}`;
+
+      const res = await api.get<{ data: TrackingData }>(
+        endpoint,
+        isAuthenticated ? (token || undefined) : undefined
+      );
       setTracking(res.data);
     } catch {
-      addToast('Order not found. Please check the order ID.', 'error');
+      addToast('Unable to fetch tracking details. Please verify order ID and email.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const currentStep = tracking
-    ? STATUS_STEPS.indexOf(tracking.order.status)
+    ? STATUS_STEPS.indexOf(normalizeStatusForStepper(tracking.order.status))
     : -1;
 
   const formatDate = (d: string) =>
@@ -78,18 +103,29 @@ export default function TrackOrderPage() {
           <p className="text-clay">Enter your order number to see the latest status</p>
         </div>
 
-        <form onSubmit={handleSearch} className="mx-auto mb-12 flex max-w-lg gap-3">
+        <form onSubmit={handleSearch} className="mx-auto mb-12 max-w-lg space-y-3">
           <input
             type="text"
-            value={orderId}
+            value={resolvedOrderId}
             onChange={(e) => setOrderId(e.target.value)}
-            placeholder="e.g. SW1709..."
-            className="flex-1 rounded-lg border border-neutral-300 bg-white px-5 py-3 text-sm outline-none focus:border-gold"
+            placeholder="Enter full order ID"
+            className="w-full rounded-lg border border-neutral-300 bg-white px-5 py-3 text-sm outline-none focus:border-gold"
           />
+
+          {!isAuthenticated && (
+            <input
+              type="email"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              placeholder="Email used during checkout"
+              className="w-full rounded-lg border border-neutral-300 bg-white px-5 py-3 text-sm outline-none focus:border-gold"
+            />
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-gold px-6 py-3 font-semibold text-forest transition-colors hover:bg-gold-dark disabled:opacity-60"
+            className="w-full rounded-lg bg-gold px-6 py-3 font-semibold text-forest transition-colors hover:bg-gold-dark disabled:opacity-60"
           >
             {loading ? 'Searching...' : 'Track'}
           </button>
@@ -111,7 +147,7 @@ export default function TrackOrderPage() {
               </div>
 
               {/* Progress Steps */}
-              {!['cancelled', 'expired', 'returned'].includes(tracking.order.status) && (
+              {!['cancelled', 'expired', 'returned', 'refunded'].includes(tracking.order.status) && (
                 <div className="mb-8">
                   <div className="flex items-center justify-between">
                     {STATUS_STEPS.map((step, i) => (

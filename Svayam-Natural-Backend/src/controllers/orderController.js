@@ -4,44 +4,74 @@ import Product from '../models/Product.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import shiprocket from '../services/shiprocketService.js';
+import {
+  getOrderState,
+  transitionOrder,
+  ORDER_STATES,
+  CANCELLATION_REASONS,
+} from '../services/orderStateMachine.js';
 
 // Helper: Auto-generate Shiprocket Shipment
 async function autoGenerateShipment(order) {
-  if (!order.shiprocketOrderId && shiprocket.isEnabled) {
-    try {
+  try {
+    if (!order.shiprocketShipmentId) {
       const srResult = await shiprocket.createOrder(order);
-      order.shiprocketOrderId = srResult.order_id?.toString() || '';
+      order.shiprocketOrderId = srResult.order_id?.toString() || order.shiprocketOrderId || '';
       order.shiprocketShipmentId = srResult.shipment_id?.toString() || '';
-
-      if (srResult.shipment_id) {
-        const awbResult = await shiprocket.generateAWB(srResult.shipment_id);
-        const awbData = awbResult?.response?.data;
-        if (awbData) {
-          order.awbCode = awbData.awb_code || '';
-          order.courierName = awbData.courier_name || 'Courier';
-        }
-        
-        try {
-          const labelResult = await shiprocket.generateLabel(srResult.shipment_id);
-          if (labelResult?.label_url) {
-            order.labelUrl = labelResult.label_url;
-          }
-        } catch (labelErr) {
-          console.error("Auto label generation error:", labelErr.message);
-        }
-      }
-    } catch (err) {
-      console.error(`Auto Shiprocket Error [OrderId: ${order._id}]:`, err.message);
     }
+
+    if (!order.shiprocketShipmentId) {
+      throw createHttpError('Shiprocket shipment creation failed. Try again.', 502);
+    }
+
+    if (!order.awbCode) {
+      const awbResult = await shiprocket.generateAWB(order.shiprocketShipmentId);
+      const awbData = awbResult?.response?.data;
+      if (!awbData?.awb_code) {
+        throw createHttpError('AWB generation failed. Keep order in processing and retry.', 502);
+      }
+
+      order.awbCode = awbData.awb_code;
+      order.courierName = awbData.courier_name || 'Courier';
+    }
+
+    if (!order.labelUrl) {
+      try {
+        const labelResult = await shiprocket.generateLabel(order.shiprocketShipmentId);
+        const labelUrl = shiprocket.extractDocumentUrl(labelResult, ['label_url']);
+        if (labelUrl) {
+          order.labelUrl = labelUrl;
+        }
+      } catch (labelErr) {
+        console.error('Auto label generation error:', labelErr.message);
+      }
+    }
+
+    if (!order.shiprocketInvoiceUrl && order.shiprocketOrderId) {
+      try {
+        const invoiceResult = await shiprocket.generateInvoice(order.shiprocketOrderId);
+        const invoiceUrl = shiprocket.extractDocumentUrl(invoiceResult, ['invoice_url']);
+        if (invoiceUrl) {
+          order.shiprocketInvoiceUrl = invoiceUrl;
+        }
+      } catch (invoiceErr) {
+        console.error('Auto invoice generation error:', invoiceErr.message);
+      }
+    }
+  } catch (err) {
+    console.error(`Auto Shiprocket Error [OrderId: ${order._id}]:`, err.message);
+    if (!err.statusCode) {
+      err.statusCode = 502;
+    }
+    throw err;
   }
 
-  // Mock fallback if Shiprocket failed or is disabled
   if (!order.awbCode) {
-    order.awbCode = `AWB-${Math.floor(Math.random() * 1000000000)}`;
-    order.courierName = 'Standard Delivery';
+    throw createHttpError('Shipment is not ready yet. AWB missing.', 502);
   }
+
   order.trackingNumber = order.awbCode;
-  
+
   return order;
 }
 
@@ -66,17 +96,129 @@ async function resolveProduct(item) {
   return product;
 }
 
+const getIdempotencyKey = (req) => {
+  const headerKey = req.get('x-idempotency-key');
+  const bodyKey = req.body?.idempotencyKey;
+  return (headerKey || bodyKey || '').trim();
+};
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^[6-9]\d{9}$/;
+const PINCODE_REGEX = /^[1-9][0-9]{5}$/;
+
+const validateShippingAddress = (shippingAddress) => {
+  if (!shippingAddress || typeof shippingAddress !== 'object') {
+    return 'Shipping address is required';
+  }
+
+  const fullName = (shippingAddress.fullName || '').trim();
+  const email = (shippingAddress.email || '').trim().toLowerCase();
+  const phone = (shippingAddress.phone || '').trim();
+  const address = (shippingAddress.address || '').trim();
+  const city = (shippingAddress.city || '').trim();
+  const state = (shippingAddress.state || '').trim();
+  const pincode = (shippingAddress.pincode || '').trim();
+
+  if (!fullName) return 'Full name is required';
+  if (!EMAIL_REGEX.test(email)) return 'Valid email is required';
+  if (!PHONE_REGEX.test(phone)) return 'Valid 10-digit phone number is required';
+  if (!address) return 'Address is required';
+  if (!city) return 'City is required';
+  if (!state) return 'State is required';
+  if (!PINCODE_REGEX.test(pincode)) return 'Valid 6-digit pincode is required';
+
+  return null;
+};
+
+const validateOrderItemsPayload = (items) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    return 'No order items';
+  }
+
+  for (const item of items) {
+    const qty = Number(item?.qty || item?.quantity || 1);
+    if (!Number.isFinite(qty) || qty < 1 || qty > 20) {
+      return 'Each item quantity must be between 1 and 20';
+    }
+  }
+
+  return null;
+};
+
+const createHttpError = (message, statusCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+const assertPaymentReferenceUniqueness = async (orderId, razorpayPaymentId) => {
+  if (!razorpayPaymentId) {
+    return;
+  }
+
+  const conflictingOrder = await Order.findOne({
+    _id: { $ne: orderId },
+    'paymentStatus.razorpayPaymentId': razorpayPaymentId,
+  })
+    .select('_id')
+    .lean();
+
+  if (conflictingOrder) {
+    throw createHttpError('Payment reference already linked to another order', 409);
+  }
+};
+
+const sendDuplicateOrderResponse = async (res, idempotencyKey) => {
+  const existingOrder = await Order.findOne({ idempotencyKey })
+    .select('_id paymentStatus totalAmount createdAt')
+    .lean();
+
+  return res.status(409).json({
+    success: false,
+    code: 'DUPLICATE_CHECKOUT',
+    message: 'Duplicate checkout request detected. Order already exists for this idempotency key.',
+    data: existingOrder
+      ? {
+          orderId: existingOrder._id,
+          paymentStatus: existingOrder.paymentStatus?.status || 'Pending',
+          amount: existingOrder.totalAmount,
+          createdAt: existingOrder.createdAt,
+        }
+      : null,
+  });
+};
+
 // @desc    Create new order
 // @route   POST /api/v1/orders
 // @access  Private
 export const addOrderItems = async (req, res) => {
-  const { orderItems, shippingAddress, paymentMethod, totalAmount } = req.body;
+  const { orderItems, shippingAddress, paymentMethod } = req.body;
+  const idempotencyKey = getIdempotencyKey(req);
+  const touchedInventory = [];
+  let orderPersisted = false;
 
-  if (!orderItems || orderItems.length === 0) {
-    return res.status(400).json({ message: 'No order items' });
+  const itemsValidationError = validateOrderItemsPayload(orderItems);
+  if (itemsValidationError) {
+    return res.status(400).json({ message: itemsValidationError });
+  }
+
+  const shippingValidationError = validateShippingAddress(shippingAddress);
+  if (shippingValidationError) {
+    return res.status(400).json({ message: shippingValidationError });
+  }
+
+  if (!idempotencyKey) {
+    return res.status(400).json({
+      message: 'Missing idempotency key. Please retry checkout from the latest page.',
+    });
   }
 
   try {
+    const duplicateOrder = await Order.exists({ idempotencyKey });
+    if (duplicateOrder) {
+      return sendDuplicateOrderResponse(res, idempotencyKey);
+    }
+
     const finalItems = [];
     let subtotal = 0;
 
@@ -91,6 +233,7 @@ export const addOrderItems = async (req, res) => {
         }
         product.inventory -= qty;
         await product.save();
+        touchedInventory.push({ productId: product._id, qty });
 
         finalItems.push({
           name: product.title,
@@ -138,6 +281,8 @@ export const addOrderItems = async (req, res) => {
       shippingAddress,
       paymentMethod,
       totalAmount: finalTotal,
+      lifecycleStatus: ORDER_STATES.PENDING,
+      idempotencyKey,
       paymentStatus: {
         razorpayOrderId: razorpayOrder.id,
         status: 'Pending'
@@ -145,6 +290,7 @@ export const addOrderItems = async (req, res) => {
     });
 
     const createdOrder = await order.save();
+    orderPersisted = true;
     
     // Email (non-blocking)
     try {
@@ -169,6 +315,18 @@ export const addOrderItems = async (req, res) => {
       }
     });
   } catch (error) {
+    if (!orderPersisted && touchedInventory.length > 0) {
+      await Promise.all(
+        touchedInventory.map(({ productId, qty }) =>
+          Product.updateOne({ _id: productId }, { $inc: { inventory: qty } })
+        )
+      );
+    }
+
+    if (error?.code === 11000 && error?.keyPattern?.idempotencyKey) {
+      return sendDuplicateOrderResponse(res, idempotencyKey);
+    }
+
     console.error("addOrderItems error:", error);
     res.status(500).json({ message: error.message });
   }
@@ -181,40 +339,58 @@ export const verifyPayment = async (req, res) => {
   try {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      return res.status(400).json({ message: 'Missing payment verification fields' });
+    }
+
     const sign = razorpayOrderId + "|" + razorpayPaymentId;
     const expectedSign = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(sign.toString())
       .digest("hex");
 
-    if (razorpaySignature === expectedSign) {
-      const order = await Order.findOne({ "paymentStatus.razorpayOrderId": razorpayOrderId, user: req.user._id });
-      if (order) {
-        const instance = new Razorpay({
-          key_id: process.env.RAZORPAY_KEY_ID,
-          key_secret: process.env.RAZORPAY_KEY_SECRET,
-        });
-        const payment = await instance.payments.fetch(razorpayPaymentId);
-        
-        if (payment.amount !== Math.round(order.totalAmount * 100)) {
-          return res.status(400).json({ message: "Payment amount does not match order amount" });
-        }
-
-        order.isPaid = true;
-        order.paidAt = Date.now();
-        order.paymentStatus.status = 'Completed';
-        order.paymentStatus.razorpayPaymentId = razorpayPaymentId;
-        order.paymentStatus.razorpaySignature = razorpaySignature;
-        await order.save();
-        return res.status(200).json({ success: true, message: "Payment verified successfully" });
-      } else {
-        return res.status(404).json({ message: "Order not found" });
-      }
-    } else {
+    if (razorpaySignature !== expectedSign) {
       return res.status(400).json({ message: "Invalid signature" });
     }
+
+    const order = await Order.findOne({
+      "paymentStatus.razorpayOrderId": razorpayOrderId,
+      user: req.user._id,
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.isPaid && order.paymentStatus?.razorpayPaymentId === razorpayPaymentId) {
+      return res.status(200).json({ success: true, message: 'Payment already verified' });
+    }
+
+    if (order.isPaid && order.paymentStatus?.razorpayPaymentId && order.paymentStatus.razorpayPaymentId !== razorpayPaymentId) {
+      return res.status(409).json({ message: 'Order is already paid with a different payment reference' });
+    }
+
+    const instance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+    const payment = await instance.payments.fetch(razorpayPaymentId);
+
+    if (payment.amount !== Math.round(order.totalAmount * 100)) {
+      return res.status(400).json({ message: "Payment amount does not match order amount" });
+    }
+
+    await assertPaymentReferenceUniqueness(order._id, razorpayPaymentId);
+
+    transitionOrder(order, ORDER_STATES.PAID, {
+      paymentId: razorpayPaymentId,
+      signature: razorpaySignature,
+    });
+
+    await order.save();
+    return res.status(200).json({ success: true, message: "Payment verified successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -224,13 +400,22 @@ export const verifyPayment = async (req, res) => {
 export const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate('user', 'name email');
-    if (order) {
-      res.json(order);
-    } else {
-      res.status(404).json({ message: 'Order not found' });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
     }
+
+    const isAdmin = req.user?.role === 'admin';
+    if (!isAdmin) {
+      const ownerId = order.user?._id?.toString();
+      if (!ownerId || ownerId !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to view this order' });
+      }
+    }
+
+    return res.json(order);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -241,11 +426,33 @@ export const updateOrderTracking = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (order) {
-      order.trackingStatus = req.body.status || order.trackingStatus;
-      order.trackingNumber = req.body.trackingNumber || order.trackingNumber;
-      
-      if (req.body.status === 'Shipped') {
-        order.shippedAt = Date.now();
+      const statusMap = {
+        processing: ORDER_STATES.PROCESSING,
+        shipped: ORDER_STATES.SHIPPED,
+        delivered: ORDER_STATES.DELIVERED,
+        cancelled: ORDER_STATES.CANCELLED,
+      };
+
+      const requestedStatus = (req.body.status || '').toLowerCase();
+      const targetState = requestedStatus ? statusMap[requestedStatus] : null;
+
+      if (requestedStatus && !targetState) {
+        return res.status(400).json({ message: 'Invalid tracking status' });
+      }
+
+      if (targetState === ORDER_STATES.SHIPPED) {
+        const currentState = getOrderState(order);
+        if (currentState === ORDER_STATES.PAID) {
+          transitionOrder(order, ORDER_STATES.PROCESSING);
+        }
+
+        if (getOrderState(order) !== ORDER_STATES.PROCESSING) {
+          return res.status(400).json({ message: 'Order must be in Processing state before shipment creation' });
+        }
+
+        await autoGenerateShipment(order);
+        transitionOrder(order, ORDER_STATES.SHIPPED);
+
         try {
           const User = (await import('../models/User.js')).default;
           const emailService = await import('../services/emailService.js');
@@ -256,8 +463,17 @@ export const updateOrderTracking = async (req, res) => {
         } catch(err) {
           console.error("Email error: ", err);
         }
+      } else if (targetState === ORDER_STATES.CANCELLED) {
+        transitionOrder(order, targetState, {
+          reason: req.body.cancellationReason || CANCELLATION_REASONS.ADMIN_CANCELLED,
+        });
+      } else if (targetState) {
+        transitionOrder(order, targetState);
       }
-      if (req.body.status === 'Delivered') order.deliveredAt = Date.now();
+
+      if (req.body.trackingNumber && targetState !== ORDER_STATES.SHIPPED) {
+        order.trackingNumber = req.body.trackingNumber;
+      }
 
       const updatedOrder = await order.save();
       res.json(updatedOrder);
@@ -265,7 +481,7 @@ export const updateOrderTracking = async (req, res) => {
       res.status(404).json({ message: 'Order not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -292,35 +508,60 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     const statusMap = {
-      pending: 'Pending',
-      processing: 'Processing',
-      shipped: 'Shipped',
-      'out for delivery': 'Out for Delivery',
-      delivered: 'Delivered',
-      cancelled: 'Cancelled'
+      pending: ORDER_STATES.PENDING,
+      paid: ORDER_STATES.PAID,
+      processing: ORDER_STATES.PROCESSING,
+      shipped: ORDER_STATES.SHIPPED,
+      delivered: ORDER_STATES.DELIVERED,
+      cancelled: ORDER_STATES.CANCELLED,
     };
-    
+
     if (req.body.status) {
-      order.trackingStatus = statusMap[(req.body.status || '').toLowerCase()] || req.body.status;
+      const normalizedStatus = (req.body.status || '').toLowerCase();
+      if (normalizedStatus === 'refunded') {
+        return res.status(400).json({ message: 'Use the refund endpoint to mark an order as refunded' });
+      }
+
+      const requestedState = statusMap[normalizedStatus];
+      if (!requestedState) {
+        return res.status(400).json({ message: 'Invalid status transition request' });
+      }
+
+      // Hard guard: shipping is blocked unless payment is completed.
+      if (requestedState === ORDER_STATES.SHIPPED && !order.isPaid && order.paymentStatus?.status !== 'Completed') {
+        return res.status(400).json({ message: 'Cannot ship an unpaid order' });
+      }
+
+      if (requestedState === ORDER_STATES.CANCELLED) {
+        transitionOrder(order, requestedState, {
+          reason: req.body.cancellationReason || CANCELLATION_REASONS.ADMIN_CANCELLED,
+        });
+      } else if (requestedState === ORDER_STATES.SHIPPED) {
+        const currentState = getOrderState(order);
+        if (currentState === ORDER_STATES.PAID) {
+          transitionOrder(order, ORDER_STATES.PROCESSING);
+        }
+
+        if (getOrderState(order) !== ORDER_STATES.PROCESSING) {
+          return res.status(400).json({ message: 'Order must be in Processing state before shipment creation' });
+        }
+
+        await autoGenerateShipment(order);
+        transitionOrder(order, requestedState);
+      } else {
+        transitionOrder(order, requestedState);
+      }
     }
 
     // Save estimated delivery date if provided
     if (req.body.estimatedDelivery) {
       order.estimatedDelivery = new Date(req.body.estimatedDelivery);
     }
-    
-    if (order.trackingStatus === 'Shipped' && !order.shippedAt) {
-      order.shippedAt = Date.now();
-      await autoGenerateShipment(order);
-    } else if (order.trackingStatus === 'Delivered' && !order.deliveredAt) {
-      order.deliveredAt = Date.now();
-      if (!order.shippedAt) order.shippedAt = Date.now(); 
-    }
 
     const updatedOrder = await order.save();
     res.json({ success: true, data: updatedOrder });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -346,7 +587,11 @@ export const getAdminOrders = async (req, res) => {
 
     const query = {};
     if (req.query.status) {
-      query.trackingStatus = new RegExp(`^${req.query.status}$`, 'i');
+      const statusRegex = new RegExp(`^${req.query.status}$`, 'i');
+      query.$or = [
+        { lifecycleStatus: statusRegex },
+        { trackingStatus: statusRegex },
+      ];
     }
 
     const total = await Order.countDocuments(query);
@@ -401,7 +646,7 @@ export const getAdminOrders = async (req, res) => {
           status: order.isPaid ? 'completed' : (order.paymentStatus?.status?.toLowerCase() || 'pending'),
           razorpayPaymentId: order.paymentStatus?.razorpayPaymentId
         },
-        status: order.trackingStatus?.toLowerCase() || 'pending',
+        status: (order.lifecycleStatus || order.trackingStatus || 'Pending').toLowerCase(),
         createdAt: order.createdAt,
         estimatedDelivery: order.estimatedDelivery || null,
         tracking: {
@@ -436,18 +681,53 @@ export const refundOrder = async (req, res) => {
     if (!order.isPaid) {
       return res.status(400).json({ message: 'Cannot refund unpaid order' });
     }
-    
-    order.trackingStatus = 'Cancelled';
-    if(order.paymentStatus) {
-       order.paymentStatus.status = 'Refunded';
-    } else {
-       order.paymentStatus = { status: 'Refunded' };
+
+    const razorpayPaymentId = order.paymentStatus?.razorpayPaymentId;
+    if (!razorpayPaymentId) {
+      return res.status(400).json({ message: 'Missing Razorpay payment reference for refund' });
     }
 
+    const fullAmount = Number(order.totalAmount || 0);
+    const requestedAmount = req.body.amount ? Number(req.body.amount) : fullAmount;
+
+    if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid refund amount' });
+    }
+
+    if (requestedAmount > fullAmount) {
+      return res.status(400).json({ message: 'Refund amount cannot exceed order total' });
+    }
+
+    const instance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const refundPayload = {
+      amount: Math.round(requestedAmount * 100),
+      notes: {
+        orderId: order._id.toString(),
+        reason: req.body.reason || 'admin_refund',
+      },
+    };
+
+    const refund = await instance.payments.refund(razorpayPaymentId, refundPayload);
+
+    transitionOrder(order, ORDER_STATES.REFUNDED, {
+      reason: CANCELLATION_REASONS.REFUND,
+      refundId: refund.id,
+      refundAmount: requestedAmount,
+    });
+
     const updatedOrder = await order.save();
-    res.json({ success: true, message: 'Refund processed successfully', data: updatedOrder });
+    res.json({
+      success: true,
+      message: 'Refund processed successfully',
+      data: updatedOrder,
+      refundId: refund.id,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -571,7 +851,7 @@ export const downloadInvoice = async (req, res) => {
   }
 };
 
-// @desc    Download Bulk Shipping Invoices & mark as shipped
+// @desc    Download Bulk Shipping Invoices (read-only)
 // @route   GET /api/v1/orders/admin/bulk-ship-invoices
 // @access  Private/Admin
 export const downloadBulkInvoices = async (req, res) => {
@@ -595,13 +875,6 @@ export const downloadBulkInvoices = async (req, res) => {
     let bulkText = `BULK SHIPPING INVOICES FOR ${dateStr}\n${'='.repeat(50)}\n\n`;
     
     for (const order of orders) {
-      if(order.trackingStatus !== 'Shipped' && order.trackingStatus !== 'Delivered') {
-        order.trackingStatus = 'Shipped';
-        order.shippedAt = Date.now();
-        await autoGenerateShipment(order);
-        await order.save();
-      }
-
       const items = (order.orderItems || []).map(item => 
         `    ${(item.qty || 1)}x ${item.name} — ₹${item.price * (item.qty || 1)}`
       ).join('\n');
@@ -629,11 +902,32 @@ export const downloadBulkInvoices = async (req, res) => {
 // @route   POST /api/v1/orders/guest/create
 // @access  Public
 export const createGuestOrder = async (req, res) => {
+  const touchedInventory = [];
+  let orderPersisted = false;
+
   try {
     const { items, shippingAddress } = req.body;
+    const idempotencyKey = getIdempotencyKey(req);
 
-    if (!items || items.length === 0) {
-      return res.status(400).json({ message: 'No items in cart' });
+    const itemsValidationError = validateOrderItemsPayload(items);
+    if (itemsValidationError) {
+      return res.status(400).json({ message: itemsValidationError });
+    }
+
+    const shippingValidationError = validateShippingAddress(shippingAddress);
+    if (shippingValidationError) {
+      return res.status(400).json({ message: shippingValidationError });
+    }
+
+    if (!idempotencyKey) {
+      return res.status(400).json({
+        message: 'Missing idempotency key. Please retry checkout from the latest page.',
+      });
+    }
+
+    const duplicateOrder = await Order.exists({ idempotencyKey });
+    if (duplicateOrder) {
+      return sendDuplicateOrderResponse(res, idempotencyKey);
     }
 
     const orderItems = [];
@@ -654,6 +948,7 @@ export const createGuestOrder = async (req, res) => {
       }
       product.inventory -= qty;
       await product.save();
+      touchedInventory.push({ productId: product._id, qty });
 
       orderItems.push({
         name: product.title,
@@ -695,6 +990,8 @@ export const createGuestOrder = async (req, res) => {
       orderItems,
       shippingAddress,
       totalAmount: finalTotal,
+      lifecycleStatus: ORDER_STATES.PENDING,
+      idempotencyKey,
       paymentStatus: {
         razorpayOrderId: razorpayOrder.id,
         status: 'Pending'
@@ -702,6 +999,7 @@ export const createGuestOrder = async (req, res) => {
     });
 
     const createdOrder = await order.save();
+    orderPersisted = true;
 
     res.status(201).json({
       success: true,
@@ -715,6 +1013,19 @@ export const createGuestOrder = async (req, res) => {
     });
 
   } catch (error) {
+    if (!orderPersisted && touchedInventory.length > 0) {
+      await Promise.all(
+        touchedInventory.map(({ productId, qty }) =>
+          Product.updateOne({ _id: productId }, { $inc: { inventory: qty } })
+        )
+      );
+    }
+
+    if (error?.code === 11000 && error?.keyPattern?.idempotencyKey) {
+      const idempotencyKey = getIdempotencyKey(req);
+      return sendDuplicateOrderResponse(res, idempotencyKey);
+    }
+
     console.error("createGuestOrder error:", error);
     res.status(500).json({ message: error.message });
   }
@@ -725,7 +1036,20 @@ export const createGuestOrder = async (req, res) => {
 // @access  Public
 export const verifyGuestPayment = async (req, res) => {
   try {
-    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+    const {
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+      guestEmail,
+    } = req.body;
+
+    if (!guestEmail) {
+      return res.status(400).json({ message: 'Guest email is required for payment verification' });
+    }
+
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      return res.status(400).json({ message: 'Missing payment verification fields' });
+    }
 
     const sign = razorpayOrderId + "|" + razorpayPaymentId;
     const expectedSign = crypto
@@ -733,44 +1057,61 @@ export const verifyGuestPayment = async (req, res) => {
       .update(sign.toString())
       .digest("hex");
 
-    if (razorpaySignature === expectedSign) {
-      const order = await Order.findOne({ "paymentStatus.razorpayOrderId": razorpayOrderId });
-      if (order) {
-        const instance = new Razorpay({
-          key_id: process.env.RAZORPAY_KEY_ID,
-          key_secret: process.env.RAZORPAY_KEY_SECRET,
-        });
-        const payment = await instance.payments.fetch(razorpayPaymentId);
-        
-        if (payment.amount !== Math.round(order.totalAmount * 100)) {
-          return res.status(400).json({ message: "Payment amount does not match order amount" });
-        }
-
-        order.isPaid = true;
-        order.paidAt = Date.now();
-        order.paymentStatus.status = 'Completed';
-        order.paymentStatus.razorpayPaymentId = razorpayPaymentId;
-        order.paymentStatus.razorpaySignature = razorpaySignature;
-        await order.save();
-
-        try {
-          const emailService = await import('../services/emailService.js');
-          if (order.shippingAddress?.email) {
-            await emailService.sendOrderConfirmationEmail(order.shippingAddress.email, order);
-          }
-        } catch (err) {
-          console.error("Email error:", err);
-        }
-
-        return res.status(200).json({ success: true, message: "Payment verified successfully" });
-      } else {
-        return res.status(404).json({ message: "Order not found" });
-      }
-    } else {
+    if (razorpaySignature !== expectedSign) {
       return res.status(400).json({ message: "Invalid signature" });
     }
+
+    const order = await Order.findOne({ "paymentStatus.razorpayOrderId": razorpayOrderId });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.isPaid && order.paymentStatus?.razorpayPaymentId === razorpayPaymentId) {
+      return res.status(200).json({ success: true, message: 'Payment already verified' });
+    }
+
+    if (order.isPaid && order.paymentStatus?.razorpayPaymentId && order.paymentStatus.razorpayPaymentId !== razorpayPaymentId) {
+      return res.status(409).json({ message: 'Order is already paid with a different payment reference' });
+    }
+
+    const normalizedOrderEmail = (order.shippingAddress?.email || '').trim().toLowerCase();
+    const normalizedGuestEmail = guestEmail.trim().toLowerCase();
+
+    if (!normalizedOrderEmail || normalizedOrderEmail !== normalizedGuestEmail) {
+      return res.status(403).json({ message: 'Guest email does not match this order' });
+    }
+
+    const instance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+    const payment = await instance.payments.fetch(razorpayPaymentId);
+
+    if (payment.amount !== Math.round(order.totalAmount * 100)) {
+      return res.status(400).json({ message: "Payment amount does not match order amount" });
+    }
+
+    await assertPaymentReferenceUniqueness(order._id, razorpayPaymentId);
+
+    transitionOrder(order, ORDER_STATES.PAID, {
+      paymentId: razorpayPaymentId,
+      signature: razorpaySignature,
+    });
+
+    await order.save();
+
+    try {
+      const emailService = await import('../services/emailService.js');
+      if (order.shippingAddress?.email) {
+        await emailService.sendOrderConfirmationEmail(order.shippingAddress.email, order);
+      }
+    } catch (err) {
+      console.error("Email error:", err);
+    }
+
+    return res.status(200).json({ success: true, message: "Payment verified successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -783,11 +1124,14 @@ export const verifyWebhook = async (req, res) => {
     if (!secret) return res.status(400).json({ message: 'Webhook secret not configured' });
 
     const signature = req.headers['x-razorpay-signature'];
+    if (!req.rawBody || !signature) {
+      return res.status(400).json({ success: false, message: 'Missing webhook signature or raw payload' });
+    }
     
     // Validate signature using raw body
     const expectedSignature = crypto
       .createHmac('sha256', secret)
-      .update(req.rawBody || JSON.stringify(req.body))
+      .update(req.rawBody)
       .digest('hex');
 
     if (expectedSignature !== signature) {
@@ -797,34 +1141,48 @@ export const verifyWebhook = async (req, res) => {
     const { event, payload } = req.body;
 
     if (event === 'payment.captured') {
-      const payment = payload.payment.entity;
+      const payment = payload?.payment?.entity;
+      if (!payment?.order_id || !payment?.id) {
+        return res.status(400).json({ success: false, message: 'Invalid payment payload' });
+      }
+
       const razorpayOrderId = payment.order_id;
-
       const order = await Order.findOne({ "paymentStatus.razorpayOrderId": razorpayOrderId });
-      
-      if (order && !order.isPaid) {
-        if (payment.amount === Math.round(order.totalAmount * 100)) {
-          order.isPaid = true;
-          order.paidAt = Date.now();
-          order.paymentStatus.status = 'Completed';
-          order.paymentStatus.razorpayPaymentId = payment.id;
-          order.paymentStatus.razorpaySignature = 'webhook_verified';
-          await order.save();
 
-          try {
-            const emailService = await import('../services/emailService.js');
-            let customerEmail = order.shippingAddress?.email;
-            if (!customerEmail && order.user) {
-              const User = (await import('../models/User.js')).default;
-              const user = await User.findById(order.user);
-              if (user) customerEmail = user.email;
-            }
-            if (customerEmail) {
-              await emailService.sendOrderConfirmationEmail(customerEmail, order);
-            }
-          } catch(err) {
-            console.error("Email error: ", err);
+      if (!order) {
+        return res.status(200).json({ success: true });
+      }
+
+      if (order.isPaid && order.paymentStatus?.razorpayPaymentId === payment.id) {
+        return res.status(200).json({ success: true, message: 'Webhook already processed' });
+      }
+
+      if (payment.amount !== Math.round(order.totalAmount * 100)) {
+        return res.status(400).json({ success: false, message: 'Webhook amount mismatch' });
+      }
+
+      await assertPaymentReferenceUniqueness(order._id, payment.id);
+
+      if (!order.isPaid) {
+        transitionOrder(order, ORDER_STATES.PAID, {
+          paymentId: payment.id,
+          signature: 'webhook_verified',
+        });
+        await order.save();
+
+        try {
+          const emailService = await import('../services/emailService.js');
+          let customerEmail = order.shippingAddress?.email;
+          if (!customerEmail && order.user) {
+            const User = (await import('../models/User.js')).default;
+            const user = await User.findById(order.user);
+            if (user) customerEmail = user.email;
           }
+          if (customerEmail) {
+            await emailService.sendOrderConfirmationEmail(customerEmail, order);
+          }
+        } catch(err) {
+          console.error("Email error: ", err);
         }
       }
     }

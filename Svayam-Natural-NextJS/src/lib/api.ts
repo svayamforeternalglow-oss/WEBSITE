@@ -34,20 +34,20 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 }
 
 export const api = {
-  get: <T>(endpoint: string, token?: string) =>
-    request<T>(endpoint, { token }),
+  get: <T>(endpoint: string, token?: string, headers?: Record<string, string>) =>
+    request<T>(endpoint, { token, headers }),
 
-  post: <T>(endpoint: string, body: unknown, token?: string) =>
-    request<T>(endpoint, { method: 'POST', body, token }),
+  post: <T>(endpoint: string, body: unknown, token?: string, headers?: Record<string, string>) =>
+    request<T>(endpoint, { method: 'POST', body, token, headers }),
 
-  put: <T>(endpoint: string, body: unknown, token?: string) =>
-    request<T>(endpoint, { method: 'PUT', body, token }),
+  put: <T>(endpoint: string, body: unknown, token?: string, headers?: Record<string, string>) =>
+    request<T>(endpoint, { method: 'PUT', body, token, headers }),
 
-  patch: <T>(endpoint: string, body: unknown, token?: string) =>
-    request<T>(endpoint, { method: 'PATCH', body, token }),
+  patch: <T>(endpoint: string, body: unknown, token?: string, headers?: Record<string, string>) =>
+    request<T>(endpoint, { method: 'PATCH', body, token, headers }),
 
-  delete: <T>(endpoint: string, token?: string) =>
-    request<T>(endpoint, { method: 'DELETE', token }),
+  delete: <T>(endpoint: string, token?: string, headers?: Record<string, string>) =>
+    request<T>(endpoint, { method: 'DELETE', token, headers }),
 
   /** Fetch blob (e.g. PDF/ZIP) and return as Blob for download */
   getBlob: async (endpoint: string, token?: string): Promise<Blob> => {

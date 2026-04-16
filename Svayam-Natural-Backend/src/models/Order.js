@@ -37,7 +37,20 @@ const orderSchema = new mongoose.Schema({
     status: { type: String, enum: ['Pending', 'Completed', 'Failed', 'Refunded'], default: 'Pending' },
     razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String },
-    razorpaySignature: { type: String }
+    razorpaySignature: { type: String },
+    razorpayRefundId: { type: String },
+    refundAmount: { type: Number }
+  },
+  lifecycleStatus: {
+    type: String,
+    enum: ['Pending', 'Paid', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded'],
+    default: 'Pending'
+  },
+  idempotencyKey: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true
   },
   isPaid: {
     type: Boolean,
@@ -54,6 +67,11 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'],
     default: 'Pending'
+  },
+  cancellation_reason: {
+    type: String,
+    enum: ['timeout', 'admin_cancelled', 'customer_cancelled', 'payment_failed', 'refund', 'other'],
+    default: null
   },
   shippedAt: {
     type: Date
@@ -78,6 +96,10 @@ const orderSchema = new mongoose.Schema({
     default: ''
   },
   labelUrl: {
+    type: String,
+    default: ''
+  },
+  shiprocketInvoiceUrl: {
     type: String,
     default: ''
   },

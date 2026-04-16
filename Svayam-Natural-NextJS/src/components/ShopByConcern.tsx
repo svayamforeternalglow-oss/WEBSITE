@@ -5,16 +5,19 @@ import Link from "next/link";
 import Image from "next/image";
 import AnimateOnScroll from "./AnimateOnScroll";
 import { api } from "@/lib/api";
+import { normalizeConcernQuery } from "@/lib/products";
 
 const STATIC_CONCERNS = [
   { name: "Pigmentation", slug: "pigmentation", image: "/images/pigmnetation.png" },
-  { name: "Anti Aging", slug: "anti-aging", image: "/images/aging.png" },
+  { name: "Antiageing", slug: "anti-ageing", image: "/images/aging.png" },
   { name: "Hair Fall", slug: "hair-fall", image: "/images/hairfall.png" },
   { name: "Hair Growth", slug: "hair-growth", image: "/images/concerns/hair-growth.png" },
+  { name: "Day Care", slug: "day-care", image: "/images/suryakanti-day-creme.png" },
   { name: "Night Care", slug: "night-care", image: "/images/chandraprabha-night-necter.png" },
-  { name: "Oil & Acne Control", slug: "oil-acne-control", image: "/images/concerns/acne-blemishes.png" },
   { name: "Dry Skin", slug: "dry-skin", image: "/images/concerns/skin-hydration.png" },
   { name: "Glow & Radiance", slug: "glow-radiance", image: "/images/tejasamrit.png" },
+  { name: "Dull & Damaged Hair", slug: "dull-damaged-hair", image: "/images/shudhi/1.jpeg" },
+  { name: "Oil & Acne Control", slug: "oil-acne-control", image: "/images/concerns/acne-blemishes.png" },
 ];
 
 interface ConcernItem {
@@ -35,6 +38,16 @@ export default function ShopByConcern() {
         const data = await api.get<ConcernItem[]>('/taxonomy/concerns?active=true');
         let fetched = Array.isArray(data) ? data.filter(c => c.isActive !== false) : [];
         if (!cancelled && fetched.length > 0) {
+          const imageMap = new Map(STATIC_CONCERNS.map((c) => [c.slug, c.image]));
+          fetched = fetched.map((concern) => {
+            const normalizedSlug = normalizeConcernQuery(concern.slug) || concern.slug;
+            return {
+              ...concern,
+              slug: normalizedSlug,
+              image: concern.image || imageMap.get(normalizedSlug) || '/images/placeholder.jpg',
+            };
+          });
+
           const orderMap = new Map(STATIC_CONCERNS.map((c, i) => [c.slug, i]));
           fetched = fetched.sort((a, b) => {
             const indexA = orderMap.has(a.slug) ? orderMap.get(a.slug)! : 999;
@@ -70,7 +83,7 @@ export default function ShopByConcern() {
             {concerns.map((concern, i) => (
               <AnimateOnScroll key={concern.slug} animation="fadeInUp" delay={i * 50}>
                 <Link
-                  href={`/products?concern=${concern.slug}`}
+                  href={`/products?concern=${normalizeConcernQuery(concern.slug) || concern.slug}`}
                   className="group flex flex-col items-center gap-4 transition-all duration-300 flex-shrink-0 lg:flex-shrink"
                 >
                   <div className="relative h-[110px] w-[110px] sm:h-[130px] sm:w-[130px] lg:h-[120px] lg:w-[120px] xl:h-[145px] xl:w-[145px] rounded-[32px] overflow-hidden bg-white shadow-[0_4px_15px_rgb(0,0,0,0.05)] transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_12px_30px_rgb(0,0,0,0.12)]">

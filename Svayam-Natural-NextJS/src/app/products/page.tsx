@@ -6,27 +6,37 @@ import SectionHeader from "@/components/SectionHeader";
 import ProductCard from "@/components/ProductCard";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { fetchProducts, type MergedProduct } from "@/lib/productApi";
-import { PRODUCTS_PAGE_CATEGORIES } from "@/lib/products";
+import {
+  PRODUCTS_PAGE_CATEGORIES,
+  CATEGORY_TO_BACKEND_MAP,
+  CONCERN_ROUTE_PRODUCTS,
+  COLLECTION_ROUTE_PRODUCTS,
+  normalizeCategoryQuery,
+  normalizeConcernQuery,
+} from "@/lib/products";
 
 function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const categoryParam = searchParams.get("category");
   const concernParam = searchParams.get("concern");
+  const collectionParam = searchParams.get("collection");
   const searchParam = searchParams.get("search");
 
-  const [activeCategory, setActiveCategory] = useState(categoryParam || "all");
-  const [activeConcern, setActiveConcern] = useState(concernParam || "");
+  const [activeCategory, setActiveCategory] = useState(normalizeCategoryQuery(categoryParam));
+  const [activeConcern, setActiveConcern] = useState(normalizeConcernQuery(concernParam));
+  const [activeCollection, setActiveCollection] = useState((collectionParam || "").trim().toLowerCase());
   const [searchQuery, setSearchQuery] = useState(searchParam || "");
   const [products, setProducts] = useState<MergedProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Sync URL params to state
   useEffect(() => {
-    if (categoryParam) setActiveCategory(categoryParam);
-    if (concernParam) setActiveConcern(concernParam);
-    if (searchParam) setSearchQuery(searchParam);
-  }, [categoryParam, concernParam, searchParam]);
+    setActiveCategory(normalizeCategoryQuery(categoryParam));
+    setActiveConcern(normalizeConcernQuery(concernParam));
+    setActiveCollection((collectionParam || "").trim().toLowerCase());
+    setSearchQuery(searchParam || "");
+  }, [categoryParam, concernParam, collectionParam, searchParam]);
 
   // Fetch products from API
   const loadProducts = useCallback(async () => {
@@ -35,38 +45,48 @@ function ProductsContent() {
       // Build category filter for API
       let categoryForApi: string | undefined;
       if (activeCategory !== "all") {
-        // Map our local category IDs to backend category values
-        const catMap: Record<string, string> = {
-          face: "skin-care",
-          "lip-balm": "beauty-products",
-          "body-care": "body-care",
-          "hair-care": "hair-care",
-          food: "natural-food",
-          detox: "natural-food",
-          kits: "", // Kits span multiple categories — fetch all, filter client-side
-        };
-        categoryForApi = catMap[activeCategory];
+        categoryForApi = CATEGORY_TO_BACKEND_MAP[activeCategory];
+        if (!categoryForApi && !(activeCategory in CATEGORY_TO_BACKEND_MAP)) {
+          categoryForApi = activeCategory;
+        }
       }
 
       const result = await fetchProducts({
-        search: searchQuery || undefined,
+        search: searchQuery.trim() || undefined,
         category: categoryForApi || undefined,
-        // We filter concern client-side based on our rich editorial data mapped to each product
         active: true,
       });
 
       let filtered = result;
-      // 1. Filter by Concern Client-Side
-      if (activeConcern) {
-        filtered = filtered.filter(p => p.concerns && p.concerns.includes(activeConcern));
+
+      // 1. Filter by collection routes
+      if (activeCollection) {
+        const collectionSlugs = COLLECTION_ROUTE_PRODUCTS[activeCollection];
+        if (collectionSlugs?.length) {
+          const slugSet = new Set(collectionSlugs);
+          filtered = filtered.filter((p) => slugSet.has(p.slug));
+        }
       }
 
-      // 2. Filter by Categories requiring slug matching
-      if (activeCategory !== "all" && !categoryForApi) {
-        const catConfig = PRODUCTS_PAGE_CATEGORIES.find(c => c.id === activeCategory);
+      // 2. Filter by concern routes
+      if (activeConcern) {
+        const concernSlugs = CONCERN_ROUTE_PRODUCTS[activeConcern];
+        if (concernSlugs?.length > 0) {
+          const slugSet = new Set(concernSlugs);
+          filtered = filtered.filter((p) => slugSet.has(p.slug));
+        } else {
+          filtered = filtered.filter((p) =>
+            (p.concerns || []).some((concern) => normalizeConcernQuery(concern) === activeConcern)
+          );
+        }
+      }
+
+      // 3. Filter by category slug sets
+      if (activeCategory !== "all") {
+        const catConfig = PRODUCTS_PAGE_CATEGORIES.find((c) => c.id === activeCategory);
         if (catConfig && catConfig.slugs.length > 0) {
           const slugSet = new Set<string>(catConfig.slugs as unknown as string[]);
-          filtered = filtered.filter(p => slugSet.has(p.slug));
+          filtered = filtered.filter((p) => slugSet.has(p.slug));
         }
       }
       
@@ -77,30 +97,48 @@ function ProductsContent() {
     } finally {
       setLoading(false);
     }
-  }, [activeCategory, activeConcern, searchQuery]);
+  }, [activeCategory, activeConcern, activeCollection, searchQuery]);
 
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
 
   // Update URL when filters change
-  const updateUrl = (cat: string, concern: string, search: string) => {
+  const updateUrl = (
+    cat: string,
+    concern: string,
+    search: string,
+    collection: string,
+    mode: "push" | "replace" = "push"
+  ) => {
     const params = new URLSearchParams();
     if (cat !== "all") params.set("category", cat);
     if (concern) params.set("concern", concern);
-    if (search) params.set("search", search);
+    if (collection) params.set("collection", collection);
+    if (search.trim()) params.set("search", search.trim());
     const qs = params.toString();
-    router.push(`/products${qs ? `?${qs}` : ""}`);
+    const nextUrl = `/products${qs ? `?${qs}` : ""}`;
+    if (mode === "replace") {
+      router.replace(nextUrl);
+      return;
+    }
+    router.push(nextUrl);
   };
 
   const handleCategoryChange = (catId: string) => {
     setActiveCategory(catId);
-    updateUrl(catId, activeConcern, searchQuery);
+    setActiveCollection("");
+    updateUrl(catId, activeConcern, searchQuery, "");
   };
 
   const handleConcernClear = () => {
     setActiveConcern("");
-    updateUrl(activeCategory, "", searchQuery);
+    updateUrl(activeCategory, "", searchQuery, activeCollection);
+  };
+
+  const handleCollectionClear = () => {
+    setActiveCollection("");
+    updateUrl(activeCategory, activeConcern, searchQuery, "");
   };
 
   const handleSearchChange = (value: string) => {
@@ -110,7 +148,7 @@ function ProductsContent() {
   // Debounced search: update URL after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
-      updateUrl(activeCategory, activeConcern, searchQuery);
+      updateUrl(activeCategory, activeConcern, searchQuery, activeCollection, "replace");
     }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,10 +169,19 @@ function ProductsContent() {
             onChange={handleSearchChange}
             onClear={() => {
               setSearchQuery("");
-              updateUrl(activeCategory, activeConcern, "");
+              updateUrl(activeCategory, activeConcern, "", activeCollection);
             }}
           />
         </div>
+
+        {activeCollection && (
+          <div className="mb-4 flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-forest/10 border border-forest/20 px-4 py-2 text-sm font-medium text-forest">
+              Collection: {activeCollection}
+              <button onClick={handleCollectionClear} className="ml-1 hover:text-gold-dark">✕</button>
+            </span>
+          </div>
+        )}
 
         {/* Active concern badge */}
         {activeConcern && (

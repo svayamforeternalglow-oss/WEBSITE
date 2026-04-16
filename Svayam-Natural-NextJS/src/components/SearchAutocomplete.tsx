@@ -25,6 +25,14 @@ export default function SearchAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const navigateToSearchResults = useCallback(() => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setShowDropdown(false);
+    setHighlightIndex(-1);
+    router.push(`/products?search=${encodeURIComponent(trimmed)}`);
+  }, [router, value]);
+
   // Fetch suggestions when user types
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.trim().length < 1) {
@@ -33,14 +41,13 @@ export default function SearchAutocomplete({
       return;
     }
 
+    setShowDropdown(true);
     setLoading(true);
     try {
       const results = await fetchProducts({ search: query, active: true, limit: 6 });
       setSuggestions(results);
-      setShowDropdown(results.length > 0);
     } catch {
       setSuggestions([]);
-      setShowDropdown(false);
     } finally {
       setLoading(false);
     }
@@ -83,6 +90,26 @@ export default function SearchAutocomplete({
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setShowDropdown(false);
+      setHighlightIndex(-1);
+      return;
+    }
+
+    if (e.key === "Enter") {
+      if (showDropdown && highlightIndex >= 0 && suggestions[highlightIndex]) {
+        e.preventDefault();
+        handleSelect(suggestions[highlightIndex]);
+        return;
+      }
+
+      if (value.trim()) {
+        e.preventDefault();
+        navigateToSearchResults();
+      }
+      return;
+    }
+
     if (!showDropdown || suggestions.length === 0) return;
 
     if (e.key === "ArrowDown") {
@@ -95,12 +122,6 @@ export default function SearchAutocomplete({
       setHighlightIndex((prev) =>
         prev > 0 ? prev - 1 : suggestions.length - 1
       );
-    } else if (e.key === "Enter" && highlightIndex >= 0) {
-      e.preventDefault();
-      handleSelect(suggestions[highlightIndex]);
-    } else if (e.key === "Escape") {
-      setShowDropdown(false);
-      setHighlightIndex(-1);
     }
   };
 
@@ -125,7 +146,7 @@ export default function SearchAutocomplete({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => {
-          if (suggestions.length > 0 && value.trim().length >= 1) {
+          if (value.trim().length >= 1) {
             setShowDropdown(true);
           }
         }}
@@ -258,9 +279,7 @@ export default function SearchAutocomplete({
           {/* View all results link */}
           <div className="border-t border-neutral-300/50 px-4 py-2.5">
             <button
-              onClick={() => {
-                setShowDropdown(false);
-              }}
+              onClick={navigateToSearchResults}
               className="flex w-full items-center justify-center gap-2 text-xs font-medium uppercase tracking-wider text-gold-dark transition-colors hover:text-forest"
             >
               <svg
@@ -314,13 +333,15 @@ export default function SearchAutocomplete({
 function highlightMatch(text: string, query: string) {
   if (!query.trim()) return text;
 
-  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-  const parts = text.split(regex);
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const splitRegex = new RegExp(`(${escaped})`, "gi");
+  const exactRegex = new RegExp(`^${escaped}$`, "i");
+  const parts = text.split(splitRegex);
 
   return (
     <>
       {parts.map((part, i) =>
-        regex.test(part) ? (
+        exactRegex.test(part) ? (
           <span key={i} className="text-gold-dark font-bold">
             {part}
           </span>

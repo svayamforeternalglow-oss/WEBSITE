@@ -19,6 +19,7 @@ interface Order {
   totalAmount: number;
   isPaid: boolean;
   trackingStatus: string;
+  lifecycleStatus?: string;
   orderItems: OrderItem[];
 }
 
@@ -76,14 +77,16 @@ export default function MyOrdersPage() {
         {orders.length === 0 ? (
           <div className="rounded-2xl border border-neutral-300 bg-white p-12 text-center">
             <h2 className="mb-3 font-heading text-xl font-bold text-forest">No orders yet</h2>
-            <p className="mb-6 text-clay">Looks like you haven't placed any orders with us.</p>
+            <p className="mb-6 text-clay">Looks like you have not placed any orders with us.</p>
             <Link href="/products" className="rounded-lg bg-forest px-6 py-3 font-semibold text-sand transition-colors hover:bg-forest-dark">
               Start Shopping
             </Link>
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
+            {orders.map((order) => {
+              const displayStatus = order.lifecycleStatus || order.trackingStatus || 'Processing';
+              return (
               <div key={order._id} className="overflow-hidden rounded-2xl border border-neutral-300 bg-white">
                 {/* Order Header */}
                 <div className="flex flex-wrap items-center justify-between border-b border-neutral-200 bg-neutral-50 p-6">
@@ -114,11 +117,11 @@ export default function MyOrdersPage() {
                 {/* Order Status */}
                 <div className="border-b border-neutral-200 px-6 py-4">
                   <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                    order.trackingStatus === 'Delivered' ? 'bg-green-100 text-green-800' : 
-                    order.trackingStatus === 'Cancelled' ? 'bg-red-100 text-red-800' : 
+                    displayStatus === 'Delivered' ? 'bg-green-100 text-green-800' : 
+                    displayStatus === 'Cancelled' || displayStatus === 'Refunded' ? 'bg-red-100 text-red-800' : 
                     'bg-gold/20 text-gold-dark'
                   }`}>
-                    {order.trackingStatus || 'Processing'}
+                    {displayStatus}
                   </span>
                 </div>
 
@@ -144,7 +147,8 @@ export default function MyOrdersPage() {
                   ))}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

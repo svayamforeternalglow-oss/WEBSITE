@@ -50,7 +50,12 @@ export interface MergedProduct {
 }
 
 /* ---- Import editorial data ---- */
-import { editorialBySlug, CATEGORY_THEMES, type ProductTheme } from './products';
+import {
+  editorialBySlug,
+  CATEGORY_THEMES,
+  normalizeConcernQuery,
+  type ProductTheme,
+} from './products';
 
 /* ---- Merge helper ---- */
 export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedProduct[] {
@@ -58,8 +63,12 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
     const editorial = editorialBySlug[bp.slug];
     // Parse comma-separated concerns from backend into array
     const backendConcerns = bp.concern
-      ? bp.concern.split(',').map(c => c.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')).filter(Boolean)
+      ? bp.concern
+          .split(',')
+          .map((c) => normalizeConcernQuery(c.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')))
+          .filter(Boolean)
       : [];
+    const editorialConcerns = (editorial?.concerns || []).map((c) => normalizeConcernQuery(c)).filter(Boolean);
     return {
       _id: bp._id,
       slug: bp.slug,
@@ -82,7 +91,7 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
       sku: editorial?.sku || '',
       badges: editorial?.badges || [],
       // Prefer backend concerns if they exist, otherwise fall back to editorial
-      concerns: backendConcerns.length > 0 ? backendConcerns : (editorial?.concerns || []),
+      concerns: backendConcerns.length > 0 ? backendConcerns : editorialConcerns,
       ingredients: editorial?.ingredients || [],
       benefits: editorial?.benefits || [],
       howToUse: editorial?.howToUse,
@@ -107,9 +116,14 @@ export interface FetchProductsParams {
 
 export async function fetchProducts(params?: FetchProductsParams): Promise<MergedProduct[]> {
   const qs = new URLSearchParams();
-  if (params?.search) qs.set('search', params.search);
+  if (params?.search?.trim()) qs.set('search', params.search.trim());
   if (params?.category) qs.set('category', params.category);
-  if (params?.concern) qs.set('concern', params.concern);
+  if (params?.concern) {
+    const concern = normalizeConcernQuery(params.concern);
+    if (concern) {
+      qs.set('concern', concern);
+    }
+  }
   if (params?.featured) qs.set('featured', 'true');
   if (params?.active !== undefined) qs.set('active', String(params.active));
   if (params?.limit) qs.set('limit', String(params.limit));

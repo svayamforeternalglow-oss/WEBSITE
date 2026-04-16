@@ -33,7 +33,7 @@ const categories = [
     description:
       "Time-tested Ayurvedic formulations for radiant, healthy skin and timeless beauty.",
     icon: SparklesIcon,
-    href: "/products?category=face",
+    href: "/products?collection=soundarya",
     accent: "from-gold/10 to-gold/[0.02]",
   },
   {
@@ -42,7 +42,7 @@ const categories = [
     description:
       "Natural food and wellness products for holistic well-being and inner balance.",
     icon: DropletIcon,
-    href: "/products?category=food",
+    href: "/products?collection=swasthya",
     accent: "from-sage/20 to-sage/[0.03]",
   },
 ];

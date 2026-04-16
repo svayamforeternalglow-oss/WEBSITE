@@ -397,14 +397,105 @@ export function getThemeForCategory(category: string): ProductTheme {
 /** Category filter options for All Products page. */
 export const PRODUCTS_PAGE_CATEGORIES = [
   { id: "all", label: "All Products", slugs: [] },
-  { id: "kits", label: "Best selling kits", slugs: ["complete-radiance-kit", "hair-care-kit", "tejasamrit-golden-latte-family-pack", "royal-bathing-kit", "autea", "tejasamrit"] },
+  { id: "kits", label: "Best Selling Kits", slugs: ["complete-radiance-kit", "hair-care-kit", "tejasamrit-golden-latte-family-pack", "royal-bathing-kit", "autea", "tejasamrit"] },
   { id: "face", label: "Face", slugs: ["chandraprabha-night-nectar", "suryakanti-day-cream", "lavanyam-facepack", "face-polishing-scrub", "tarunya-rose-toner"] },
   { id: "lip-balm", label: "Lip Balm", slugs: ["kumkumadi-lip-balm", "rose-lip-balm"] },
+  { id: "hair-care", label: "Hair Care", slugs: ["keshvardhini-hair-oil", "hibiscus-hair-gel", "bhruhshakti-roll-on", "kesh-shuddhi", "kesh-samraksha"] },
   { id: "body-care", label: "Body Care", slugs: ["abhyanga-natural-soap", "snehchandan-natural-soap", "abhyanga-udvartana", "soumya-touch-of-silk", "mango-body-butter", "kayashuddhi-abhyanga-body-oil", "triphala-natural-soap", "glowup-night-gel"] },
-  { id: "hair-care", label: "Hair care", slugs: ["keshvardhini-hair-oil", "hibiscus-hair-gel", "bhruhshakti-roll-on", "kesh-shuddhi", "kesh-samraksha"] },
-  { id: "food", label: "Food", slugs: ["swarnahairdra-turmeric", "gulkand", "sonamoti-wheat", "autea", "tejasamrit"] },
-  { id: "detox", label: "Detox", slugs: ["triphala-detox", "autea", "tejasamrit"] },
+  { id: "food", label: "Eat to Glow", slugs: ["tejasamrit", "autea", "gulkand"] },
+  { id: "detox", label: "Detox", slugs: ["triphala-detox", "swarnahairdra-turmeric"] },
+  { id: "natural-food", label: "Natural Food", slugs: ["swarnahairdra-turmeric", "sonamoti-wheat", "triphala-detox", "autea", "gulkand"] },
 ] as const;
+
+export const CATEGORY_QUERY_ALIASES: Record<string, string> = {
+  'hair care': 'hair-care',
+  haircare: 'hair-care',
+  'body care': 'body-care',
+  skincare: 'face',
+  'skin-care': 'face',
+  'beauty-products': 'all',
+  wellness: 'body-care',
+};
+
+export const CATEGORY_TO_BACKEND_MAP: Record<string, string | undefined> = {
+  all: undefined,
+  kits: undefined,
+  face: 'skin-care',
+  'lip-balm': 'beauty-products',
+  'hair-care': 'hair-care',
+  'body-care': 'body-care',
+  food: undefined,
+  detox: 'natural-food',
+  'natural-food': 'natural-food',
+};
+
+export const CONCERN_QUERY_ALIASES: Record<string, string> = {
+  antiaging: 'anti-ageing',
+  'anti-aging': 'anti-ageing',
+  antiageing: 'anti-ageing',
+  'hairfall': 'hair-fall',
+  'hair-fall-control': 'hair-fall',
+  daycare: 'day-care',
+  'day care': 'day-care',
+  'dull-hair': 'dull-damaged-hair',
+  'damaged-hair': 'dull-damaged-hair',
+  'oily-acne-control': 'oil-acne-control',
+  glow: 'glow-radiance',
+};
+
+export const CONCERN_ROUTE_PRODUCTS: Record<string, string[]> = {
+  pigmentation: ['lavanyam-facepack', 'suryakanti-day-cream', 'chandraprabha-night-nectar'],
+  'anti-ageing': ['suryakanti-day-cream', 'chandraprabha-night-nectar', 'tarunya-rose-toner', 'tejasamrit'],
+  'hair-fall': ['kesh-samraksha', 'kesh-shuddhi', 'keshvardhini-hair-oil'],
+  'hair-growth': ['kesh-samraksha', 'kesh-shuddhi', 'keshvardhini-hair-oil', 'hibiscus-hair-gel'],
+  'day-care': ['suryakanti-day-cream', 'tarunya-rose-toner', 'soumya-touch-of-silk'],
+  'night-care': ['chandraprabha-night-nectar', 'glowup-night-gel', 'tejasamrit'],
+  'dry-skin': ['lavanyam-facepack', 'rose-lip-balm', 'soumya-touch-of-silk', 'abhyanga-udvartana'],
+  'glow-radiance': ['tejasamrit', 'autea', 'gulkand', 'lavanyam-facepack', 'suryakanti-day-cream', 'chandraprabha-night-nectar'],
+  'dull-damaged-hair': ['kesh-samraksha', 'kesh-shuddhi', 'keshvardhini-hair-oil', 'hibiscus-hair-gel'],
+  'oil-acne-control': ['glowup-night-gel', 'tarunya-rose-toner', 'lavanyam-facepack'],
+};
+
+export const COLLECTION_ROUTE_PRODUCTS: Record<string, string[]> = {
+  soundarya: [
+    'lavanyam-facepack',
+    'chandraprabha-night-nectar',
+    'suryakanti-day-cream',
+    'tarunya-rose-toner',
+    'kumkumadi-lip-balm',
+    'rose-lip-balm',
+    'kesh-samraksha',
+    'hibiscus-hair-gel',
+    'kesh-shuddhi',
+    'keshvardhini-hair-oil',
+    'bhruhshakti-roll-on',
+  ],
+  swasthya: [
+    'sonamoti-wheat',
+    'swarnahairdra-turmeric',
+    'triphala-detox',
+    'autea',
+    'tejasamrit',
+    'gulkand',
+    'kayashuddhi-abhyanga-body-oil',
+    'abhyanga-natural-soap',
+    'snehchandan-natural-soap',
+    'triphala-natural-soap',
+    'soumya-touch-of-silk',
+  ],
+};
+
+export function normalizeCategoryQuery(rawCategory: string | null | undefined): string {
+  const normalized = (rawCategory || '').trim().toLowerCase();
+  if (!normalized) return 'all';
+  return CATEGORY_QUERY_ALIASES[normalized] || normalized;
+}
+
+export function normalizeConcernQuery(rawConcern: string | null | undefined): string {
+  const normalized = (rawConcern || '').trim().toLowerCase();
+  if (!normalized) return '';
+  return CONCERN_QUERY_ALIASES[normalized] || normalized;
+}
 
 /** Slug → editorial data map for merge with backend commerce data */
 export const editorialBySlug: Record<string, Product> = Object.fromEntries(

@@ -31,7 +31,11 @@ export const getOrderStatusStats = async (req, res) => {
     const stats = await Order.aggregate([
       {
         $group: {
-          _id: { $toLower: "$trackingStatus" },
+          _id: {
+            $toLower: {
+              $ifNull: ['$lifecycleStatus', '$trackingStatus']
+            }
+          },
           count: { $sum: 1 }
         }
       }
@@ -87,7 +91,11 @@ export const exportPhones = async (req, res) => {
     
     // Optional status filter
     if (req.query.status) {
-      query.trackingStatus = new RegExp(`^${req.query.status}$`, 'i');
+      const statusRegex = new RegExp(`^${req.query.status}$`, 'i');
+      query.$or = [
+        { lifecycleStatus: statusRegex },
+        { trackingStatus: statusRegex },
+      ];
     }
 
     const orders = await Order.find(query)

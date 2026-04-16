@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   InstagramIcon,
   FacebookIcon,
@@ -15,11 +14,12 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 const footerLinks = {
   shop: [
+    { label: "Face", href: "/products?category=face" },
     { label: "Hair Care", href: "/products?category=hair-care" },
-    { label: "Skin Care", href: "/products?category=skin-care" },
-    { label: "Beauty Products", href: "/products?category=beauty-products" },
+    { label: "Body Care", href: "/products?category=body-care" },
+    { label: "Eat to Glow", href: "/products?category=food" },
     { label: "Natural Food", href: "/products?category=natural-food" },
-    { label: "Wellness", href: "/products?category=wellness" },
+    { label: "Svayam Collections", href: "/products?collection=soundarya" },
   ],
   company: [
     { label: "Radiance Rituals", href: "/radiance-rituals" },

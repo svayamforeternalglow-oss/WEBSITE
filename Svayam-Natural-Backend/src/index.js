@@ -10,6 +10,17 @@ import startCronJobs from './utils/cronJobs.js';
 // Load env vars
 dotenv.config();
 
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET'];
+const missingRequiredEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+
+if (missingRequiredEnvVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingRequiredEnvVars.join(', ')}`);
+}
+
+if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+  console.warn('[Startup] RAZORPAY_WEBHOOK_SECRET is missing. Razorpay webhook events will be rejected.');
+}
+
 // Connect to database
 connectDB();
 

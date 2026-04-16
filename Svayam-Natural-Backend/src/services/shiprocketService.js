@@ -4,6 +4,8 @@ const SHIPROCKET_BASE = 'https://apiv2.shiprocket.in/v1/external';
 
 let cachedToken = null;
 let tokenExpiry = 0;
+const DEFAULT_TIMEOUT_MS = Number(process.env.SHIPROCKET_TIMEOUT_MS || 10000);
+const DEFAULT_RETRY_COUNT = Number(process.env.SHIPROCKET_RETRY_COUNT || 2);
 
 /**
  * Shiprocket API Service
@@ -14,6 +16,44 @@ class ShiprocketService {
   get isEnabled() {
     return process.env.SHIPROCKET_ENABLED === 'true';
   }
+
+  extractDocumentUrl(payload, preferredKeys = []) {
+    if (!payload || typeof payload !== 'object') {
+      return '';
+    }
+
+    const keys = [
+      ...preferredKeys,
+      'label_url',
+      'invoice_url',
+      'manifest_url',
+      'pdf_url',
+      'url',
+    ];
+
+    const containers = [
+      payload,
+      payload.data,
+      payload.response,
+      payload.response?.data,
+      payload.response?.label,
+      payload.response?.invoice,
+      payload.response?.manifest,
+      payload.result,
+    ].filter(Boolean);
+
+    for (const container of containers) {
+      for (const key of keys) {
+        const value = container?.[key];
+        if (typeof value === 'string' && value.trim()) {
+          return value.trim();
+        }
+      }
+    }
+
+    return '';
+  }
+
   async getToken() {
     if (cachedToken && Date.now() < tokenExpiry) {
       return cachedToken;
@@ -41,26 +81,49 @@ class ShiprocketService {
       return this._mockResponse(endpoint, data);
     }
 
-    try {
-      const token = await this.getToken();
-      const config = {
-        method,
-        url: `${SHIPROCKET_BASE}${endpoint}`,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      if (data) config.data = data;
+    for (let attempt = 0; attempt <= DEFAULT_RETRY_COUNT; attempt += 1) {
+      try {
+        const token = await this.getToken();
+        const config = {
+          method,
+          url: `${SHIPROCKET_BASE}${endpoint}`,
+          timeout: DEFAULT_TIMEOUT_MS,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        };
+        if (data) config.data = data;
 
-      const response = await axios(config);
-      return response.data;
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || err.response?.data?.errors || err.message;
-      console.error(`Shiprocket API Error [${endpoint}]:`, errorMsg);
-      // Re-throw so controllers can handle or report it
-      throw new Error(errorMsg);
+        const response = await axios(config);
+        return response.data;
+      } catch (err) {
+        const status = err.response?.status;
+        const errorMsg = err.response?.data?.message || err.response?.data?.errors || err.message;
+        const isTimeout = err.code === 'ECONNABORTED';
+        const isAuthFailure = status === 401 || status === 403;
+        const isRetriable = isTimeout || !status || status >= 500 || status === 429;
+        const hasNextAttempt = attempt < DEFAULT_RETRY_COUNT;
+
+        if (isAuthFailure && hasNextAttempt) {
+          cachedToken = null;
+          tokenExpiry = 0;
+          continue;
+        }
+
+        if (isRetriable && hasNextAttempt) {
+          continue;
+        }
+
+        console.error(`Shiprocket API Error [${endpoint}]:`, errorMsg);
+        const wrappedError = new Error(typeof errorMsg === 'string' ? errorMsg : 'Shiprocket request failed');
+        wrappedError.statusCode = status || (isTimeout ? 504 : 502);
+        wrappedError.code = 'SHIPROCKET_REQUEST_FAILED';
+        throw wrappedError;
+      }
     }
+
+    throw new Error('Shiprocket request failed after retries');
   }
 
   /**
@@ -118,6 +181,24 @@ class ShiprocketService {
   }
 
   /**
+   * Generate shipping invoice for a Shiprocket order.
+   */
+  async generateInvoice(shiprocketOrderId) {
+    const normalizedId = Number(shiprocketOrderId);
+    const ids = Number.isFinite(normalizedId) ? [normalizedId] : [shiprocketOrderId];
+
+    try {
+      return await this.request('post', '/orders/print/invoice', { ids });
+    } catch (error) {
+      // Compatibility fallback for payload variants in older API responses.
+      if (error?.statusCode && error.statusCode < 500) {
+        return this.request('post', '/orders/print/invoice', { order_ids: ids });
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Generate manifest for shipments.
    */
   async generateManifest(shipmentIds) {
@@ -164,8 +245,15 @@ class ShiprocketService {
     }
     if (endpoint.includes('/courier/generate/label')) {
       return {
-        label_url: '',
+        label_url: `https://mock.shiprocket.local/label/${data?.shipment_id?.[0] || 'unknown'}.pdf`,
         response: 'Mock label generated',
+      };
+    }
+    if (endpoint.includes('/orders/print/invoice')) {
+      const invoiceId = data?.ids?.[0] || data?.order_ids?.[0] || 'unknown';
+      return {
+        invoice_url: `https://mock.shiprocket.local/invoice/${invoiceId}.pdf`,
+        response: 'Mock invoice generated',
       };
     }
     if (endpoint.includes('/manifests/generate')) {

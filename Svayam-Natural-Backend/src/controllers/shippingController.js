@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import shiprocket from '../services/shiprocketService.js';
+import { getOrderState, ORDER_STATES, transitionOrder } from '../services/orderStateMachine.js';
 
 // @desc    Track order
 // @route   GET /api/v1/shipping/track/:orderId
@@ -7,17 +9,40 @@ import shiprocket from '../services/shiprocketService.js';
 export const trackOrder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    
-    let order;
-    if (orderId.length === 24) {
-      order = await Order.findById(orderId);
-    } else {
-      const orders = await Order.find({});
-      order = orders.find(o => o._id.toString().endsWith(orderId));
+
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({ success: false, message: 'Invalid order ID format' });
     }
+
+    const order = await Order.findById(orderId);
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.user) {
+      const authenticatedUser = req.user;
+      if (!authenticatedUser) {
+        return res.status(401).json({ success: false, message: 'Please login to track this order' });
+      }
+
+      const isOwner = order.user.toString() === authenticatedUser._id.toString();
+      const isAdmin = authenticatedUser.role === 'admin';
+
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
+      }
+    } else {
+      const providedEmail = (req.query.email || '').trim().toLowerCase();
+      const orderEmail = (order.shippingAddress?.email || '').trim().toLowerCase();
+
+      if (!providedEmail) {
+        return res.status(400).json({ success: false, message: 'Email is required for guest tracking' });
+      }
+
+      if (!orderEmail || providedEmail !== orderEmail) {
+        return res.status(403).json({ success: false, message: 'Order ID and email do not match' });
+      }
     }
 
     // If we have an AWB code, try to get live tracking from Shiprocket
@@ -66,7 +91,7 @@ export const trackOrder = async (req, res) => {
     const responseData = {
       order: {
         orderId: order._id.toString(),
-        status: order.trackingStatus ? order.trackingStatus.toLowerCase() : 'pending',
+        status: getOrderState(order).toLowerCase(),
         tracking: {
           carrier: order.courierName || 'Standard Delivery',
           trackingNumber: order.awbCode || order.trackingNumber || '',
@@ -112,6 +137,26 @@ export const createShipment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
+    if (!order.isPaid && order.paymentStatus?.status !== 'Completed') {
+      return res.status(400).json({ success: false, message: 'Cannot create shipment for unpaid order' });
+    }
+
+    const currentState = getOrderState(order);
+    if (currentState === ORDER_STATES.SHIPPED || currentState === ORDER_STATES.DELIVERED) {
+      return res.status(400).json({ success: false, message: 'Shipment already created for this order' });
+    }
+
+    if (currentState === ORDER_STATES.PAID) {
+      transitionOrder(order, ORDER_STATES.PROCESSING);
+    }
+
+    if (getOrderState(order) !== ORDER_STATES.PROCESSING) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order must be in Processing state before shipment creation',
+      });
+    }
+
     // Create Shiprocket order (or mock)
     const srResult = await shiprocket.createOrder(order);
     
@@ -125,27 +170,58 @@ export const createShipment = async (req, res) => {
       try {
         awbResult = await shiprocket.generateAWB(srResult.shipment_id);
         const awbData = awbResult?.response?.data;
-        if (awbData) {
-          order.awbCode = awbData.awb_code || '';
+        if (awbData?.awb_code) {
+          order.awbCode = awbData.awb_code;
           order.courierName = awbData.courier_name || 'Courier';
+        } else {
+          return res.status(502).json({
+            success: false,
+            message: 'AWB generation failed. Keep order in Processing and retry shipment.',
+          });
         }
       } catch (err) {
         console.error('AWB generation error:', err.message);
-        // Fallback to mock AWB
-        order.awbCode = `AWB-${Math.floor(Math.random() * 1000000000)}`;
-        order.courierName = 'Standard Delivery';
+        return res.status(502).json({
+          success: false,
+          message: 'AWB generation failed. Keep order in Processing and retry shipment.',
+        });
       }
     }
 
-    // If no AWB was set, use mock
     if (!order.awbCode) {
-      order.awbCode = `AWB-${Math.floor(Math.random() * 1000000000)}`;
-      order.courierName = 'Standard Delivery';
+      return res.status(502).json({
+        success: false,
+        message: 'Shipment is not ready yet. AWB missing.',
+      });
     }
 
-    order.trackingStatus = 'Shipped';
+    // Auto-generate label and invoice documents (non-blocking for shipment state).
+    if (!order.labelUrl) {
+      try {
+        const labelResult = await shiprocket.generateLabel(order.shiprocketShipmentId);
+        const labelUrl = shiprocket.extractDocumentUrl(labelResult, ['label_url']);
+        if (labelUrl) {
+          order.labelUrl = labelUrl;
+        }
+      } catch (labelErr) {
+        console.error('Label generation error:', labelErr.message);
+      }
+    }
+
+    if (!order.shiprocketInvoiceUrl && order.shiprocketOrderId) {
+      try {
+        const invoiceResult = await shiprocket.generateInvoice(order.shiprocketOrderId);
+        const invoiceUrl = shiprocket.extractDocumentUrl(invoiceResult, ['invoice_url']);
+        if (invoiceUrl) {
+          order.shiprocketInvoiceUrl = invoiceUrl;
+        }
+      } catch (invoiceErr) {
+        console.error('Invoice generation error:', invoiceErr.message);
+      }
+    }
+
+    transitionOrder(order, ORDER_STATES.SHIPPED);
     order.trackingNumber = order.awbCode;
-    order.shippedAt = Date.now();
 
     await order.save();
 
@@ -179,11 +255,13 @@ export const createShipment = async (req, res) => {
           shipmentId: order.shiprocketShipmentId,
           awbCode: order.awbCode,
           courierName: order.courierName,
+          labelUrl: order.labelUrl || '',
+          invoiceUrl: order.shiprocketInvoiceUrl || '',
         }
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 };
 
@@ -207,7 +285,7 @@ export const getShippingLabel = async (req, res) => {
     }
 
     const result = await shiprocket.generateLabel(order.shiprocketShipmentId);
-    const labelUrl = result?.label_url || '';
+    const labelUrl = shiprocket.extractDocumentUrl(result, ['label_url']);
     
     if (labelUrl) {
       order.labelUrl = labelUrl;
@@ -215,6 +293,38 @@ export const getShippingLabel = async (req, res) => {
     }
 
     res.json({ success: true, data: { labelUrl } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get shipping invoice for order
+// @route   GET /api/v1/shipping/invoice/:orderId
+// @access  Private/Admin
+export const getShippingInvoice = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (!order.shiprocketOrderId) {
+      return res.status(400).json({ success: false, message: 'No Shiprocket order found. Create shipment first.' });
+    }
+
+    if (order.shiprocketInvoiceUrl) {
+      return res.json({ success: true, data: { invoiceUrl: order.shiprocketInvoiceUrl } });
+    }
+
+    const result = await shiprocket.generateInvoice(order.shiprocketOrderId);
+    const invoiceUrl = shiprocket.extractDocumentUrl(result, ['invoice_url']);
+
+    if (invoiceUrl) {
+      order.shiprocketInvoiceUrl = invoiceUrl;
+      await order.save();
+    }
+
+    res.json({ success: true, data: { invoiceUrl } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

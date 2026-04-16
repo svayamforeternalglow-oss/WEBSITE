@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import { transitionOrder, ORDER_STATES, CANCELLATION_REASONS } from '../services/orderStateMachine.js';
 
 const startCronJobs = () => {
   // Run every 15 minutes
@@ -19,9 +20,10 @@ const startCronJobs = () => {
         console.log(`[Cron] Found ${unpaidOrders.length} unpaid orders to cancel.`);
         
         for (const order of unpaidOrders) {
-          // Cancel the order
-          order.trackingStatus = 'Cancelled';
-          order.paymentStatus.status = 'Failed (Timeout)';
+          // Cancel timed-out orders through the transition machine.
+          transitionOrder(order, ORDER_STATES.CANCELLED, {
+            reason: CANCELLATION_REASONS.TIMEOUT,
+          });
           await order.save();
 
           // Restore inventory

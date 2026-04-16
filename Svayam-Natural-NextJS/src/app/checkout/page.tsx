@@ -43,14 +43,13 @@ interface OrderResponse {
   };
 }
 
-interface VerifyResponse {
-  success: boolean;
-  data: {
-    orderId: string;
-    orderNumber: string;
-    status: string;
-  };
-}
+const generateIdempotencyKey = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `idem_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -104,8 +103,14 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (loading) {
+      return;
+    }
+
     setLoading(true);
     try {
+      const idempotencyKey = generateIdempotencyKey();
+
       const cartItems = items.map((i) => ({ 
         product: i.productId,
         productId: i.productId,
@@ -127,17 +132,23 @@ export default function CheckoutPage() {
       // If authenticated, use private endpoint, otherwise use guest endpoint
       const endpoint = isAuthenticated ? '/orders' : '/orders/guest/create';
       const body = isAuthenticated
-        ? { orderItems: cartItems, shippingAddress, paymentMethod: 'Razorpay', totalAmount: getTotal() }
-        : { items: cartItems, shippingAddress };
+        ? { orderItems: cartItems, shippingAddress, paymentMethod: 'Razorpay', totalAmount: getTotal(), idempotencyKey }
+        : { items: cartItems, shippingAddress, idempotencyKey };
 
-      const response = await api.post<any>(endpoint, body, token || undefined);
+      const response = await api.post<OrderResponse>(
+        endpoint,
+        body,
+        token || undefined,
+        { 'x-idempotency-key': idempotencyKey }
+      );
       
       const data = response.data || response;
+      const orderRef = data.orderNumber || data.orderId;
 
       await openRazorpayCheckout({
-        orderId: data.orderNumber || data._id,
-        razorpayOrderId: data.razorpayOrderId || (data.paymentStatus && data.paymentStatus.razorpayOrderId),
-        amount: data.amount || data.totalAmount,
+        orderId: orderRef,
+        razorpayOrderId: data.razorpayOrderId,
+        amount: data.amount,
         razorpayKeyId: data.razorpayKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SSZQo0ldhC6rPT',
         customerName: shipping.fullName,
         customerEmail: shipping.email,
@@ -145,18 +156,24 @@ export default function CheckoutPage() {
         onSuccess: async (razorpayResponse) => {
           try {
             const verifyEndpoint = isAuthenticated ? '/orders/verify-payment' : '/orders/guest/verify-payment';
-            await api.post<any>(verifyEndpoint, {
+            await api.post<{ success: boolean; message?: string }>(verifyEndpoint, {
               razorpayOrderId: razorpayResponse.razorpay_order_id,
               razorpayPaymentId: razorpayResponse.razorpay_payment_id,
               razorpaySignature: razorpayResponse.razorpay_signature,
+              ...(isAuthenticated ? {} : { guestEmail: shipping.email }),
             }, token || undefined);
 
             clearCart();
             addToast('Payment successful! Order confirmed.', 'success');
-            router.push(`/order-success?order=${data.orderNumber || data._id}`);
+            router.push(`/order-success?order=${orderRef}`);
           } catch (err) {
             console.error("Verification error:", err);
-            addToast('Payment verification failed. Contact support if charged.', 'error', 8000);
+            addToast('Payment captured but confirmation is pending. Redirecting to tracking.', 'warning', 8000);
+            const trackingQuery = new URLSearchParams({
+              id: orderRef,
+              ...(isAuthenticated ? {} : { email: shipping.email }),
+            });
+            router.push(`/track-order?${trackingQuery.toString()}`);
           }
           setLoading(false);
         },
