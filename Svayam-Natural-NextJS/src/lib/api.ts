@@ -1,4 +1,10 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+
+if (!API_BASE) {
+  throw new Error('NEXT_PUBLIC_API_URL is not defined');
+}
+
+const API_BASE_URL = API_BASE.replace(/\/$/, '');
 
 interface RequestOptions {
   method?: string;
@@ -23,7 +29,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     config.body = JSON.stringify(body);
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, config);
+  const res = await fetch(`${API_BASE_URL}${endpoint}`, config);
   const data = await res.json();
 
   if (!res.ok) {
@@ -51,7 +57,7 @@ export const api = {
 
   /** Fetch blob (e.g. PDF/ZIP) and return as Blob for download */
   getBlob: async (endpoint: string, token?: string): Promise<Blob> => {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     if (!res.ok) {
