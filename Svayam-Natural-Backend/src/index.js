@@ -39,24 +39,28 @@ app.use(helmet({
 // Dynamic CORS configuration
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  process.env.FRONTEND_URL?.replace('https://', 'https://www.'),
-  process.env.FRONTEND_URL?.replace('https://www.', 'https://'),
+  'https://www.svayamnatural.com',
+  'https://svayamnatural.com',
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://checkout.razorpay.com'
-].filter(Boolean).map(url => url.replace(/\/$/, ''));
+].filter(Boolean).map(url => url.replace(/\/$/, '').toLowerCase());
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.indexOf(origin + '/') !== -1) {
+
+    const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+
+    if (allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
-      callback(null, new Error('Not allowed by CORS'));
+      console.log('[CORS] Blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key']
 }));
 
 // Rate limiting
