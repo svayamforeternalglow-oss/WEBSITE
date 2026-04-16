@@ -36,32 +36,47 @@ app.use(helmet({
   contentSecurityPolicy: false, // API doesn't need CSP, and it can interfere with some gateways
 }));
 
-// Dynamic CORS configuration
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  'https://www.svayamnatural.com',
-  'https://svayamnatural.com',
-  'http://localhost:3000',
-  'http://localhost:3001',
-].filter(Boolean).map(url => url.replace(/\/$/, '').toLowerCase());
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
-
-    if (allowedOrigins.includes(normalizedOrigin)) {
-      callback(null, true);
-    } else {
-      console.log('[CORS] Blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+const corsBaseOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key'],
+};
+
+// Temporary diagnostics toggle: set CORS_OPEN=true to allow all origins.
+const isCorsOpenMode = process.env.CORS_OPEN === 'true';
+
+if (isCorsOpenMode) {
+  console.warn('[CORS] OPEN mode enabled. All origins are temporarily allowed.');
+  app.use(cors({
+    ...corsBaseOptions,
+    origin: true,
+  }));
+} else {
+  // Dynamic CORS configuration
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'https://www.svayamnatural.com',
+    'https://svayamnatural.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ].filter(Boolean).map(url => url.replace(/\/$/, '').toLowerCase());
+
+  app.use(cors({
+    ...corsBaseOptions,
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        callback(null, true);
+      } else {
+        console.log('[CORS] Blocked origin:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+  }));
+}
 
 // Rate limiting
 const limiter = rateLimit({
