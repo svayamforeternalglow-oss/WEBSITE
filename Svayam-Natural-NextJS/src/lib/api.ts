@@ -1,11 +1,8 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-const API_BASE_FALLBACK = process.env.NEXT_PUBLIC_API_URL_FALLBACK;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim();
+const API_BASE_FALLBACK = process.env.NEXT_PUBLIC_API_URL_FALLBACK?.trim();
+const PRODUCTION_API_BASE_FALLBACK = 'https://api.svayamnatural.com/api/v1';
 
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL is not defined');
-}
-
-const API_BASE_URL = API_BASE.replace(/\/$/, '');
+const API_BASE_URL = API_BASE ? API_BASE.replace(/\/$/, '') : null;
 const API_BASE_FALLBACK_URL = API_BASE_FALLBACK ? API_BASE_FALLBACK.replace(/\/$/, '') : null;
 
 interface ErrorResponse {
@@ -18,6 +15,34 @@ const normalizeEndpoint = (endpoint: string): string =>
 
 const buildUrl = (baseUrl: string, endpoint: string): string =>
   `${baseUrl}${normalizeEndpoint(endpoint)}`;
+
+const getUrlHost = (value: string): string | null => {
+  try {
+    return new URL(value).host.toLowerCase();
+  } catch {
+    return null;
+  }
+};
+
+const isStorefrontProductionHost = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return /(^|\.)svayamnatural\.com$/i.test(window.location.hostname);
+};
+
+const getPrimaryApiBaseUrl = (): string => {
+  if (API_BASE_URL) {
+    return API_BASE_URL;
+  }
+
+  if (isStorefrontProductionHost()) {
+    return PRODUCTION_API_BASE_FALLBACK;
+  }
+
+  throw new Error('NEXT_PUBLIC_API_URL is not defined');
+};
 
 const isNetworkError = (error: unknown): boolean => {
   if (error instanceof TypeError) {
@@ -45,6 +70,48 @@ const extractErrorMessage = (payload: unknown, fallback: string): string => {
   return fallback;
 };
 
+const hasHeader = (headers: Record<string, string>, target: string): boolean =>
+  Object.keys(headers).some((name) => name.toLowerCase() === target.toLowerCase());
+
+const canRetryWithFallback = (method: string): boolean => {
+  const normalizedMethod = method.toUpperCase();
+
+  if (normalizedMethod === 'GET' || normalizedMethod === 'HEAD' || normalizedMethod === 'OPTIONS') {
+    return true;
+  }
+
+  return false;
+};
+
+const getFallbackBaseUrl = (primaryBaseUrl: string, method: string): string | null => {
+  if (!API_BASE_FALLBACK_URL) {
+    return null;
+  }
+
+  if (!canRetryWithFallback(method)) {
+    return null;
+  }
+
+  // In production storefront traffic, do not auto-hop to a different host.
+  if (isStorefrontProductionHost()) {
+    const primaryHost = getUrlHost(primaryBaseUrl);
+    const fallbackHost = getUrlHost(API_BASE_FALLBACK_URL);
+    if (primaryHost && fallbackHost && primaryHost !== fallbackHost) {
+      return null;
+    }
+  }
+
+  return API_BASE_FALLBACK_URL;
+};
+
+const logFallbackSkip = (reason: string, details: Record<string, string>): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  console.warn('[API] Fallback retry skipped', { reason, ...details });
+};
+
 interface RequestOptions {
   method?: string;
   body?: unknown;
@@ -70,24 +137,41 @@ async function requestWithBase<T>(
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, token, headers = {} } = options;
 
-  const config: RequestInit = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+  const requestHeaders: Record<string, string> = {
+    ...headers,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  if (body) {
+  if (typeof body !== 'undefined' && !hasHeader(requestHeaders, 'Content-Type')) {
+    requestHeaders['Content-Type'] = 'application/json';
+  }
+
+  const config: RequestInit = {
+    method,
+    headers: requestHeaders,
+  };
+
+  if (typeof body !== 'undefined') {
     config.body = JSON.stringify(body);
   }
 
+  const primaryBaseUrl = getPrimaryApiBaseUrl();
+  const fallbackBaseUrl = getFallbackBaseUrl(primaryBaseUrl, method);
+
   try {
-    return await requestWithBase<T>(API_BASE_URL, endpoint, config);
+    return await requestWithBase<T>(primaryBaseUrl, endpoint, config);
   } catch (error) {
-    if (API_BASE_FALLBACK_URL && isNetworkError(error)) {
-      return requestWithBase<T>(API_BASE_FALLBACK_URL, endpoint, config);
+    if (fallbackBaseUrl && isNetworkError(error)) {
+      return requestWithBase<T>(fallbackBaseUrl, endpoint, config);
+    }
+
+    if (API_BASE_FALLBACK_URL && isNetworkError(error) && !fallbackBaseUrl) {
+      logFallbackSkip('policy_blocked', {
+        method: method.toUpperCase(),
+        endpoint: normalizeEndpoint(endpoint),
+        primaryBaseUrl,
+        fallbackBaseUrl: API_BASE_FALLBACK_URL,
+      });
     }
 
     throw error;
@@ -112,6 +196,9 @@ export const api = {
 
   /** Fetch blob (e.g. PDF/ZIP) and return as Blob for download */
   getBlob: async (endpoint: string, token?: string): Promise<Blob> => {
+    const primaryBaseUrl = getPrimaryApiBaseUrl();
+    const fallbackBaseUrl = getFallbackBaseUrl(primaryBaseUrl, 'GET');
+
     const config: RequestInit = {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     };
@@ -126,10 +213,19 @@ export const api = {
     };
 
     try {
-      return await fetchBlob(API_BASE_URL);
+      return await fetchBlob(primaryBaseUrl);
     } catch (error) {
-      if (API_BASE_FALLBACK_URL && isNetworkError(error)) {
-        return fetchBlob(API_BASE_FALLBACK_URL);
+      if (fallbackBaseUrl && isNetworkError(error)) {
+        return fetchBlob(fallbackBaseUrl);
+      }
+
+      if (API_BASE_FALLBACK_URL && isNetworkError(error) && !fallbackBaseUrl) {
+        logFallbackSkip('policy_blocked', {
+          method: 'GET',
+          endpoint: normalizeEndpoint(endpoint),
+          primaryBaseUrl,
+          fallbackBaseUrl: API_BASE_FALLBACK_URL,
+        });
       }
 
       throw error;

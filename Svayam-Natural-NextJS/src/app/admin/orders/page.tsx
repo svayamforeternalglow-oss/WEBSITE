@@ -278,7 +278,7 @@ export default function AdminOrdersPage() {
             if (dateFrom) params.set('dateFrom', dateFrom);
             if (dateTo) params.set('dateTo', dateTo);
             if (statusFilter) params.set('status', statusFilter);
-            const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/admin/export/phones?${params}`;
+            const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://api.svayamnatural.com/api/v1'}/admin/export/phones?${params}`;
             const a = document.createElement('a');
             a.href = url;
             a.download = 'customer-phones.csv';
