@@ -24,7 +24,18 @@ export default function AdminDevLayout({ children }: { children: React.ReactNode
         }`}
       >
         <div className="flex items-center justify-between border-b border-gold/10 px-6 py-5">
-          <Image src="/Svayam_Logo1.png" alt="Svayam Natural" width={140} height={48} className="h-10 w-auto" />
+          <Link href="/" className="inline-flex">
+            <span className="relative block h-[36px] w-[132px] overflow-hidden">
+              <Image
+                src="/main_logo.png"
+                alt="Svayam Natural"
+                fill
+                sizes="132px"
+                className="object-cover object-center"
+                priority
+              />
+            </span>
+          </Link>
           <button onClick={() => setSidebarOpen(false)} className="text-sand/50 hover:text-sand lg:hidden">
             ✕
           </button>

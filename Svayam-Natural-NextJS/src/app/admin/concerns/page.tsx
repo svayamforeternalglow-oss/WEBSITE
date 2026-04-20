@@ -402,7 +402,7 @@ export default function AdminConcernsPage() {
                       <div key={p._id} className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
                         <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border border-neutral-200">
                           <img
-                            src={p.images?.[0] || '/images/placeholder.jpg'}
+                            src={p.images?.[0] || '/images/All-Products.jpeg'}
                             alt={p.title}
                             className="h-full w-full object-cover"
                           />
@@ -453,7 +453,7 @@ export default function AdminConcernsPage() {
                     <div key={p._id} className="flex items-center gap-3 rounded-lg border border-neutral-200 px-3 py-2 hover:bg-neutral-50 transition-colors">
                       <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border border-neutral-200">
                         <img
-                          src={p.images?.[0] || '/images/placeholder.jpg'}
+                          src={p.images?.[0] || '/images/All-Products.jpeg'}
                           alt={p.title}
                           className="h-full w-full object-cover"
                         />

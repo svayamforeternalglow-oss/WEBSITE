@@ -273,7 +273,7 @@ export default function AdminProductsPage() {
               filtered.map((product) => {
                 const title = product.title || product.name || 'Unnamed Product';
                 const stock = product.inventory !== undefined ? product.inventory : (product.stock || 0);
-                const image = product.images && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg';
+                const image = product.images && product.images.length > 0 ? product.images[0] : '/images/All-Products.jpeg';
                 
                 return (
                   <tr key={product._id} className={`border-b border-neutral-200 transition-colors hover:bg-neutral-100/50 ${product.isActive === false ? 'opacity-50' : ''}`}>

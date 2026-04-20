@@ -21,6 +21,22 @@ if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
   console.warn('[Startup] RAZORPAY_WEBHOOK_SECRET is missing. Razorpay webhook events will be rejected.');
 }
 
+const isShiprocketEnabled = process.env.SHIPROCKET_ENABLED === 'true';
+if (isShiprocketEnabled) {
+  const shiprocketRequiredEnvVars = ['SHIPROCKET_EMAIL', 'SHIPROCKET_PASSWORD'];
+  const missingShiprocketEnvVars = shiprocketRequiredEnvVars.filter((key) => !process.env[key]);
+
+  if (missingShiprocketEnvVars.length > 0) {
+    throw new Error(`SHIPROCKET_ENABLED=true but missing environment variables: ${missingShiprocketEnvVars.join(', ')}`);
+  }
+
+  if (!process.env.SHIPROCKET_PICKUP_LOCATION) {
+    console.warn('[Startup] SHIPROCKET_PICKUP_LOCATION is missing. Falling back to "Primary".');
+  }
+} else {
+  console.warn('[Startup] Shiprocket integration is disabled (SHIPROCKET_ENABLED is not "true"). Shipping calls will run in mock mode.');
+}
+
 // Connect to database
 connectDB();
 

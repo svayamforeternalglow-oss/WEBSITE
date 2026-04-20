@@ -77,7 +77,7 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
       price: bp.price,
       originalPrice: bp.originalPrice,
       inventory: bp.inventory,
-      image: bp.images?.[0] || '/images/placeholder.jpg',
+      image: bp.images?.[0] || '/images/All-Products.jpeg',
       images: bp.images || [],
       category: bp.category,
       concern: bp.concern,

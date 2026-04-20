@@ -142,6 +142,14 @@ export const createShipment = async (req, res) => {
     }
 
     const currentState = getOrderState(order);
+    console.info('[Shipping] createShipment requested', {
+      orderId: order._id.toString(),
+      currentState,
+      isPaid: order.isPaid,
+      paymentStatus: order.paymentStatus?.status || 'Unknown',
+      shiprocketEnabled: shiprocket.isEnabled,
+    });
+
     if (currentState === ORDER_STATES.SHIPPED || currentState === ORDER_STATES.DELIVERED) {
       return res.status(400).json({ success: false, message: 'Shipment already created for this order' });
     }
@@ -163,6 +171,11 @@ export const createShipment = async (req, res) => {
     // Store Shiprocket IDs
     order.shiprocketOrderId = srResult.order_id?.toString() || '';
     order.shiprocketShipmentId = srResult.shipment_id?.toString() || '';
+    console.info('[Shipping] Shiprocket order created', {
+      orderId: order._id.toString(),
+      shiprocketOrderId: order.shiprocketOrderId || null,
+      shiprocketShipmentId: order.shiprocketShipmentId || null,
+    });
 
     // Generate AWB (assign courier)
     let awbResult = null;
@@ -180,15 +193,25 @@ export const createShipment = async (req, res) => {
           });
         }
       } catch (err) {
-        console.error('AWB generation error:', err.message);
+        console.error('[Shipping] AWB generation error', {
+          orderId: order._id.toString(),
+          shiprocketShipmentId: order.shiprocketShipmentId || null,
+          statusCode: err.statusCode || null,
+          code: err.code || null,
+          message: err.message,
+        });
         return res.status(502).json({
           success: false,
-          message: 'AWB generation failed. Keep order in Processing and retry shipment.',
+          message: `AWB generation failed: ${err.message}. Keep order in Processing and retry shipment.`,
         });
       }
     }
 
     if (!order.awbCode) {
+      console.error('[Shipping] AWB missing after Shiprocket assignment', {
+        orderId: order._id.toString(),
+        shiprocketShipmentId: order.shiprocketShipmentId || null,
+      });
       return res.status(502).json({
         success: false,
         message: 'Shipment is not ready yet. AWB missing.',
@@ -204,7 +227,13 @@ export const createShipment = async (req, res) => {
           order.labelUrl = labelUrl;
         }
       } catch (labelErr) {
-        console.error('Label generation error:', labelErr.message);
+        console.error('[Shipping] Label generation error', {
+          orderId: order._id.toString(),
+          shiprocketShipmentId: order.shiprocketShipmentId || null,
+          statusCode: labelErr.statusCode || null,
+          code: labelErr.code || null,
+          message: labelErr.message,
+        });
       }
     }
 
@@ -216,7 +245,13 @@ export const createShipment = async (req, res) => {
           order.shiprocketInvoiceUrl = invoiceUrl;
         }
       } catch (invoiceErr) {
-        console.error('Invoice generation error:', invoiceErr.message);
+        console.error('[Shipping] Invoice generation error', {
+          orderId: order._id.toString(),
+          shiprocketOrderId: order.shiprocketOrderId || null,
+          statusCode: invoiceErr.statusCode || null,
+          code: invoiceErr.code || null,
+          message: invoiceErr.message,
+        });
       }
     }
 
@@ -224,6 +259,12 @@ export const createShipment = async (req, res) => {
     order.trackingNumber = order.awbCode;
 
     await order.save();
+    console.info('[Shipping] Shipment created successfully', {
+      orderId: order._id.toString(),
+      shiprocketOrderId: order.shiprocketOrderId || null,
+      shiprocketShipmentId: order.shiprocketShipmentId || null,
+      awbCode: order.awbCode || null,
+    });
 
     // Send shipping email
     try {

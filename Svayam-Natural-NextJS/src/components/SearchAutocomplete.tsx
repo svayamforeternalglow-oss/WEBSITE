@@ -151,7 +151,7 @@ export default function SearchAutocomplete({
           }
         }}
         onKeyDown={handleKeyDown}
-        className="w-full rounded-full border border-neutral-300 bg-white px-6 py-3 pl-12 text-sm outline-none transition-all focus:border-gold focus:shadow-[0_0_0_3px_rgba(194,162,93,0.1)]"
+        className="h-10 w-full rounded-full border border-neutral-300 bg-white px-6 py-0 pl-12 text-sm outline-none transition-all focus:border-gold focus:shadow-[0_0_0_3px_rgba(194,162,93,0.1)] md:h-12"
         role="combobox"
         aria-expanded={showDropdown}
         aria-autocomplete="list"

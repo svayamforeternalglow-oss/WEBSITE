@@ -6,6 +6,23 @@ let cachedToken = null;
 let tokenExpiry = 0;
 const DEFAULT_TIMEOUT_MS = Number(process.env.SHIPROCKET_TIMEOUT_MS || 10000);
 const DEFAULT_RETRY_COUNT = Number(process.env.SHIPROCKET_RETRY_COUNT || 2);
+let hasWarnedMockMode = false;
+
+const summarizeErrorPayload = (payload) => {
+  if (!payload) {
+    return '';
+  }
+
+  if (typeof payload === 'string') {
+    return payload.slice(0, 500);
+  }
+
+  try {
+    return JSON.stringify(payload).slice(0, 500);
+  } catch {
+    return '[unserializable payload]';
+  }
+};
 
 /**
  * Shiprocket API Service
@@ -61,25 +78,61 @@ class ShiprocketService {
 
     if (!this.isEnabled) return 'mock-token';
 
+    const email = (process.env.SHIPROCKET_EMAIL || '').trim();
+    const password = process.env.SHIPROCKET_PASSWORD;
+
+    if (!email || !password) {
+      const configError = new Error('Shiprocket credentials are missing. Check SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD.');
+      configError.statusCode = 500;
+      configError.code = 'SHIPROCKET_CONFIG_ERROR';
+      throw configError;
+    }
+
     try {
       const response = await axios.post(`${SHIPROCKET_BASE}/auth/login`, {
-        email: process.env.SHIPROCKET_EMAIL,
-        password: process.env.SHIPROCKET_PASSWORD,
+        email,
+        password,
+      }, {
+        timeout: DEFAULT_TIMEOUT_MS,
       });
+
+      if (!response.data?.token) {
+        const tokenError = new Error('Shiprocket login succeeded but token is missing in response');
+        tokenError.statusCode = 502;
+        tokenError.code = 'SHIPROCKET_TOKEN_MISSING';
+        throw tokenError;
+      }
 
       cachedToken = response.data.token;
       tokenExpiry = Date.now() + 9 * 24 * 60 * 60 * 1000; // 9 days
       return cachedToken;
     } catch (err) {
-      console.error('Shiprocket Login Error:', err.response?.data?.message || err.message);
+      const status = err.response?.status || err.statusCode;
+      const payloadSummary = summarizeErrorPayload(err.response?.data);
+      console.error(`[Shiprocket] Login failed (status: ${status || 'n/a'})`, payloadSummary || err.message);
+
+      if ((status === 401 || status === 403) && !err.code) {
+        const authError = new Error('Shiprocket authentication failed. Check SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD.');
+        authError.statusCode = status;
+        authError.code = 'SHIPROCKET_AUTH_FAILED';
+        throw authError;
+      }
+
       throw err;
     }
   }
 
   async request(method, endpoint, data = null) {
     if (!this.isEnabled) {
+      if (!hasWarnedMockMode) {
+        console.warn('[Shiprocket] SHIPROCKET_ENABLED is not "true". Returning mock responses for shipping endpoints.');
+        hasWarnedMockMode = true;
+      }
       return this._mockResponse(endpoint, data);
     }
+
+    const methodName = method.toUpperCase();
+    const totalAttempts = DEFAULT_RETRY_COUNT + 1;
 
     for (let attempt = 0; attempt <= DEFAULT_RETRY_COUNT; attempt += 1) {
       try {
@@ -98,32 +151,47 @@ class ShiprocketService {
         const response = await axios(config);
         return response.data;
       } catch (err) {
-        const status = err.response?.status;
+        const status = err.response?.status || err.statusCode;
         const errorMsg = err.response?.data?.message || err.response?.data?.errors || err.message;
         const isTimeout = err.code === 'ECONNABORTED';
         const isAuthFailure = status === 401 || status === 403;
         const isRetriable = isTimeout || !status || status >= 500 || status === 429;
         const hasNextAttempt = attempt < DEFAULT_RETRY_COUNT;
+        const payloadSummary = summarizeErrorPayload(err.response?.data);
 
         if (isAuthFailure && hasNextAttempt) {
+          console.warn(`[Shiprocket] ${methodName} ${endpoint} auth failed on attempt ${attempt + 1}/${totalAttempts}. Refreshing token and retrying.`);
           cachedToken = null;
           tokenExpiry = 0;
           continue;
         }
 
         if (isRetriable && hasNextAttempt) {
+          console.warn(`[Shiprocket] ${methodName} ${endpoint} failed on attempt ${attempt + 1}/${totalAttempts}. Retrying.`, {
+            status: status || 'n/a',
+            reason: typeof errorMsg === 'string' ? errorMsg : summarizeErrorPayload(errorMsg),
+          });
           continue;
         }
 
-        console.error(`Shiprocket API Error [${endpoint}]:`, errorMsg);
-        const wrappedError = new Error(typeof errorMsg === 'string' ? errorMsg : 'Shiprocket request failed');
+        const normalizedMessage = typeof errorMsg === 'string' ? errorMsg : summarizeErrorPayload(errorMsg) || 'Shiprocket request failed';
+        console.error(`[Shiprocket] ${methodName} ${endpoint} failed after ${attempt + 1}/${totalAttempts} attempt(s).`, {
+          status: status || 'n/a',
+          message: normalizedMessage,
+          payload: payloadSummary || undefined,
+        });
+
+        const wrappedError = new Error(normalizedMessage);
         wrappedError.statusCode = status || (isTimeout ? 504 : 502);
-        wrappedError.code = 'SHIPROCKET_REQUEST_FAILED';
+        wrappedError.code = isAuthFailure ? 'SHIPROCKET_AUTH_FAILED' : 'SHIPROCKET_REQUEST_FAILED';
+        wrappedError.endpoint = endpoint;
+        wrappedError.method = methodName;
+        wrappedError.details = payloadSummary;
         throw wrappedError;
       }
     }
 
-    throw new Error('Shiprocket request failed after retries');
+    throw new Error(`Shiprocket request failed after retries: ${methodName} ${endpoint}`);
   }
 
   /**

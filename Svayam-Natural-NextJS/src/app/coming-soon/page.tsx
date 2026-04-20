@@ -9,15 +9,17 @@ export default function ComingSoonPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-forest p-6 text-center">
-      <Link href="/" className="mb-12">
-        <Image
-          src="/Svayam_Logo4.png"
-          alt="Svayam Natural"
-          width={280}
-          height={98}
-          className="h-12 w-auto brightness-0 invert sm:h-16"
-          priority
-        />
+      <Link href="/" className="mb-12 inline-flex">
+        <span className="relative block h-[48px] w-[176px] overflow-hidden sm:h-[58px] sm:w-[212px]">
+          <Image
+            src="/main_logo.png"
+            alt="Svayam Natural"
+            fill
+            sizes="(max-width: 639px) 176px, 212px"
+            className="object-cover object-center"
+            priority
+          />
+        </span>
       </Link>
 
       <div className="mx-auto w-full max-w-lg rounded-2xl border border-gold/20 bg-forest-dark/50 p-10 pb-12 shadow-2xl backdrop-blur">

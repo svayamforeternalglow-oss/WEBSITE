@@ -1,39 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   InstagramIcon,
   FacebookIcon,
   TwitterIcon,
-  ArrowRightIcon,
 } from "./icons";
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.svayamnatural.com/api/v1';
+const API = process.env.NEXT_PUBLIC_API_URL || "https://api.svayamnatural.com/api/v1";
 
-const footerLinks = {
-  shop: [
-    { label: "Face", href: "/products?category=face" },
-    { label: "Hair Care", href: "/products?category=hair-care" },
-    { label: "Body Care", href: "/products?category=body-care" },
-    { label: "Eat to Glow", href: "/products?category=food" },
-    { label: "Natural Food", href: "/products?category=natural-food" },
-    { label: "Svayam Collections", href: "/products?collection=soundarya" },
-  ],
-  company: [
-    { label: "Radiance Rituals", href: "/radiance-rituals" },
-    { label: "About Us", href: "/#about" },
-    { label: "Our Philosophy", href: "/#about" },
-    { label: "Contact", href: "/#contact" },
-  ],
-  support: [
-    { label: "Shipping Policy", href: "/shipping-policy" },
-    { label: "Returns & Refunds", href: "/returns-refunds" },
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms of Service", href: "/terms-of-service" },
-  ],
-};
+const FOOTER_LINKS = [
+  { label: "Sustainability", href: "/radiance-rituals" },
+  { label: "Shipping", href: "/shipping-policy" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Contact", href: "/#contact" },
+];
 
 // WhatsApp SVG icon component
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -52,168 +34,65 @@ const DEFAULT_SOCIALS = [
 ];
 
 export default function Footer() {
-  const pathname = usePathname();
-  const isLight = pathname === "/products/chandraprabha-night-nectar";
   const [socials, setSocials] = useState(DEFAULT_SOCIALS);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch(`${API}/site-config`);
-        if (!res.ok) throw new Error('API not available');
-        const ct = res.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) throw new Error('Not JSON');
+        if (!res.ok) throw new Error("API not available");
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) throw new Error("Not JSON");
         const data = await res.json();
         if (data.success) {
           const map = data.data.map;
-          setSocials(DEFAULT_SOCIALS.map(s => ({
+          setSocials(DEFAULT_SOCIALS.map((s) => ({
             ...s,
             href: map[s.configKey] || s.href,
           })));
         }
-      } catch { /* keep defaults */ }
+      } catch {
+        // Keep defaults when remote config is unavailable.
+      }
     })();
   }, []);
 
+  const visibleSocials = socials.filter((social) => social.href && social.href !== "#");
+
   return (
-    <footer
-      className={`relative overflow-hidden ${isLight ? "bg-white" : "bg-forest"}`}
-    >
-      {/* Top decorative line */}
-      <div
-        className={`h-[1px] bg-gradient-to-r from-transparent to-transparent ${
-          isLight ? "via-neutral-300" : "via-gold/25"
-        }`}
-      />
+    <footer className="border-t border-forest-dark bg-forest">
+      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
+        <div className="flex flex-col items-center gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <p className="text-center text-[11px] font-medium uppercase tracking-[0.14em] text-sand/80 lg:text-left">
+            &copy; {new Date().getFullYear()} Svayam Natural. Consciously crafted.
+          </p>
 
-      {/* Subtle glow */}
-      <div
-        className={`pointer-events-none absolute -top-40 left-1/2 h-80 w-[600px] -translate-x-1/2 rounded-full blur-[100px] ${
-          isLight ? "bg-gold/[0.03]" : "bg-gold/[0.02]"
-        }`}
-      />
-
-      <div className="relative mx-auto max-w-7xl px-6 py-20 lg:px-10">
-        <div className="grid grid-cols-1 gap-y-12 gap-x-8 text-center sm:grid-cols-2 sm:text-left lg:grid-cols-4">
-
-          {/* Link columns */}
-          {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title} className="flex w-full flex-col items-center sm:items-start gap-4">
-              <h3
-                className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${
-                  isLight ? "text-forest" : "text-gold/70"
-                }`}
+          <nav className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2" aria-label="Footer links">
+            {FOOTER_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-[11px] font-medium uppercase tracking-[0.14em] text-sand/70 transition-colors duration-200 hover:text-gold"
               >
-                {title}
-              </h3>
-              <ul className="flex flex-col items-center sm:items-start gap-3">
-                {links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className={`group inline-flex items-center gap-0 text-sm py-1.5 transition-all duration-300 hover:gap-2 ${
-                        isLight
-                          ? "text-clay-light hover:text-forest"
-                          : "text-sand/35 hover:text-sand/70"
-                      }`}
-                    >
-                      {link.label}
-                      <ArrowRightIcon className="h-3 w-3 opacity-0 transition-all duration-300 group-hover:opacity-50" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                {link.label}
+              </Link>
+            ))}
+          </nav>
 
-          {/* Newsletter hint */}
-          <div className="flex w-full flex-col items-center sm:items-start gap-4 sm:max-w-none">
-            <h3
-              className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${
-                isLight ? "text-forest" : "text-gold/70"
-              }`}
-            >
-              Stay Updated
-            </h3>
-            <p
-              className={`text-sm leading-relaxed ${
-                isLight ? "text-clay-light" : "text-sand/35"
-              }`}
-            >
-              Be the first to know about new products, rituals, and exclusive
-              offers.
-            </p>
-            <div className="flex w-full">
-              <input
-                type="email"
-                placeholder="Your email"
-                className={`w-full rounded-l-lg border px-4 py-2.5 text-sm outline-none transition-colors ${
-                  isLight
-                    ? "border-neutral-300 bg-neutral-100 text-forest placeholder:text-clay-light/60 focus:border-gold/50"
-                    : "border-sand/10 bg-sand/[0.04] text-sand/70 placeholder:text-sand/25 focus:border-gold/30"
-                }`}
-              />
-              <button
-                className={`flex items-center justify-center rounded-r-lg px-4 transition-colors ${
-                  isLight
-                    ? "bg-gold/15 text-gold-dark hover:bg-gold/25"
-                    : "bg-gold/20 text-gold hover:bg-gold/30"
-                }`}
+          <div className="flex items-center justify-center gap-2.5">
+            {visibleSocials.map((social) => (
+              <a
+                key={social.label}
+                href={social.href}
+                aria-label={social.label}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-sand/20 text-sand/75 transition-colors duration-200 hover:border-gold/60 hover:bg-sand/5 hover:text-gold"
               >
-                <ArrowRightIcon className="h-4 w-4" />
-              </button>
-            </div>
+                <social.icon className="h-[15px] w-[15px]" />
+              </a>
+            ))}
           </div>
-        </div>
-
-        {/* Tagline — below grid, wraps on small screens */}
-        <p className="mt-14 text-center">
-          <span className={`font-accent text-lg italic ${isLight ? "text-clay" : "text-gold/60"}`}>
-            Where Nature Meets Tradition
-          </span>
-          <span className={`mx-2 ${isLight ? "text-clay-light" : "text-sand/35"}`}>—</span>
-          <span className={`text-sm leading-relaxed ${isLight ? "text-clay-light" : "text-sand/35"}`}>
-            Handcrafted Ayurvedic products made with ethically sourced ingredients, rooted in centuries of Indian wellness wisdom.
-          </span>
-        </p>
-
-        {/* Social links — centered below tagline */}
-        <div className="mt-6 flex justify-center gap-3">
-          {socials.filter(s => s.href && s.href !== '#').map((social) => (
-            <a
-              key={social.label}
-              href={social.href}
-              aria-label={social.label}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 hover:-translate-y-0.5 ${
-                isLight
-                  ? "border-neutral-300 text-clay-light hover:border-gold/50 hover:text-gold-dark"
-                  : "border-sand/10 text-sand/40 hover:border-gold/50 hover:text-gold hover:shadow-[0_4px_20px_rgba(194,162,93,0.15)]"
-              }`}
-            >
-              <social.icon className="h-[18px] w-[18px]" />
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom bar */}
-      <div
-        className={`border-t ${isLight ? "border-neutral-300" : "border-sand/[0.06]"}`}
-      >
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-5 text-center sm:flex-row lg:px-10">
-          <p
-            className={`text-xs ${isLight ? "text-clay-light" : "text-sand/25"}`}
-          >
-            &copy; {new Date().getFullYear()} Svayam Natural. All rights
-            reserved.
-          </p>
-          <p
-            className={`text-xs ${isLight ? "text-clay-light/60" : "text-sand/20"}`}
-          >
-            Crafted with care in India
-          </p>
         </div>
       </div>
     </footer>

@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
 import { api } from '@/lib/api';
@@ -51,6 +52,18 @@ export default function LoginPage() {
     <section className="flex min-h-screen items-center justify-center bg-forest px-6">
       <div className="w-full max-w-md">
         <div className="mb-10 text-center">
+          <Link href="/" className="mx-auto mb-6 inline-flex">
+            <span className="relative block h-[46px] w-[168px] overflow-hidden">
+              <Image
+                src="/main_logo.png"
+                alt="Svayam Natural"
+                fill
+                sizes="168px"
+                className="object-cover object-center"
+                priority
+              />
+            </span>
+          </Link>
           <h1 className="font-heading text-2xl font-bold text-sand">Sign In</h1>
           <p className="mt-2 text-sm text-sand/50">Welcome to Svayam Natural</p>
         </div>
@@ -86,7 +99,7 @@ export default function LoginPage() {
           </button>
           
           <p className="text-center text-sm text-sand/60">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/signup" className="text-gold hover:underline">
               Sign Up
             </Link>

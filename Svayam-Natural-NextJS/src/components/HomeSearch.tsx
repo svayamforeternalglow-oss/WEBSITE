@@ -16,7 +16,7 @@ export default function HomeSearch() {
   };
 
   return (
-    <div className="w-full bg-cream/30 pb-4 pt-3 px-4 md:pt-6 md:pb-6 md:px-8 border-b border-gold/10">
+    <div className="w-full border-b border-gold/10 bg-cream/30 px-4 py-2 md:px-8 md:py-2.5">
       <div className="mx-auto max-w-7xl flex flex-col items-center justify-center">
         <form onSubmit={handleSearchSubmit} className="w-full flex justify-center">
           <SearchAutocomplete

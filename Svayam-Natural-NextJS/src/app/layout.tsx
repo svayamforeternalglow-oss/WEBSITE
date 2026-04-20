@@ -30,6 +30,8 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
+const ICON_VERSION = "20260417-2";
+
 export const metadata: Metadata = {
   title: {
     default: "Svayam Natural — Premium Ayurvedic Beauty & Wellness",
@@ -37,6 +39,16 @@ export const metadata: Metadata = {
   },
   description:
     "Discover handcrafted Ayurvedic beauty, skincare, and wellness products made with nature's finest ingredients. Premium quality, pure tradition.",
+  icons: {
+    icon: [
+      { url: `/favicon-16x16.png?v=${ICON_VERSION}`, sizes: "16x16", type: "image/png" },
+      { url: `/favicon-32x32.png?v=${ICON_VERSION}`, sizes: "32x32", type: "image/png" },
+      { url: `/favicon-48x48.png?v=${ICON_VERSION}`, sizes: "48x48", type: "image/png" },
+      { url: `/favicon.ico?v=${ICON_VERSION}`, sizes: "any" },
+    ],
+    shortcut: [{ url: `/favicon.ico?v=${ICON_VERSION}` }],
+    apple: [{ url: `/apple-touch-icon.png?v=${ICON_VERSION}`, sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

@@ -44,7 +44,7 @@ export default function ShopByConcern() {
             return {
               ...concern,
               slug: normalizedSlug,
-              image: concern.image || imageMap.get(normalizedSlug) || '/images/placeholder.jpg',
+              image: concern.image || imageMap.get(normalizedSlug) || '/images/All-Products.jpeg',
             };
           });
 
@@ -88,7 +88,7 @@ export default function ShopByConcern() {
                 >
                   <div className="relative h-[110px] w-[110px] sm:h-[130px] sm:w-[130px] lg:h-[120px] lg:w-[120px] xl:h-[145px] xl:w-[145px] rounded-[32px] overflow-hidden bg-white shadow-[0_4px_15px_rgb(0,0,0,0.05)] transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_12px_30px_rgb(0,0,0,0.12)]">
                     <Image
-                      src={concern.image || '/images/placeholder.jpg'}
+                      src={concern.image || '/images/All-Products.jpeg'}
                       alt={concern.name}
                       fill
                       sizes="(max-width: 768px) 110px, 145px"

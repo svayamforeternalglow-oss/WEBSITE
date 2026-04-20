@@ -13,21 +13,47 @@ import {
 
 // Helper: Auto-generate Shiprocket Shipment
 async function autoGenerateShipment(order) {
+  const orderId = order?._id?.toString?.() || String(order?._id || 'unknown');
+
   try {
+    console.info('[OrderAutoShip] Starting shipment automation', {
+      orderId,
+      currentState: getOrderState(order),
+      isPaid: order.isPaid,
+      paymentStatus: order.paymentStatus?.status || 'Unknown',
+      shiprocketEnabled: shiprocket.isEnabled,
+    });
+
     if (!order.shiprocketShipmentId) {
       const srResult = await shiprocket.createOrder(order);
       order.shiprocketOrderId = srResult.order_id?.toString() || order.shiprocketOrderId || '';
       order.shiprocketShipmentId = srResult.shipment_id?.toString() || '';
+
+      console.info('[OrderAutoShip] Shiprocket order created', {
+        orderId,
+        shiprocketOrderId: order.shiprocketOrderId || null,
+        shiprocketShipmentId: order.shiprocketShipmentId || null,
+      });
     }
 
     if (!order.shiprocketShipmentId) {
+      console.error('[OrderAutoShip] Shiprocket shipment ID missing after createOrder', { orderId });
       throw createHttpError('Shiprocket shipment creation failed. Try again.', 502);
     }
 
     if (!order.awbCode) {
+      console.info('[OrderAutoShip] Generating AWB', {
+        orderId,
+        shiprocketShipmentId: order.shiprocketShipmentId,
+      });
+
       const awbResult = await shiprocket.generateAWB(order.shiprocketShipmentId);
       const awbData = awbResult?.response?.data;
       if (!awbData?.awb_code) {
+        console.error('[OrderAutoShip] AWB missing in Shiprocket response', {
+          orderId,
+          shiprocketShipmentId: order.shiprocketShipmentId,
+        });
         throw createHttpError('AWB generation failed. Keep order in processing and retry.', 502);
       }
 
@@ -43,7 +69,13 @@ async function autoGenerateShipment(order) {
           order.labelUrl = labelUrl;
         }
       } catch (labelErr) {
-        console.error('Auto label generation error:', labelErr.message);
+        console.error('[OrderAutoShip] Auto label generation error', {
+          orderId,
+          shiprocketShipmentId: order.shiprocketShipmentId || null,
+          statusCode: labelErr.statusCode || null,
+          code: labelErr.code || null,
+          message: labelErr.message,
+        });
       }
     }
 
@@ -55,11 +87,22 @@ async function autoGenerateShipment(order) {
           order.shiprocketInvoiceUrl = invoiceUrl;
         }
       } catch (invoiceErr) {
-        console.error('Auto invoice generation error:', invoiceErr.message);
+        console.error('[OrderAutoShip] Auto invoice generation error', {
+          orderId,
+          shiprocketOrderId: order.shiprocketOrderId || null,
+          statusCode: invoiceErr.statusCode || null,
+          code: invoiceErr.code || null,
+          message: invoiceErr.message,
+        });
       }
     }
   } catch (err) {
-    console.error(`Auto Shiprocket Error [OrderId: ${order._id}]:`, err.message);
+    console.error('[OrderAutoShip] Automation failed', {
+      orderId,
+      statusCode: err.statusCode || null,
+      code: err.code || null,
+      message: err.message,
+    });
     if (!err.statusCode) {
       err.statusCode = 502;
     }
@@ -71,6 +114,13 @@ async function autoGenerateShipment(order) {
   }
 
   order.trackingNumber = order.awbCode;
+
+  console.info('[OrderAutoShip] Automation completed', {
+    orderId,
+    shiprocketOrderId: order.shiprocketOrderId || null,
+    shiprocketShipmentId: order.shiprocketShipmentId || null,
+    awbCode: order.awbCode || null,
+  });
 
   return order;
 }
@@ -238,7 +288,7 @@ export const addOrderItems = async (req, res) => {
         finalItems.push({
           name: product.title,
           qty,
-          image: product.images[0] || '/images/placeholder.jpg',
+          image: product.images[0] || '/images/All-Products.jpeg',
           price: product.price,
           product: product._id
         });
@@ -953,7 +1003,7 @@ export const createGuestOrder = async (req, res) => {
       orderItems.push({
         name: product.title,
         qty,
-        image: product.images[0] || '/images/placeholder.jpg',
+        image: product.images[0] || '/images/All-Products.jpeg',
         price: product.price,
         product: product._id
       });

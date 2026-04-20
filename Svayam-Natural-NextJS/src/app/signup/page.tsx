@@ -48,7 +48,18 @@ export default function SignupPage() {
     <section className="flex min-h-screen items-center justify-center bg-forest px-6">
       <div className="w-full max-w-md">
         <div className="mb-10 text-center">
-          <Image src="/Svayam_Logo1.png" alt="Svayam Natural" width={200} height={70} className="mx-auto mb-6 h-14 w-auto" />
+          <Link href="/" className="mx-auto mb-6 inline-flex">
+            <span className="relative block h-[48px] w-[176px] overflow-hidden">
+              <Image
+                src="/main_logo.png"
+                alt="Svayam Natural"
+                fill
+                sizes="176px"
+                className="object-cover object-center"
+                priority
+              />
+            </span>
+          </Link>
           <h1 className="font-heading text-2xl font-bold text-sand">Create Account</h1>
           <p className="mt-2 text-sm text-sand/50">Join Svayam Natural today</p>
         </div>

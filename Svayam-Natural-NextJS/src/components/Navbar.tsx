@@ -144,11 +144,11 @@ export default function Navbar() {
         }`}
       />
 
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-5 lg:px-8 lg:py-0.5">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-[2px] sm:px-5 lg:px-8">
         {/* Mobile Left: Hamburger + Logo */}
-        <div className="flex items-center gap-2 lg:hidden">
+        <div className="flex items-center gap-1 lg:hidden">
           <button
-            className="relative flex h-10 w-10 items-center justify-center -ml-2"
+            className="relative -ml-1 flex h-9 w-9 items-center justify-center"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -160,33 +160,31 @@ export default function Navbar() {
             </div>
           </button>
 
-          <Link href="/" className="flex min-h-[40px] items-center gap-1.5" aria-label="Svayam Natural - Home">
-            <Image
-              src="/Svayam_Logo4.png"
-              alt=""
-              width={140}
-              height={49}
-              className="h-7 w-auto transition-all duration-300"
-              priority
-            />
-            <span className={`block font-heading text-[16px] font-bold tracking-wider ${solid ? 'text-forest' : 'text-sand'}`}>
-              Svayam Natural
+          <Link href="/" className="flex items-center leading-none" aria-label="Svayam Natural - Home">
+            <span className="relative block h-[30px] w-[120px] overflow-hidden sm:h-[32px] sm:w-[130px]">
+              <Image
+                src="/main_logo.png"
+                alt="Svayam Natural"
+                fill
+                sizes="(max-width: 639px) 120px, 130px"
+                className="object-cover object-center transition-all duration-300"
+                priority
+              />
             </span>
           </Link>
         </div>
 
         {/* Desktop Logo */}
-        <Link href="/" className="hidden lg:flex min-h-[44px] flex-shrink-0 items-center gap-2" aria-label="Svayam Natural - Home">
-          <Image
-            src="/Svayam_Logo4.png"
-            alt=""
-            width={420}
-            height={147}
-            className="h-12 w-auto max-w-none"
-            priority
-          />
-          <span className={`block font-heading text-xl font-bold tracking-wider ${solid ? 'text-forest' : 'text-sand'}`}>
-            Svayam Natural
+        <Link href="/" className="hidden lg:flex flex-shrink-0 items-center leading-none" aria-label="Svayam Natural - Home">
+          <span className="relative block h-[48px] w-[174px] overflow-hidden xl:h-[54px] xl:w-[196px]">
+            <Image
+              src="/main_logo.png"
+              alt="Svayam Natural"
+              fill
+              sizes="(max-width: 1279px) 174px, 196px"
+              className="object-cover object-center"
+              priority
+            />
           </span>
         </Link>
 
@@ -364,15 +362,17 @@ export default function Navbar() {
         }`}
       >
         {/* Header: logo (same position as navbar) + close */}
-        <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 sm:px-5">
-          <Link href="/" onClick={() => setMobileOpen(false)} className="flex min-h-[44px] flex-shrink-0 items-center">
-            <Image
-              src="/Svayam_Logo4.png"
-              alt=""
-              width={420}
-              height={147}
-              className="h-10 w-auto max-w-[180px] brightness-0 invert sm:h-12 sm:max-w-[220px]"
-            />
+        <div className="flex flex-shrink-0 items-center justify-between px-4 py-[2px] sm:px-5">
+          <Link href="/" onClick={() => setMobileOpen(false)} className="flex flex-shrink-0 items-center leading-none">
+            <span className="relative block h-[43px] w-[147px] overflow-hidden sm:h-[48px] sm:w-[167px]">
+              <Image
+                src="/main_logo.png"
+                alt="Svayam Natural"
+                fill
+                sizes="(max-width: 639px) 147px, 167px"
+                className="object-cover object-center brightness-0 invert"
+              />
+            </span>
           </Link>
           <button
             onClick={() => setMobileOpen(false)}
