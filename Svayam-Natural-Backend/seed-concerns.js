@@ -19,7 +19,7 @@ const concerns = [
   { name: "Night Care", slug: "night-care", image: "/images/chandraprabha-night-necter.png" },
   { name: "Oil & Acne Control", slug: "oil-acne-control", image: "/images/concerns/acne-blemishes.png" },
   { name: "Dry Skin", slug: "dry-skin", image: "/images/concerns/skin-hydration.png" },
-  { name: "Glow & Radiance", slug: "glow-radiance", image: "/images/tejasamrit.png" },
+  { name: "Glow & Radiance", slug: "glow-radiance", image: "/images/concerns/skin-brightening.png" },
 ];
 
 async function seed() {
