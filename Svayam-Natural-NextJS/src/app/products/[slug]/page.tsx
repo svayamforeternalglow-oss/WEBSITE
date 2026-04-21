@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { products, getProductBySlug as getStaticProduct } from "@/lib/products";
+import { products, getCategoryDisplayName, getProductBySlug as getStaticProduct } from "@/lib/products";
 import { fetchProductBySlug } from "@/lib/productApi";
 import StorySection from "@/components/StorySection";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
@@ -97,7 +97,7 @@ export default async function ProductPage({
           {/* Product Info */}
           <div className="lg:order-1">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-clay">
-              {product.category.replace(/-/g, " ")}
+              {getCategoryDisplayName(product.category)}
             </p>
             <h1 className="mb-4 font-heading text-4xl font-bold text-forest md:text-5xl lg:text-6xl">
               {product.name}

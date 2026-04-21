@@ -8,5 +8,8 @@ export default function ConditionalFooter() {
   if (pathname?.startsWith("/admin") || pathname?.startsWith("/admindev")) {
     return null;
   }
-  return <Footer />;
+
+  const isChandraprabhaPage = pathname?.startsWith("/products/chandraprabha-night-nectar");
+
+  return <Footer variant={isChandraprabhaPage ? "light" : "forest"} />;
 }

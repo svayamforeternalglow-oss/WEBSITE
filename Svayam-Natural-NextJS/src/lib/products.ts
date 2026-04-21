@@ -30,6 +30,10 @@ export const CATEGORY_THEMES: Record<string, ProductTheme> = {
   'wellness': 'wellness',
 };
 
+export const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
+  'skin-care': 'Face Care',
+};
+
 export const products: Product[] = [
   {
     slug: 'kesh-samraksha',
@@ -311,8 +315,8 @@ export const products: Product[] = [
     originalPrice: 599,
     weight: '200g',
     sku: 'SN-NF-GKD-200',
-    image: '/images/gulkand/1.jpeg',
-    images: ['/images/gulkand/1.jpeg', '/images/gulkand/2.jpeg'],
+    image: '/images/gulkand/1.png',
+    images: ['/images/gulkand/1.png', '/images/gulkand/2.jpeg'],
     badges: ['Sun-Cured', 'Natural Coolant', 'No Preservatives', 'Traditional Recipe'],
     concerns: [],
     ingredients: [
@@ -365,18 +369,18 @@ export const products: Product[] = [
   { slug: 'royal-bathing-kit', name: 'Royal bathing kit', tagline: 'Luxury bath ritual', description: 'Premium bathing essentials.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-KIT-RB', image: '/images/Royal-Bathing-Kit.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'autea', name: 'Autea', tagline: 'Ayurvedic wellness tea', description: 'Natural wellness tea blend.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-AUT', image: '/images/autea/AUTEA_HERO.png', images: ['/images/autea/AUTEA_HERO.png', '/images/autea/1.jpeg', '/images/autea/2.jpeg'], badges: [], ingredients: [], benefits: [] },
   { slug: 'face-polishing-scrub', name: 'Face polishing scrub', tagline: 'Gentle exfoliation', description: 'Face scrub for smooth, glowing skin.', story: '', category: 'skin-care', theme: 'skincare', price: 0, originalPrice: 0, weight: '', sku: 'SN-SC-FPS', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'tarunya-rose-toner', name: 'Tarunya Rose Toner', tagline: 'Refreshing rose toner', description: 'Gentle rose toner for balanced skin.', story: '', category: 'skin-care', theme: 'skincare', price: 0, originalPrice: 0, weight: '', sku: 'SN-SC-TRT', image: '/images/tarunya-toner.png', badges: [], ingredients: [], benefits: [] },
+  { slug: 'tarunya-rose-toner', name: 'Tarunya Rose Toner', tagline: 'Refreshing rose toner', description: 'Gentle rose toner for balanced skin.', story: '', category: 'skin-care', theme: 'skincare', price: 0, originalPrice: 0, weight: '', sku: 'SN-SC-TRT', image: '/images/tarunya-Rose-toner.png', badges: [], ingredients: [], benefits: [] },
   { slug: 'kumkumadi-lip-balm', name: 'Kumkumadi lip balm', tagline: 'Luxury lip care', description: 'Nourishing lip balm with Kumkumadi.', story: '', category: 'beauty-products', theme: 'beauty', price: 0, originalPrice: 0, weight: '', sku: 'SN-BP-KLB', image: '/images/kumkumadi-lip-balm.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'abhyanga-natural-soap', name: 'Abhyanga Natural soap', tagline: 'Traditional cleansing', description: 'Natural soap for body care.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-ANS', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'snehchandan-natural-soap', name: 'Snehchandan natural soap', tagline: 'Sandalwood luxury', description: 'Sandalwood-infused natural soap.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-SNS', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
+  { slug: 'abhyanga-natural-soap', name: 'Abhyanga Natural soap', tagline: 'Traditional cleansing', description: 'Natural soap for body care.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-ANS', image: '/images/Abhyanga Natural Soap.jpeg', badges: [], ingredients: [], benefits: [] },
+  { slug: 'snehchandan-natural-soap', name: 'Snehchandan natural soap', tagline: 'Sandalwood luxury', description: 'Sandalwood-infused natural soap.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-SNS', image: '/images/Snehchandan Natural Soap.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'soumya-touch-of-silk', name: 'Soumya – The touch of silk', tagline: 'Silky body care', description: 'Luxurious body care formulation.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-STS', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'mango-body-butter', name: 'Mango body butter', tagline: 'Tropical nourishment', description: 'Rich mango body butter.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-MBB', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'kayashuddhi-abhyanga-body-oil', name: 'Kayashuddhi abhyanga body oil', tagline: 'Purifying body oil', description: 'Detoxifying body massage oil.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-KAB', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
+  { slug: 'mango-body-butter', name: 'Mango body butter', tagline: 'Tropical nourishment', description: 'Rich mango body butter.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-MBB', image: '/images/Mango Body Butter.jpeg', badges: [], ingredients: [], benefits: [] },
+  { slug: 'kayashuddhi-abhyanga-body-oil', name: 'Kayashuddhi abhyanga body oil', tagline: 'Purifying body oil', description: 'Detoxifying body massage oil.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-KAB', image: '/images/Kayashuddhi Abhyanga Body Oil.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'triphala-natural-soap', name: 'Triphala Natural Soap', tagline: 'Purifying cleanse', description: 'Triphala-infused natural soap.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-TNS', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'keshvardhini-hair-oil', name: 'Keshvardhini hair oil', tagline: 'Hair growth elixir', description: 'Traditional hair oil for growth.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-KVO', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
-  { slug: 'bhruhshakti-roll-on', name: 'Bhruhshakti roll on', tagline: 'Eyebrow care', description: 'Natural eyebrow roll-on.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-BSR', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
+  { slug: 'keshvardhini-hair-oil', name: 'Keshvardhini hair oil', tagline: 'Hair growth elixir', description: 'Traditional hair oil for growth.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-KVO', image: '/images/Keshvardhini Hair Oil.jpeg', badges: [], ingredients: [], benefits: [] },
+  { slug: 'bhruhshakti-roll-on', name: 'Bhruhshakti roll on', tagline: 'Eyebrow care', description: 'Natural eyebrow roll-on.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-BSR', image: '/images/Bhruhshakti Roll On.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'kesh-shuddhi', name: 'Kesh shuddhi', tagline: 'Scalp cleansing', description: 'Scalp cleansing formulation.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-KSH', image: '/images/shudhi/1.jpeg', images: ['/images/shudhi/1.jpeg', '/images/shudhi/2.jpeg', '/images/shudhi/3.jpeg'], badges: [], ingredients: [], benefits: [] },
-  { slug: 'swarnahairdra-turmeric', name: 'Swarnahairdra Stone grounded 100% pure turmeric', tagline: 'Pure turmeric', description: 'Stone-ground pure turmeric powder.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-SHT', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
+  { slug: 'swarnahairdra-turmeric', name: 'Swarnahairdra Stone grounded 100% pure turmeric', tagline: 'Pure turmeric', description: 'Stone-ground pure turmeric powder.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-SHT', image: '/images/Swarnahairdra Turmeric Powder (400gms).jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'sonamoti-wheat', name: "Sonamoti Wheat – Nature's Gift", tagline: 'Natural wheat', description: 'Premium wheat product.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-SMW', image: '/images/tejasamrit.png', badges: [], ingredients: [], benefits: [] },
 ];
 
@@ -394,12 +398,16 @@ export function getThemeForCategory(category: string): ProductTheme {
   return CATEGORY_THEMES[category] || 'herbal';
 }
 
+export function getCategoryDisplayName(category: string): string {
+  return CATEGORY_DISPLAY_NAMES[category] || category.replace(/-/g, ' ');
+}
+
 /** Category filter options for All Products page. */
 export const PRODUCTS_PAGE_CATEGORIES = [
   { id: "all", label: "All Products", slugs: [] },
   { id: "kits", label: "Best Selling Kits", slugs: ["complete-radiance-kit", "hair-care-kit", "tejasamrit-golden-latte-family-pack", "royal-bathing-kit", "autea", "tejasamrit"] },
-  { id: "face", label: "Face", slugs: ["chandraprabha-night-nectar", "suryakanti-day-cream", "lavanyam-facepack", "face-polishing-scrub", "tarunya-rose-toner"] },
-  { id: "lip-balm", label: "Lip Balm", slugs: ["kumkumadi-lip-balm", "rose-lip-balm"] },
+  { id: "face", label: "Face Care", slugs: ["chandraprabha-night-nectar", "suryakanti-day-cream", "lavanyam-facepack", "face-polishing-scrub", "tarunya-rose-toner"] },
+  { id: "lip-balm", label: "Lip Care", slugs: ["kumkumadi-lip-balm", "rose-lip-balm"] },
   { id: "hair-care", label: "Hair Care", slugs: ["keshvardhini-hair-oil", "hibiscus-hair-gel", "bhruhshakti-roll-on", "kesh-shuddhi", "kesh-samraksha"] },
   { id: "body-care", label: "Body Care", slugs: ["abhyanga-natural-soap", "snehchandan-natural-soap", "abhyanga-udvartana", "soumya-touch-of-silk", "mango-body-butter", "kayashuddhi-abhyanga-body-oil", "triphala-natural-soap", "glowup-night-gel"] },
   { id: "food", label: "Eat to Glow", slugs: ["tejasamrit", "autea", "gulkand"] },
@@ -444,16 +452,14 @@ export const CONCERN_QUERY_ALIASES: Record<string, string> = {
 };
 
 export const CONCERN_ROUTE_PRODUCTS: Record<string, string[]> = {
-  pigmentation: ['lavanyam-facepack', 'suryakanti-day-cream', 'chandraprabha-night-nectar'],
-  'anti-ageing': ['suryakanti-day-cream', 'chandraprabha-night-nectar', 'tarunya-rose-toner', 'tejasamrit'],
-  'hair-fall': ['kesh-samraksha', 'kesh-shuddhi', 'keshvardhini-hair-oil'],
-  'hair-growth': ['kesh-samraksha', 'kesh-shuddhi', 'keshvardhini-hair-oil', 'hibiscus-hair-gel'],
-  'day-care': ['suryakanti-day-cream', 'tarunya-rose-toner', 'soumya-touch-of-silk'],
-  'night-care': ['chandraprabha-night-nectar', 'glowup-night-gel', 'tejasamrit'],
-  'dry-skin': ['lavanyam-facepack', 'rose-lip-balm', 'soumya-touch-of-silk', 'abhyanga-udvartana'],
-  'glow-radiance': ['tejasamrit', 'autea', 'gulkand', 'lavanyam-facepack', 'suryakanti-day-cream', 'chandraprabha-night-nectar'],
-  'dull-damaged-hair': ['kesh-samraksha', 'kesh-shuddhi', 'keshvardhini-hair-oil', 'hibiscus-hair-gel'],
-  'oil-acne-control': ['glowup-night-gel', 'tarunya-rose-toner', 'lavanyam-facepack'],
+  pigmentation: ['chandraprabha-night-nectar', 'suryakanti-day-cream', 'tejasamrit', 'tarunya-rose-toner', 'lavanyam-facepack'],
+  'anti-ageing': ['face-polishing-scrub', 'lavanyam-facepack', 'chandraprabha-night-nectar', 'suryakanti-day-cream', 'tejasamrit', 'autea'],
+  'dry-skin': ['soumya-touch-of-silk', 'kayashuddhi-abhyanga-body-oil', 'abhyanga-udvartana', 'abhyanga-natural-soap', 'snehchandan-natural-soap', 'triphala-natural-soap'],
+  'hair-fall': ['hibiscus-hair-gel', 'kesh-samraksha', 'kesh-shuddhi', 'keshvardhini-hair-oil'],
+  'dull-damaged-hair': ['hibiscus-hair-gel', 'kesh-samraksha', 'keshvardhini-hair-oil', 'kesh-shuddhi'],
+  'night-care': ['tejasamrit', 'chandraprabha-night-nectar', 'tarunya-rose-toner'],
+  'day-care': ['autea', 'tarunya-rose-toner', 'suryakanti-day-cream', 'abhyanga-natural-soap', 'snehchandan-natural-soap', 'triphala-natural-soap'],
+  'glow-radiance': ['tejasamrit-golden-latte-family-pack', 'autea', 'gulkand'],
 };
 
 export const COLLECTION_ROUTE_PRODUCTS: Record<string, string[]> = {

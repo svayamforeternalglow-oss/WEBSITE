@@ -269,14 +269,14 @@ export default function RadianceRitualsPage() {
               },
             ].map((item, i) => (
               <AnimateOnScroll key={item.title} animation="fadeInUp" delay={i * 120}>
-                <div className="group rounded-2xl border border-neutral-300 bg-white p-8 transition-all duration-400 hover:-translate-y-1 hover:border-gold/30 hover:shadow-[0_16px_48px_rgba(194,162,93,0.06)]">
+                <div className="group flex h-full flex-col rounded-2xl border border-neutral-300 bg-white p-8 transition-all duration-400 hover:-translate-y-1 hover:border-gold/30 hover:shadow-[0_16px_48px_rgba(194,162,93,0.06)]">
                   <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-forest/10 bg-forest/[0.04] text-forest transition-all duration-300 group-hover:border-gold/30 group-hover:bg-gold/[0.06] group-hover:text-gold-dark">
                     {item.icon}
                   </div>
                   <h3 className="mb-3 font-heading text-lg font-semibold text-forest">
                     {item.title}
                   </h3>
-                  <p className="text-sm leading-relaxed text-clay-light">
+                  <p className="flex-1 text-sm leading-relaxed text-clay-light">
                     {item.description}
                   </p>
                 </div>

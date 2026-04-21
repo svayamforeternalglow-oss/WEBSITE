@@ -24,7 +24,7 @@ const slides = [
     subtitle: "Nourish From Within",
     title: "Eat To Glow Kit",
     description: "An inner wellness bundle that supports glow, digestion, and daily nourishment.",
-    cta: { label: "Explore Kit", href: "/products/tejasamrit-golden-latte-family-pack" },
+    cta: { label: "Shop Category", href: "/products?category=food" },
   },
   {
     backgroundImage: "/images/Royal-Bathing-Kit.jpeg",
@@ -122,14 +122,23 @@ export default function HeroSlider() {
           loading={current === 0 ? "eager" : "lazy"}
         />
 
-        <div className="absolute inset-0" style={{ background: activeSlide.overlay }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/12" />
+        <div className="absolute inset-0 hidden md:block" style={{ background: activeSlide.overlay }} />
+        <div className="absolute inset-0 md:hidden bg-black/12" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/8 md:from-black/35 md:to-black/12" />
         <div className="pointer-events-none absolute -left-20 top-10 h-60 w-60 rounded-full bg-gold/25 blur-3xl" />
         <div className="pointer-events-none absolute -right-12 bottom-0 h-52 w-52 rounded-full bg-sage/30 blur-3xl" />
 
-        <div className="relative mx-auto flex max-w-[1520px] items-center px-4 sm:px-6 lg:px-10" style={heroHeightStyle}>
+        <Link
+          href={activeSlide.cta.href}
+          aria-label={`${activeSlide.title} - ${activeSlide.cta.label}`}
+          className="absolute inset-0 z-10 md:hidden"
+        >
+          <span className="sr-only">{activeSlide.cta.label}</span>
+        </Link>
+
+        <div className="relative z-10 mx-auto flex max-w-[1520px] items-center px-4 sm:px-6 lg:px-10" style={heroHeightStyle}>
           <div className="flex w-full items-center">
-            <div key={`copy-${activeSlide.title}`} className="max-w-2xl animate-fadeInUp">
+            <div key={`copy-${activeSlide.title}`} className="hidden max-w-2xl animate-fadeInUp md:block">
               <p className="mb-4 inline-flex rounded-full border border-white/35 bg-black/25 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-sand">
                 {activeSlide.subtitle}
               </p>

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@/lib/products";
+import { getCategoryDisplayName, type Product } from "@/lib/products";
 import AddToCartButton from "./AddToCartButton";
 import WishlistButton from "./WishlistButton";
 
@@ -105,7 +105,7 @@ export default function ChandraprabhaPage({ product }: ChandraprabhaPageProps) {
           {/* Product Info */}
           <div className="lg:order-1">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#B0C4DE]/60">
-              {product.category.replace(/-/g, " ")}
+              {getCategoryDisplayName(product.category)}
             </p>
             <h1 className="mb-4 font-heading text-4xl font-bold text-white/90 md:text-5xl lg:text-6xl">
               Chandraprabha Night Nectar

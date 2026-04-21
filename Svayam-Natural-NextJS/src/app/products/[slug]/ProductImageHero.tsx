@@ -44,7 +44,7 @@ export default function ProductImageHero({
                 src={img}
                 alt={`${name} thumbnail ${idx + 1}`}
                 fill
-                className="object-cover"
+                className="object-contain bg-white/80 p-1"
               />
             </button>
           ))}

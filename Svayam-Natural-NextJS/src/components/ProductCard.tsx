@@ -6,6 +6,7 @@ import { ArrowRightIcon, ShoppingBagIcon } from "./icons";
 import WishlistButton from "./WishlistButton";
 import { useCartStore } from "@/lib/cart";
 import { useToastStore } from "@/lib/toast";
+import { getCategoryDisplayName } from "@/lib/products";
 
 export interface ProductCardData {
   slug: string;
@@ -93,7 +94,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         {/* Info */}
         <div className="flex flex-1 flex-col px-1 pb-1">
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-clay-light">
-            {product.category.replace(/-/g, " ")}
+            {getCategoryDisplayName(product.category)}
           </p>
           <h3 className="mb-1.5 font-heading text-lg font-semibold text-forest transition-colors duration-300 group-hover:text-gold-dark">
             {product.name}

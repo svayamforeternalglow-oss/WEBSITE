@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@/lib/products";
+import { getCategoryDisplayName, type Product } from "@/lib/products";
 import AddToCartButton from "./AddToCartButton";
 import WishlistButton from "./WishlistButton";
 
@@ -46,13 +46,13 @@ export default function SuryakantiPage({ product }: SuryakantiPageProps) {
 
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2 lg:px-10">
           {/* Product image */}
-          <div className="relative mx-auto w-full max-w-md lg:order-2">
+          <div className="relative mx-auto w-full max-w-lg lg:order-2">
             <div className="animate-warmGlow relative aspect-square rounded-full">
               <Image
                 src={product.image}
                 alt={product.name}
                 fill
-                className="object-contain drop-shadow-2xl"
+                className="object-contain scale-110 drop-shadow-2xl md:scale-[1.14]"
                 priority
               />
             </div>
@@ -68,7 +68,7 @@ export default function SuryakantiPage({ product }: SuryakantiPageProps) {
           {/* Product info */}
           <div className="lg:order-1">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#8B6914]">
-              {product.category.replace(/-/g, " ")}
+              {getCategoryDisplayName(product.category)}
             </p>
             <h1 className="mb-4 font-heading text-5xl font-bold text-[#3D2B1F] md:text-7xl lg:text-8xl">
               Suryakanti Day Cream

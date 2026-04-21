@@ -64,7 +64,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <section className="flex min-h-[60vh] items-center justify-center bg-neutral-100 pt-28 pb-24">
+      <section className="flex min-h-screen items-center justify-center bg-neutral-100 pt-28 pb-12">
         <div className="text-center">
           <h1 className="mb-2 font-heading text-3xl font-bold text-forest">No items to checkout</h1>
           <p className="mb-8 text-clay">Add some products to your cart first.</p>
@@ -201,7 +201,7 @@ export default function CheckoutPage() {
   const total = getTotal();
 
   return (
-    <section className="bg-neutral-100 pt-28 pb-24">
+    <section className="min-h-screen bg-neutral-100 pt-28 pb-12">
       <div className="mx-auto max-w-5xl px-6 lg:px-10">
         {/* Step Indicator */}
         <div className="mb-12 flex items-center justify-center gap-2">

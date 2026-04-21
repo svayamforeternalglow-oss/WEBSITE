@@ -33,8 +33,15 @@ const DEFAULT_SOCIALS = [
   { label: "WhatsApp", href: "#", icon: WhatsAppIcon, configKey: "whatsapp_group_link" },
 ];
 
-export default function Footer() {
+type FooterVariant = "forest" | "light";
+
+interface FooterProps {
+  variant?: FooterVariant;
+}
+
+export default function Footer({ variant = "forest" }: FooterProps) {
   const [socials, setSocials] = useState(DEFAULT_SOCIALS);
+  const isLight = variant === "light";
 
   useEffect(() => {
     (async () => {
@@ -60,10 +67,10 @@ export default function Footer() {
   const visibleSocials = socials.filter((social) => social.href && social.href !== "#");
 
   return (
-    <footer className="border-t border-forest-dark bg-forest">
+    <footer className={isLight ? "border-t border-neutral-300 bg-white" : "border-t border-forest-dark bg-forest"}>
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
         <div className="flex flex-col items-center gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <p className="text-center text-[11px] font-medium uppercase tracking-[0.14em] text-sand/80 lg:text-left">
+          <p className={`text-center text-[11px] font-medium uppercase tracking-[0.14em] lg:text-left ${isLight ? "text-clay/80" : "text-sand/80"}`}>
             &copy; {new Date().getFullYear()} Svayam Natural. Consciously crafted.
           </p>
 
@@ -72,7 +79,7 @@ export default function Footer() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="text-[11px] font-medium uppercase tracking-[0.14em] text-sand/70 transition-colors duration-200 hover:text-gold"
+                className={`text-[11px] font-medium uppercase tracking-[0.14em] transition-colors duration-200 ${isLight ? "text-clay/70 hover:text-gold-dark" : "text-sand/70 hover:text-gold"}`}
               >
                 {link.label}
               </Link>
@@ -87,7 +94,7 @@ export default function Footer() {
                 aria-label={social.label}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-sand/20 text-sand/75 transition-colors duration-200 hover:border-gold/60 hover:bg-sand/5 hover:text-gold"
+                className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors duration-200 ${isLight ? "border-neutral-300 text-clay/70 hover:border-gold/60 hover:bg-gold/10 hover:text-gold-dark" : "border-sand/20 text-sand/75 hover:border-gold/60 hover:bg-sand/5 hover:text-gold"}`}
               >
                 <social.icon className="h-[15px] w-[15px]" />
               </a>

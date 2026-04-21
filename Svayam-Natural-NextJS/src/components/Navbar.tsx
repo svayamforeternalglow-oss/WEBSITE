@@ -27,8 +27,8 @@ const navLinks: NavItem[] = [
     children: [
       { label: "All Products", href: "/products" },
       { label: "Best Selling Kits", href: "/products?category=kits" },
-      { label: "Face", href: "/products?category=face" },
-      { label: "Lip Balm", href: "/products?category=lip-balm" },
+      { label: "Face Care", href: "/products?category=face" },
+      { label: "Lip Care", href: "/products?category=lip-balm" },
       { label: "Hair Care", href: "/products?category=hair-care" },
       { label: "Body Care", href: "/products?category=body-care" },
       { label: "Eat to Glow", href: "/products?category=food" },

@@ -1,6 +1,6 @@
 "use client";
 
-import ParallaxImage from "./ParallaxImage";
+import Image from "next/image";
 import AnimateOnScroll from "./AnimateOnScroll";
 
 interface StorySectionProps {
@@ -22,12 +22,15 @@ export default function StorySection({
         <AnimateOnScroll animation="fadeInUp">
           <div className="relative overflow-hidden rounded-2xl bg-neutral-200">
             <div className="aspect-[4/3]">
-              <ParallaxImage
-                src={image}
-                alt={`${name} story`}
-                className="h-full w-full"
-                speed={0.3}
-              />
+              <div className="relative h-full w-full">
+                <Image
+                  src={image}
+                  alt={`${name} story`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-contain p-8"
+                />
+              </div>
             </div>
           </div>
         </AnimateOnScroll>

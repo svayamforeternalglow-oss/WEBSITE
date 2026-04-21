@@ -8,16 +8,14 @@ import { api } from "@/lib/api";
 import { normalizeConcernQuery } from "@/lib/products";
 
 const STATIC_CONCERNS = [
-  { name: "Pigmentation", slug: "pigmentation", image: "/images/pigmnetation.png" },
-  { name: "Antiageing", slug: "anti-ageing", image: "/images/aging.png" },
-  { name: "Hair Fall", slug: "hair-fall", image: "/images/hairfall.png" },
-  { name: "Hair Growth", slug: "hair-growth", image: "/images/concerns/hair-growth.png" },
-  { name: "Day Care", slug: "day-care", image: "/images/suryakanti-day-creme.png" },
-  { name: "Night Care", slug: "night-care", image: "/images/chandraprabha-night-necter.png" },
+  { name: "Pigmentation", slug: "pigmentation", image: "/images/concern-pigmentation.png" },
+  { name: "Antiageing", slug: "anti-ageing", image: "/images/concern-anti-ageing.png" },
   { name: "Dry Skin", slug: "dry-skin", image: "/images/concerns/skin-hydration.png" },
-  { name: "Glow & Radiance", slug: "glow-radiance", image: "/images/tejasamrit.png" },
-  { name: "Dull & Damaged Hair", slug: "dull-damaged-hair", image: "/images/shudhi/1.jpeg" },
-  { name: "Oil & Acne Control", slug: "oil-acne-control", image: "/images/concerns/acne-blemishes.png" },
+  { name: "Hairfall", slug: "hair-fall", image: "/images/concern-hair-fall.png" },
+  { name: "Dull Damaged Hair", slug: "dull-damaged-hair", image: "/images/concerns/dandruff.png" },
+  { name: "Night Care", slug: "night-care", image: "/images/chandraprabha-night-necter.png" },
+  { name: "Day Care", slug: "day-care", image: "/images/suryakanti-day-creme.png" },
+  { name: "Glow and Radiance", slug: "glow-radiance", image: "/images/concerns/skin-brightening.png" },
 ];
 
 interface ConcernItem {
@@ -36,25 +34,38 @@ export default function ShopByConcern() {
     (async () => {
       try {
         const data = await api.get<ConcernItem[]>('/taxonomy/concerns?active=true');
-        let fetched = Array.isArray(data) ? data.filter(c => c.isActive !== false) : [];
+        const fetched = Array.isArray(data) ? data.filter(c => c.isActive !== false) : [];
         if (!cancelled && fetched.length > 0) {
+          const allowedSlugs = new Set(STATIC_CONCERNS.map((c) => c.slug));
           const imageMap = new Map(STATIC_CONCERNS.map((c) => [c.slug, c.image]));
-          fetched = fetched.map((concern) => {
-            const normalizedSlug = normalizeConcernQuery(concern.slug) || concern.slug;
+          const mapped = fetched
+            .map((concern) => {
+              const normalizedSlug = normalizeConcernQuery(concern.slug) || concern.slug;
+              return {
+                ...concern,
+                slug: normalizedSlug,
+                image: concern.image || imageMap.get(normalizedSlug) || '/images/All-Products.jpeg',
+              };
+            })
+            .filter((concern) => allowedSlugs.has(concern.slug));
+
+          const bySlug = new Map(mapped.map((concern) => [concern.slug, concern]));
+          const merged = STATIC_CONCERNS.map((concern) => {
+            const apiConcern = bySlug.get(concern.slug);
+            if (!apiConcern) {
+              return concern;
+            }
+
             return {
               ...concern,
-              slug: normalizedSlug,
-              image: concern.image || imageMap.get(normalizedSlug) || '/images/All-Products.jpeg',
+              ...apiConcern,
+              slug: concern.slug,
+              image: apiConcern.image || concern.image,
+              name: concern.name,
             };
           });
 
-          const orderMap = new Map(STATIC_CONCERNS.map((c, i) => [c.slug, i]));
-          fetched = fetched.sort((a, b) => {
-            const indexA = orderMap.has(a.slug) ? orderMap.get(a.slug)! : 999;
-            const indexB = orderMap.has(b.slug) ? orderMap.get(b.slug)! : 999;
-            return indexA - indexB;
-          });
-          setConcerns(fetched);
+          setConcerns(merged);
         }
       } catch {
         // Keep static fallback
