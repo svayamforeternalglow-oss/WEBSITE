@@ -126,7 +126,7 @@ const products = [
     price: 450,
     originalPrice: 599,
     inventory: 100,
-    images: ['/images/gulkand/1.png', '/images/gulkand/2.jpeg'],
+    images: ['/images/gulkand/1.jpeg', '/images/gulkand/2.jpeg'],
     category: 'natural-food',
     concern: 'General',
   },
