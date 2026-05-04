@@ -178,6 +178,11 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 }
 
+/** Same origin as `api.get` / `api.post` — use for raw `fetch` (e.g. blobs). */
+export function buildApiUrl(endpoint: string): string {
+  return buildUrl(getPrimaryApiBaseUrl(), endpoint);
+}
+
 export const api = {
   get: <T>(endpoint: string, token?: string, headers?: Record<string, string>) =>
     request<T>(endpoint, { token, headers }),

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
-import { api } from '@/lib/api';
+import { api, buildApiUrl } from '@/lib/api';
 
 interface OrderItem {
   name: string;
@@ -230,7 +230,7 @@ export default function AdminOrdersPage() {
               }
               setBulkLabelsLoading(true);
               try {
-                const res = await fetch(`${api.url}/orders/admin/bulk-labels-html`, {
+                const res = await fetch(buildApiUrl('/orders/admin/bulk-labels-html'), {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -261,7 +261,7 @@ export default function AdminOrdersPage() {
               }
               setBulkInvoicesLoading(true);
               try {
-                const res = await fetch(`${api.url}/orders/admin/bulk-invoices-html`, {
+                const res = await fetch(buildApiUrl('/orders/admin/bulk-invoices-html'), {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
