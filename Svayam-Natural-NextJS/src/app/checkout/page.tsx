@@ -54,7 +54,7 @@ const generateIdempotencyKey = (): string => {
 export default function CheckoutPage() {
   const router = useRouter();
   const { isAuthenticated, token } = useAuthStore();
-  const { items, getSubtotal, getShipping, getTax, getTotal, clearCart } = useCartStore();
+  const { items, getSubtotal, getShipping, getTotal, clearCart } = useCartStore();
   const { addToast } = useToastStore();
 
   const [step, setStep] = useState(0);
@@ -197,7 +197,6 @@ export default function CheckoutPage() {
 
   const subtotal = getSubtotal();
   const shippingCost = getShipping();
-  const tax = getTax();
   const total = getTotal();
 
   return (
@@ -351,10 +350,6 @@ export default function CheckoutPage() {
                   <span className={shippingCost === 0 ? 'text-green-700 font-medium' : ''}>
                     {shippingCost === 0 ? 'Free' : `₹${shippingCost}`}
                   </span>
-                </div>
-                <div className="flex justify-between text-clay">
-                  <span>Tax (18% GST)</span>
-                  <span>₹{tax}</span>
                 </div>
               </div>
               <div className="flex justify-between pt-4 text-lg font-bold text-forest">

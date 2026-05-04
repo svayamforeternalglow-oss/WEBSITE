@@ -5,6 +5,38 @@ import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
 import { api, buildApiUrl } from '@/lib/api';
 
+function parseFilenameFromContentDisposition(header: string | null): string | undefined {
+  if (!header) return undefined;
+  const encoded = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(header);
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1].trim().replace(/^"(.*)"$/, '$1'));
+    } catch {
+      return encoded[1].trim();
+    }
+  }
+  const quoted = /filename="([^"]+)"/i.exec(header);
+  if (quoted) return quoted[1];
+  const plain = /filename=([^;,\s]+)/i.exec(header);
+  if (plain) return plain[1].replace(/^"(.*)"$/, '$1');
+  return undefined;
+}
+
+/** Saves a fetched blob as a file download (avoids popup blockers from window.open after async fetch). */
+function saveBlobAsDownload(blob: Blob, res: Response, fallbackFilename: string) {
+  const filename =
+    parseFilenameFromContentDisposition(res.headers.get('content-disposition')) || fallbackFilename;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 interface OrderItem {
   name: string;
   quantity: number;
@@ -156,7 +188,7 @@ export default function AdminOrdersPage() {
     document.body.appendChild(form);
     form.submit();
     document.body.removeChild(form);
-    addToast('Invoice downloaded', 'success');
+    addToast('Invoice PDF download started.', 'success');
   };
 
 
@@ -238,12 +270,16 @@ export default function AdminOrdersPage() {
                   },
                   body: JSON.stringify({ orderIds: Array.from(selectedOrderIds) }),
                 });
-                if (!res.ok) throw new Error('Failed to generate labels');
                 const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                window.open(url, '_blank');
+                if (!res.ok) {
+                  const msg = await blob.text();
+                  throw new Error(msg || 'Failed to generate labels');
+                }
+                saveBlobAsDownload(blob, res, `svayam-shipping-labels-${Date.now()}.pdf`);
+                addToast('Shipping labels PDF downloaded.', 'success');
               } catch (err) {
                 console.error(err);
+                addToast(err instanceof Error ? err.message : 'Failed to generate labels', 'error');
               } finally {
                 setBulkLabelsLoading(false);
               }
@@ -269,12 +305,16 @@ export default function AdminOrdersPage() {
                   },
                   body: JSON.stringify({ orderIds: Array.from(selectedOrderIds) }),
                 });
-                if (!res.ok) throw new Error('Failed to generate invoices');
                 const blob = await res.blob();
-                const url = URL.createObjectURL(new Blob([blob], {type: 'text/html'}));
-                window.open(url, '_blank');
+                if (!res.ok) {
+                  const msg = await blob.text();
+                  throw new Error(msg || 'Failed to generate invoices');
+                }
+                saveBlobAsDownload(blob, res, `svayam-invoices-${Date.now()}.pdf`);
+                addToast('Invoices PDF downloaded.', 'success');
               } catch (err) {
                 console.error(err);
+                addToast(err instanceof Error ? err.message : 'Failed to generate invoices', 'error');
               } finally {
                 setBulkInvoicesLoading(false);
               }

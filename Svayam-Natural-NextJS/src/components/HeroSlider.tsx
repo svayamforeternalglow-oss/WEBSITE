@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLongRightIcon } from "./icons";
@@ -54,8 +54,6 @@ const PROGRESS_TICK_MS = 50;
 export default function HeroSlider() {
   const [current, setCurrent] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [heroViewportHeight, setHeroViewportHeight] = useState<number | null>(null);
-  const sectionRef = useRef<HTMLElement>(null);
 
   const next = useCallback(() => {
     setProgress(0);
@@ -78,39 +76,17 @@ export default function HeroSlider() {
     return () => window.clearInterval(timer);
   }, [next]);
 
-  useLayoutEffect(() => {
-    const updateHeroViewportHeight = () => {
-      if (!sectionRef.current) return;
-
-      const topOffset = sectionRef.current.getBoundingClientRect().top;
-      const viewportHeight = Math.round(window.visualViewport?.height ?? window.innerHeight);
-      const remainingViewport = Math.round(viewportHeight - topOffset);
-
-      // Exact fit: hero ends exactly at the bottom edge of the current viewport.
-      setHeroViewportHeight(Math.max(0, remainingViewport));
-    };
-
-    updateHeroViewportHeight();
-    window.addEventListener("resize", updateHeroViewportHeight);
-    window.visualViewport?.addEventListener("resize", updateHeroViewportHeight);
-
-    return () => {
-      window.removeEventListener("resize", updateHeroViewportHeight);
-      window.visualViewport?.removeEventListener("resize", updateHeroViewportHeight);
-    };
-  }, []);
-
   const goTo = (i: number) => {
     setProgress(0);
     setCurrent(i);
   };
 
   const activeSlide = slides[current];
-  const heroHeightStyle = heroViewportHeight ? { height: `${heroViewportHeight}px` } : undefined;
 
   return (
-    <section ref={sectionRef} className="relative w-full overflow-hidden border-b border-neutral-300/70">
-      <div className="relative overflow-hidden" style={heroHeightStyle}>
+    <section className="relative w-full overflow-hidden border-b border-neutral-300/70">
+      {/* Stable CSS height (dvh) avoids visualViewport/innerHeight mismatch on mobile scroll */}
+      <div className="relative h-[min(56dvh,36rem)] min-h-[280px] overflow-hidden sm:h-[min(58dvh,40rem)] sm:min-h-[300px] md:h-[min(62dvh,44rem)] md:min-h-[380px] lg:h-[min(64dvh,46rem)] lg:min-h-[420px]">
         <Image
           src={activeSlide.backgroundImage}
           alt={`${activeSlide.title} background`}

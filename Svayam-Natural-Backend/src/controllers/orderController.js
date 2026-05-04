@@ -5,6 +5,11 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import shiprocket from '../services/shiprocketService.js';
 import {
+  renderHtmlToPdf,
+  invoicePdfOptions,
+  shippingLabelsPdfOptions,
+} from '../utils/htmlToPdf.js';
+import {
   getOrderState,
   transitionOrder,
   ORDER_STATES,
@@ -781,7 +786,7 @@ export const refundOrder = async (req, res) => {
   }
 };
 
-// @desc    Download Invoice for a specific order (HTML)
+// @desc    Download Invoice for a specific order (PDF via Puppeteer)
 // @route   GET /api/v1/orders/admin/:id/invoice
 // @access  Private/Admin
 export const downloadInvoice = async (req, res) => {
@@ -892,9 +897,10 @@ export const downloadInvoice = async (req, res) => {
   </div>
 </body></html>`;
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Content-Disposition', `inline; filename="invoice-${order._id}.html"`);
-    res.send(html);
+    const pdfBuffer = await renderHtmlToPdf(html, invoicePdfOptions());
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-${order._id}.pdf"`);
+    res.send(pdfBuffer);
   } catch (error) {
     console.error("downloadInvoice error:", error);
     res.status(500).json({ message: error.message });
@@ -1244,7 +1250,7 @@ export const verifyWebhook = async (req, res) => {
   }
 };
 
-// Native Bulk Print: HTML Invoices
+// Native Bulk Print: PDF Invoices (HTML → PDF)
 export const generateBulkInvoicesHTML = async (req, res) => {
   try {
     const { orderIds } = req.body;
@@ -1252,7 +1258,9 @@ export const generateBulkInvoicesHTML = async (req, res) => {
       return res.status(400).send('No orders selected');
     }
 
-    const orders = await Order.find({ _id: { $in: orderIds } }).populate('userId', 'firstName lastName email').lean();
+    const orders = await Order.find({ _id: { $in: orderIds } }).populate('user', 'name email firstName lastName').lean();
+
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
 
     let combinedHtml = `<!DOCTYPE html>
     <html>
@@ -1265,16 +1273,20 @@ export const generateBulkInvoicesHTML = async (req, res) => {
         @media print {
           .page-break { page-break-after: always; clear: both; }
           body { background: #fff; margin: 0; padding: 0; }
+          .no-print { display: none !important; }
         }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e5e5; }
         th { background-color: #f8f9fa; font-weight: bold; }
+        .print-bar { text-align: center; padding: 16px; background: #f5f0e6; border-bottom: 1px solid #e0ddd5; }
+        .print-bar button { padding: 10px 24px; background: #1a2e1a; color: #f5f0e6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
       </style>
     </head>
-    <body>`;
+    <body>
+    <div class="print-bar no-print"><button type="button" onclick="window.print()">Print / Save as PDF</button></div>`;
 
     orders.forEach((order, index) => {
-      const pricing = typeof computePricing === 'function' ? computePricing(order) : order.pricing || {};
+      const pricing = computePricing(order);
       const itemsHtml = (order.orderItems || []).map((item, i) => {
         const qty = item.qty || item.quantity || 1;
         return `<tr>
@@ -1286,28 +1298,38 @@ export const generateBulkInvoicesHTML = async (req, res) => {
         </tr>`;
       }).join('');
 
-      const customerName = order.userId ? `${order.userId.firstName || ''} ${order.userId.lastName || ''}` : 'Guest';
-      const address = order.shippingAddress || {};
+      const addr = order.shippingAddress || {};
+      let customerName = 'Guest';
+      if (order.user && typeof order.user === 'object') {
+        const u = order.user;
+        customerName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.name || 'Guest';
+      }
+      const shipToName = addr.fullName || customerName;
+      const addrLine = addr.address || '';
+      const cityLine = [addr.city, addr.state, addr.pincode].filter(Boolean).join(', ');
+      const payLabel = order.isPaid ? 'Paid' : (order.paymentStatus?.status || 'Pending');
+      const shortRef = order._id ? String(order._id).slice(-10).toUpperCase() : '';
 
       combinedHtml += `
       <div class="invoice-page">
         <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
           <div>
             <h1 style="margin:0;color:#2c5e50;">Svayam Natural</h1>
-            <p style="margin:5px 0 0;color:#666;">Invoice #${order.orderId}</p>
+            <p style="margin:5px 0 0;color:#666;">Invoice #${shortRef}</p>
           </div>
           <div style="text-align:right;">
             <p style="margin:0">Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
-            <p style="margin:0">Status: ${order.paymentStatus || 'Pending'}</p>
+            <p style="margin:0">Payment: ${payLabel}</p>
           </div>
         </div>
         
         <div style="margin-bottom:30px;">
-          <h3 style="margin-bottom:10px; border-bottom: 2px solid #e5e5e5; padding-bottom:5px;">Bill To:</h3>
-          <p style="margin:0;"><strong>${address.fullName || customerName}</strong></p>
-          <p style="margin:0;">${address.addressLine1 || ''} ${address.addressLine2 || ''}</p>
-          <p style="margin:0;">${address.city || ''}, ${address.state || ''} ${address.pincode || ''}</p>
-          <p style="margin:0;">Phone: ${address.phone || ''}</p>
+          <h3 style="margin-bottom:10px; border-bottom: 2px solid #e5e5e5; padding-bottom:5px;">Bill To / Ship To:</h3>
+          <p style="margin:0;"><strong>${shipToName}</strong></p>
+          ${addr.email ? `<p style="margin:0;">${addr.email}</p>` : ''}
+          ${addrLine ? `<p style="margin:0;">${addrLine}</p>` : ''}
+          ${cityLine ? `<p style="margin:0;">${cityLine}</p>` : ''}
+          <p style="margin:0;">Phone: ${addr.phone || ''}</p>
         </div>
 
         <table>
@@ -1318,8 +1340,8 @@ export const generateBulkInvoicesHTML = async (req, res) => {
         <div style="margin-top:20px; width:300px; float:right;">
           <table style="margin-top:0;">
             <tr><td>Subtotal</td><td style="text-align:right;">₹${pricing.subtotal || 0}</td></tr>
-            <tr><td>Shipping</td><td style="text-align:right;">₹${pricing.shipping || 0}</td></tr>
-            <tr style="font-weight:bold; font-size:18px;"><td>Grand Total</td><td style="text-align:right;">₹${pricing.grandTotal || order.totalAmount}</td></tr>
+            <tr><td>Shipping</td><td style="text-align:right;">${pricing.shipping === 0 ? 'FREE' : '₹' + pricing.shipping}</td></tr>
+            <tr style="font-weight:bold; font-size:18px;"><td>Grand Total</td><td style="text-align:right;">₹${pricing.grandTotal ?? order.totalAmount}</td></tr>
           </table>
         </div>
         <div style="clear:both;"></div>
@@ -1331,16 +1353,18 @@ export const generateBulkInvoicesHTML = async (req, res) => {
     });
 
     combinedHtml += `</body></html>`;
-    
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(combinedHtml);
+
+    const pdfBuffer = await renderHtmlToPdf(combinedHtml, invoicePdfOptions());
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="svayam-invoices-${stamp}.pdf"`);
+    res.send(pdfBuffer);
   } catch (error) {
     console.error('Bulk invoice generation error:', error);
     res.status(500).send('Error generating bulk invoices: ' + error.message);
   }
 };
 
-// Native Bulk Print: HTML Shipping Labels
+// Native Bulk Print: PDF Shipping Labels (HTML → PDF)
 export const generateBulkLabelsHTML = async (req, res) => {
   try {
     const { orderIds } = req.body;
@@ -1349,6 +1373,7 @@ export const generateBulkLabelsHTML = async (req, res) => {
     }
 
     const orders = await Order.find({ _id: { $in: orderIds } }).lean();
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
 
     let combinedHtml = `<!DOCTYPE html>
     <html>
@@ -1368,34 +1393,40 @@ export const generateBulkLabelsHTML = async (req, res) => {
           body { background: transparent; padding: 0; margin: 0; }
           .label-page { border: none; margin: 0; padding: 15px; width: 4in; height: 6in; box-shadow: none; }
           @page { size: 4in 6in; margin: 0; }
+          .no-print { display: none !important; }
         }
         .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
         .addresses { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; }
         .to-address { border: 2px solid #000; padding: 12px; font-size: 1.1em; }
         .from-address { font-size: 0.9em; }
         .meta { border-top: 1px solid #000; padding-top: 8px; font-size: 0.85em; }
+        .print-bar { text-align: center; padding: 16px; margin-bottom: 16px; }
+        .print-bar button { padding: 10px 24px; background: #1a2e1a; color: #f5f0e6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
       </style>
     </head>
-    <body>`;
+    <body>
+    <div class="print-bar no-print"><button type="button" onclick="window.print()">Print / Save as PDF</button></div>`;
 
     orders.forEach((order, index) => {
       const address = order.shippingAddress || {};
       const date = new Date(order.createdAt).toLocaleDateString();
+      const shortRef = order._id ? String(order._id).slice(-10).toUpperCase() : '';
+      const cityLine = [address.city, address.state, address.pincode].filter(Boolean).join(', ');
+      const itemCount = (order.orderItems || []).reduce((s, it) => s + (it.qty || it.quantity || 1), 0);
 
       combinedHtml += `
       <div class="label-page">
         <div class="header">
           <h2 style="margin:0; font-size: 22px; text-transform: uppercase; letter-spacing: 2px;">PREPAID</h2>
-          <p style="margin:4px 0 0; font-weight: bold;">ORDER #: ${order.orderId}</p>
+          <p style="margin:4px 0 0; font-weight: bold;">ORDER #: ${shortRef}</p>
         </div>
         
         <div class="addresses">
           <div class="to-address">
             <strong style="font-size:0.9em; color:#555;">SHIP TO:</strong><br>
             <span style="font-size:1.15em; font-weight:bold;">${address.fullName || 'Guest'}</span><br>
-            ${address.addressLine1 || ''}<br>
-            ${address.addressLine2 ? address.addressLine2 + '<br>' : ''}
-            ${address.city || ''}, ${address.state || ''} ${address.pincode || ''}<br>
+            ${address.address ? `${address.address}<br>` : ''}
+            ${cityLine ? `${cityLine}<br>` : ''}
             <br>
             <strong>Phone:</strong> ${address.phone || ''}
           </div>
@@ -1408,7 +1439,7 @@ export const generateBulkLabelsHTML = async (req, res) => {
         </div>
 
         <div class="meta">
-          <strong>Items:</strong> ${order.items?.length || order.orderItems?.length || 1} units<br>
+          <strong>Items:</strong> ${itemCount || 0} units<br>
           <strong>Date:</strong> ${date}
         </div>
       </div>`;
@@ -1419,9 +1450,11 @@ export const generateBulkLabelsHTML = async (req, res) => {
     });
 
     combinedHtml += `</body></html>`;
-    
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(combinedHtml);
+
+    const pdfBuffer = await renderHtmlToPdf(combinedHtml, shippingLabelsPdfOptions());
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="svayam-shipping-labels-${stamp}.pdf"`);
+    res.send(pdfBuffer);
   } catch (error) {
     console.error('Bulk labels generation error:', error);
     res.status(500).send('Error generating bulk labels: ' + error.message);

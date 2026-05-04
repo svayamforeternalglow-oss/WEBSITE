@@ -6,7 +6,7 @@ import { useCartStore } from '@/lib/cart';
 import { useToastStore } from '@/lib/toast';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart, getSubtotal, getShipping, getTax, getTotal, getItemCount } = useCartStore();
+  const { items, removeItem, updateQuantity, clearCart, getSubtotal, getShipping, getTotal, getItemCount } = useCartStore();
   const { addToast } = useToastStore();
 
   const handleRemove = (slug: string, name: string) => {
@@ -36,7 +36,6 @@ export default function CartPage() {
 
   const subtotal = getSubtotal();
   const shipping = getShipping();
-  const tax = getTax();
   const total = getTotal();
 
   return (
@@ -121,10 +120,6 @@ export default function CartPage() {
                 <div className="flex justify-between text-clay">
                   <span>Shipping</span>
                   <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
-                </div>
-                <div className="flex justify-between text-clay">
-                  <span>Tax (18% GST)</span>
-                  <span>₹{tax}</span>
                 </div>
               </div>
               <div className="flex justify-between pt-4 text-lg font-bold text-forest">

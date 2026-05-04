@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://api.svayamnatural.com/api/v1";
 
@@ -30,20 +32,36 @@ export async function POST(request: NextRequest) {
     });
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const data = (await res.json().catch(() => ({}))) as { message?: string };
+        return NextResponse.json(
+          { message: data.message || "Failed to fetch invoice" },
+          { status: res.status }
+        );
+      }
+      const text = await res.text();
       return NextResponse.json(
-        { message: data.message || "Failed to fetch invoice" },
+        { message: text.slice(0, 500) || "Failed to fetch invoice" },
         { status: res.status }
       );
     }
 
-    const body = await res.text();
-    const resContentType = res.headers.get("content-type") || "text/html";
+    const buf = Buffer.from(await res.arrayBuffer());
+    const resContentType = res.headers.get("content-type") || "application/pdf";
+    let contentDisposition =
+      res.headers.get("content-disposition") ||
+      `attachment; filename="invoice-${orderId}.pdf"`;
 
-    return new NextResponse(body, {
+    if (/^\s*inline\s*;/i.test(contentDisposition)) {
+      contentDisposition = contentDisposition.replace(/^\s*inline\s*;/i, "attachment;");
+    }
+
+    return new NextResponse(buf, {
       status: 200,
       headers: {
         "Content-Type": resContentType,
+        "Content-Disposition": contentDisposition,
       },
     });
   } catch (error) {

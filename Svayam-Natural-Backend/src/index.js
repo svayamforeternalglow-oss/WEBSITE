@@ -56,6 +56,7 @@ const corsBaseOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key'],
+  exposedHeaders: ['Content-Disposition'],
 };
 
 const normalizeOrigin = (value) => value.replace(/\/$/, '').toLowerCase();

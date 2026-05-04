@@ -33,6 +33,18 @@ interface TaxonomyItem {
   isActive: boolean;
 }
 
+/** API may omit falsey flags or use alternate keys — keep admin Featured UI accurate */
+function normalizeAdminProduct(p: Product): Product {
+  const featured =
+    p.isFeatured === true ||
+    (p as unknown as { featured?: boolean }).featured === true;
+  return {
+    ...p,
+    isFeatured: featured,
+    isActive: p.isActive !== false,
+  };
+}
+
 export default function AdminProductsPage() {
   const token = useAuthStore((s) => s.token);
   const addToast = useToastStore((s) => s.addToast);
@@ -62,22 +74,22 @@ export default function AdminProductsPage() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<any>('/products');
+      const res = await api.get<unknown>('/products', token ?? undefined);
+      let list: Product[] = [];
       if (Array.isArray(res)) {
-         setProducts(res);
-      } else if (res && Array.isArray(res.data)) {
-         setProducts(res.data);
-      } else if (res && (res as any).products) {
-         setProducts((res as any).products);
-      } else {
-         setProducts([]);
+        list = res as Product[];
+      } else if (res && typeof res === 'object' && Array.isArray((res as { data?: unknown }).data)) {
+        list = (res as { data: Product[] }).data;
+      } else if (res && typeof res === 'object' && Array.isArray((res as { products?: unknown }).products)) {
+        list = (res as { products: Product[] }).products;
       }
+      setProducts(list.map(normalizeAdminProduct));
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to fetch products', 'error');
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, token]);
 
   const fetchTaxonomy = useCallback(async () => {
     try {
@@ -119,9 +131,21 @@ export default function AdminProductsPage() {
 
   const toggleFeatured = async (product: Product) => {
     if (!token) return;
+    const currentlyFeatured = product.isFeatured === true;
+    const stock = product.inventory !== undefined ? product.inventory : product.stock ?? 0;
     try {
-      await api.put(`/products/${product._id}`, { isFeatured: !product.isFeatured }, token);
-      addToast(`${product.title || product.name} ${product.isFeatured ? 'removed from' : 'added to'} featured`, 'success');
+      await api.put(`/products/${product._id}`, { isFeatured: !currentlyFeatured }, token);
+      addToast(
+        `${product.title || product.name} ${currentlyFeatured ? 'removed from' : 'added to'} featured`,
+        'success'
+      );
+      if (!currentlyFeatured && stock <= 0) {
+        addToast(
+          'Homepage featured picks only include active products with stock greater than zero.',
+          'warning',
+          8000
+        );
+      }
       fetchProducts();
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to update', 'error');
@@ -159,7 +183,7 @@ export default function AdminProductsPage() {
       description: p.description || '',
       images: p.images ? p.images.join(', ') : '',
       isActive: p.isActive !== undefined ? p.isActive : true,
-      isFeatured: p.isFeatured || false,
+      isFeatured: p.isFeatured === true || (p as unknown as { featured?: boolean }).featured === true,
     });
     setIsModalOpen(true);
   };
@@ -212,7 +236,7 @@ export default function AdminProductsPage() {
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-clay">Featured</p>
           <p className="mt-1 font-heading text-3xl font-bold text-gold-dark">
-            {products.filter((p) => p.isFeatured).length}
+            {products.filter((p) => p.isFeatured === true).length}
           </p>
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
@@ -258,7 +282,7 @@ export default function AdminProductsPage() {
             {loading ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="border-b border-neutral-200">
-                  {[...Array(8)].map((_, j) => (
+                  {[...Array(9)].map((_, j) => (
                     <td key={j} className="px-4 py-4">
                       <div className="h-4 w-20 rounded bg-neutral-200 animate-shimmer" />
                     </td>
@@ -267,7 +291,7 @@ export default function AdminProductsPage() {
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center text-clay">No products found</td>
+                <td colSpan={9} className="px-5 py-12 text-center text-clay">No products found</td>
               </tr>
             ) : (
               filtered.map((product) => {
@@ -319,8 +343,8 @@ export default function AdminProductsPage() {
                     <td className="px-4 py-4 text-center">
                       <button
                         onClick={() => toggleFeatured(product)}
-                        className={`text-lg transition-transform hover:scale-110 ${product.isFeatured ? 'text-gold' : 'text-neutral-300 hover:text-gold/50'}`}
-                        title={product.isFeatured ? 'Featured — click to remove' : 'Not featured — click to feature'}
+                        className={`text-lg transition-transform hover:scale-110 ${product.isFeatured === true ? 'text-gold' : 'text-neutral-300 hover:text-gold/50'}`}
+                        title={product.isFeatured === true ? 'Featured — click to remove' : 'Not featured — click to feature'}
                       >
                         ★
                       </button>
@@ -328,6 +352,18 @@ export default function AdminProductsPage() {
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          type="button"
+                          onClick={() => toggleFeatured(product)}
+                          className={`rounded border px-2 py-1.5 text-xs font-semibold transition-colors ${
+                            product.isFeatured === true
+                              ? 'border-gold/50 bg-gold/15 text-gold-dark'
+                              : 'border-neutral-300 text-forest hover:border-gold/40 hover:bg-gold/5'
+                          }`}
+                        >
+                          {product.isFeatured === true ? 'Unfeature' : 'Feature'}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             const newStock = prompt(`Quick update stock for ${title}:`, String(stock));
                             if (newStock !== null && !isNaN(Number(newStock))) {
