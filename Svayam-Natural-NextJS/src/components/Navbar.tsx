@@ -144,7 +144,7 @@ export default function Navbar() {
         }`}
       />
 
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-[2px] sm:px-5 lg:px-8">
+      <nav className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-[2px] lg:px-10">
         {/* Mobile Left: Hamburger + Logo */}
         <div className="flex items-center gap-1 lg:hidden">
           <button
@@ -284,7 +284,7 @@ export default function Navbar() {
           
           {showAuthenticatedMenu ? (
             <div className="flex items-center gap-4">
-              <span className={`text-[12px] font-medium tracking-wider ${solid ? "text-forest" : "text-sand"}`}>
+              <span className={`text-[12px] font-medium tracking-wider truncate max-w-[100px] sm:max-w-[140px] inline-block align-bottom ${solid ? "text-forest" : "text-sand"}`}>
                 Hi, {username}
               </span>
               <div className="group relative">

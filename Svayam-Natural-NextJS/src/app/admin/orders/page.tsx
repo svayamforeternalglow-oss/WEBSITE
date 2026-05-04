@@ -66,8 +66,9 @@ export default function AdminOrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [creatingShipment, setCreatingShipment] = useState<string | null>(null);
   const [refunding, setRefunding] = useState<string | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [bulkLabelsLoading, setBulkLabelsLoading] = useState(false);
   const [bulkInvoicesLoading, setBulkInvoicesLoading] = useState(false);
-  const [bulkDate, setBulkDate] = useState(new Date().toISOString().slice(0, 10));
 
   const fetchOrders = useCallback(async () => {
     if (!token) return;
@@ -244,18 +245,67 @@ export default function AdminOrdersPage() {
           ))}
         </select>
         <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={bulkDate}
-            onChange={(e) => setBulkDate(e.target.value)}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gold"
-          />
           <button
-            onClick={bulkShipInvoices}
-            disabled={bulkInvoicesLoading}
+            onClick={async () => {
+              if (!token) return;
+              if (selectedOrderIds.size === 0) {
+                return;
+              }
+              setBulkLabelsLoading(true);
+              try {
+                const res = await fetch(`${api.url}/orders/admin/bulk-labels-html`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ orderIds: Array.from(selectedOrderIds) }),
+                });
+                if (!res.ok) throw new Error('Failed to generate labels');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+              } catch (err) {
+                console.error(err);
+              } finally {
+                setBulkLabelsLoading(false);
+              }
+            }}
+            disabled={bulkLabelsLoading || selectedOrderIds.size === 0}
             className="rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-sand transition-colors hover:bg-forest-dark disabled:opacity-50"
           >
-            {bulkInvoicesLoading ? 'Generating…' : 'Generate shipping invoices & mark Shipped'}
+            {bulkLabelsLoading ? 'Generating…' : `Print Selected Labels (${selectedOrderIds.size})`}
+          </button>
+          <button
+            onClick={async () => {
+              if (!token) return;
+              if (selectedOrderIds.size === 0) {
+                return;
+              }
+              setBulkInvoicesLoading(true);
+              try {
+                const res = await fetch(`${api.url}/orders/admin/bulk-invoices-html`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ orderIds: Array.from(selectedOrderIds) }),
+                });
+                if (!res.ok) throw new Error('Failed to generate invoices');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(new Blob([blob], {type: 'text/html'}));
+                window.open(url, '_blank');
+              } catch (err) {
+                console.error(err);
+              } finally {
+                setBulkInvoicesLoading(false);
+              }
+            }}
+            disabled={bulkInvoicesLoading || selectedOrderIds.size === 0}
+            className="rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-sand transition-colors hover:bg-forest-dark disabled:opacity-50"
+          >
+            {bulkInvoicesLoading ? 'Generating…' : `Print Selected Invoices (${selectedOrderIds.size})`}
           </button>
         </div>
         <input
@@ -305,6 +355,20 @@ export default function AdminOrdersPage() {
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead>
             <tr className="border-b border-neutral-300 bg-forest text-sand">
+              <th className="px-5 py-3.5 font-medium w-10">
+                <input
+                  type="checkbox"
+                  checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedOrderIds(new Set(filteredOrders.map(o => o._id)));
+                    } else {
+                      setSelectedOrderIds(new Set());
+                    }
+                  }}
+                  className="h-4 w-4 cursor-pointer accent-gold"
+                />
+              </th>
               <th className="px-5 py-3.5 font-medium">Order ID</th>
               <th className="px-5 py-3.5 font-medium">Customer</th>
               <th className="px-5 py-3.5 font-medium">Items</th>
@@ -319,7 +383,7 @@ export default function AdminOrdersPage() {
             {loading ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="border-b border-neutral-200">
-                  {[...Array(8)].map((_, j) => (
+                {[...Array(9)].map((_, j) => (
                     <td key={j} className="px-5 py-4">
                       <div className="h-4 w-20 rounded bg-neutral-200 animate-shimmer" />
                     </td>
@@ -339,8 +403,22 @@ export default function AdminOrdersPage() {
                   : 'Guest';
 
                 return (
-                  <tr key={order._id} className="border-b border-neutral-200 transition-colors hover:bg-neutral-100/50">
-                    <td className="px-5 py-4">
+                  <tr key={order._id} className="border-b border-neutral-200 transition-colors hover:bg-neutral-100/50">                  <td className="px-5 py-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrderIds.has(order._id)}
+                      onChange={(e) => {
+                        const newSet = new Set(selectedOrderIds);
+                        if (e.target.checked) {
+                          newSet.add(order._id);
+                        } else {
+                          newSet.delete(order._id);
+                        }
+                        setSelectedOrderIds(newSet);
+                      }}
+                      className="h-4 w-4 cursor-pointer accent-forest"
+                    />
+                  </td>                    <td className="px-5 py-4">
                       <button onClick={() => setSelectedOrder(order)} className="font-medium text-forest hover:text-gold-dark">
                         {order.orderId.slice(-10)}
                       </button>

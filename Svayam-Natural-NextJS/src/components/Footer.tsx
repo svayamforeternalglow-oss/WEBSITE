@@ -68,7 +68,7 @@ export default function Footer({ variant = "forest" }: FooterProps) {
 
   return (
     <footer className={isLight ? "border-t border-neutral-300 bg-white" : "border-t border-forest-dark bg-forest"}>
-      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
+      <div className="mx-auto max-w-[1400px] px-6 py-8 lg:px-10">
         <div className="flex flex-col items-center gap-5 lg:flex-row lg:items-center lg:justify-between">
           <p className={`text-center text-[11px] font-medium uppercase tracking-[0.14em] lg:text-left ${isLight ? "text-clay/80" : "text-sand/80"}`}>
             &copy; {new Date().getFullYear()} Svayam Natural. Consciously crafted.

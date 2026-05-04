@@ -483,10 +483,6 @@ export const COLLECTION_ROUTE_PRODUCTS: Record<string, string[]> = {
     'autea',
     'tejasamrit',
     'gulkand',
-    'kayashuddhi-abhyanga-body-oil',
-    'abhyanga-natural-soap',
-    'snehchandan-natural-soap',
-    'triphala-natural-soap',
     'soumya-touch-of-silk',
   ],
 };

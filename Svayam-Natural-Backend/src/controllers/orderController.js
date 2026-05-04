@@ -620,9 +620,9 @@ function computePricing(order) {
   const subtotal = (order.orderItems || []).reduce((sum, item) => {
     return sum + (item.price * (item.qty || item.quantity || 1));
   }, 0);
-  const tax = Math.round(subtotal * 0.18);
+  const tax = 0;
   const shipping = subtotal > 1000 ? 0 : 100;
-  const grandTotal = order.totalAmount || (subtotal + tax + shipping);
+  const grandTotal = order.totalAmount || (subtotal + shipping);
   return { subtotal, tax, shipping, grandTotal };
 }
 
@@ -1241,5 +1241,189 @@ export const verifyWebhook = async (req, res) => {
   } catch (error) {
     console.error("Webhook error:", error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Native Bulk Print: HTML Invoices
+export const generateBulkInvoicesHTML = async (req, res) => {
+  try {
+    const { orderIds } = req.body;
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).send('No orders selected');
+    }
+
+    const orders = await Order.find({ _id: { $in: orderIds } }).populate('userId', 'firstName lastName email').lean();
+
+    let combinedHtml = `<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Bulk Invoices</title>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.6; }
+        .invoice-page { padding: 30px; max-width: 800px; margin: 0 auto; box-sizing: border-box; }
+        @media print {
+          .page-break { page-break-after: always; clear: both; }
+          body { background: #fff; margin: 0; padding: 0; }
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e5e5; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+      </style>
+    </head>
+    <body>`;
+
+    orders.forEach((order, index) => {
+      const pricing = typeof computePricing === 'function' ? computePricing(order) : order.pricing || {};
+      const itemsHtml = (order.orderItems || []).map((item, i) => {
+        const qty = item.qty || item.quantity || 1;
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${item.name}</td>
+          <td style="text-align:center;">${qty}</td>
+          <td style="text-align:right;">₹${item.price}</td>
+          <td style="text-align:right;">₹${item.price * qty}</td>
+        </tr>`;
+      }).join('');
+
+      const customerName = order.userId ? `${order.userId.firstName || ''} ${order.userId.lastName || ''}` : 'Guest';
+      const address = order.shippingAddress || {};
+
+      combinedHtml += `
+      <div class="invoice-page">
+        <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
+          <div>
+            <h1 style="margin:0;color:#2c5e50;">Svayam Natural</h1>
+            <p style="margin:5px 0 0;color:#666;">Invoice #${order.orderId}</p>
+          </div>
+          <div style="text-align:right;">
+            <p style="margin:0">Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
+            <p style="margin:0">Status: ${order.paymentStatus || 'Pending'}</p>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:30px;">
+          <h3 style="margin-bottom:10px; border-bottom: 2px solid #e5e5e5; padding-bottom:5px;">Bill To:</h3>
+          <p style="margin:0;"><strong>${address.fullName || customerName}</strong></p>
+          <p style="margin:0;">${address.addressLine1 || ''} ${address.addressLine2 || ''}</p>
+          <p style="margin:0;">${address.city || ''}, ${address.state || ''} ${address.pincode || ''}</p>
+          <p style="margin:0;">Phone: ${address.phone || ''}</p>
+        </div>
+
+        <table>
+          <thead><tr><th>#</th><th>Item Name</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Price</th><th style="text-align:right;">Total</th></tr></thead>
+          <tbody>${itemsHtml || '<tr><td colspan="5">No items found</td></tr>'}</tbody>
+        </table>
+
+        <div style="margin-top:20px; width:300px; float:right;">
+          <table style="margin-top:0;">
+            <tr><td>Subtotal</td><td style="text-align:right;">₹${pricing.subtotal || 0}</td></tr>
+            <tr><td>Shipping</td><td style="text-align:right;">₹${pricing.shipping || 0}</td></tr>
+            <tr style="font-weight:bold; font-size:18px;"><td>Grand Total</td><td style="text-align:right;">₹${pricing.grandTotal || order.totalAmount}</td></tr>
+          </table>
+        </div>
+        <div style="clear:both;"></div>
+      </div>`;
+
+      if (index < orders.length - 1) {
+        combinedHtml += `<div class="page-break"></div>`;
+      }
+    });
+
+    combinedHtml += `</body></html>`;
+    
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(combinedHtml);
+  } catch (error) {
+    console.error('Bulk invoice generation error:', error);
+    res.status(500).send('Error generating bulk invoices: ' + error.message);
+  }
+};
+
+// Native Bulk Print: HTML Shipping Labels
+export const generateBulkLabelsHTML = async (req, res) => {
+  try {
+    const { orderIds } = req.body;
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).send('No orders selected');
+    }
+
+    const orders = await Order.find({ _id: { $in: orderIds } }).lean();
+
+    let combinedHtml = `<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Bulk Shipping Labels</title>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; margin: 0; padding: 20px; background: #eaebec; }
+        .label-page { 
+          width: 4in; height: 6in; 
+          background: #fff; margin: 0 auto 20px auto; padding: 20px; 
+          box-sizing: border-box; border: 1px solid #ccc;
+          page-break-inside: avoid;
+        }
+        @media print {
+          .page-break { page-break-after: always; clear: both; }
+          body { background: transparent; padding: 0; margin: 0; }
+          .label-page { border: none; margin: 0; padding: 15px; width: 4in; height: 6in; box-shadow: none; }
+          @page { size: 4in 6in; margin: 0; }
+        }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
+        .addresses { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; }
+        .to-address { border: 2px solid #000; padding: 12px; font-size: 1.1em; }
+        .from-address { font-size: 0.9em; }
+        .meta { border-top: 1px solid #000; padding-top: 8px; font-size: 0.85em; }
+      </style>
+    </head>
+    <body>`;
+
+    orders.forEach((order, index) => {
+      const address = order.shippingAddress || {};
+      const date = new Date(order.createdAt).toLocaleDateString();
+
+      combinedHtml += `
+      <div class="label-page">
+        <div class="header">
+          <h2 style="margin:0; font-size: 22px; text-transform: uppercase; letter-spacing: 2px;">PREPAID</h2>
+          <p style="margin:4px 0 0; font-weight: bold;">ORDER #: ${order.orderId}</p>
+        </div>
+        
+        <div class="addresses">
+          <div class="to-address">
+            <strong style="font-size:0.9em; color:#555;">SHIP TO:</strong><br>
+            <span style="font-size:1.15em; font-weight:bold;">${address.fullName || 'Guest'}</span><br>
+            ${address.addressLine1 || ''}<br>
+            ${address.addressLine2 ? address.addressLine2 + '<br>' : ''}
+            ${address.city || ''}, ${address.state || ''} ${address.pincode || ''}<br>
+            <br>
+            <strong>Phone:</strong> ${address.phone || ''}
+          </div>
+          
+          <div class="from-address">
+            <strong style="color:#555;">FROM:</strong><br>
+            <strong>Svayam Natural</strong><br>
+            India
+          </div>
+        </div>
+
+        <div class="meta">
+          <strong>Items:</strong> ${order.items?.length || order.orderItems?.length || 1} units<br>
+          <strong>Date:</strong> ${date}
+        </div>
+      </div>`;
+
+      if (index < orders.length - 1) {
+        combinedHtml += `<div class="page-break"></div>`;
+      }
+    });
+
+    combinedHtml += `</body></html>`;
+    
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(combinedHtml);
+  } catch (error) {
+    console.error('Bulk labels generation error:', error);
+    res.status(500).send('Error generating bulk labels: ' + error.message);
   }
 };

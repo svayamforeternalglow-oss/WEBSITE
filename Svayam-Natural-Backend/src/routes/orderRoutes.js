@@ -11,6 +11,8 @@ import {
   refundOrder,
   downloadInvoice,
   downloadBulkInvoices,
+  generateBulkInvoicesHTML,
+  generateBulkLabelsHTML,
   createGuestOrder,
   verifyGuestPayment,
   verifyWebhook
@@ -37,6 +39,8 @@ router.route('/myorders').get(protect, getMyOrders);
 // Admin routes
 router.route('/admin/all').get(protect, admin, getAdminOrders);
 router.route('/admin/bulk-ship-invoices').get(protect, admin, downloadBulkInvoices);
+router.route('/admin/bulk-invoices-html').post(protect, admin, generateBulkInvoicesHTML);
+router.route('/admin/bulk-labels-html').post(protect, admin, generateBulkLabelsHTML);
 router.route('/admin/:id/status').patch(protect, admin, updateOrderStatus);
 router.route('/admin/:id/refund').post(protect, admin, refundOrder);
 router.route('/admin/:id/invoice').get(protect, admin, downloadInvoice);

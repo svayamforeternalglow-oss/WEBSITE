@@ -84,10 +84,10 @@ export const useCartStore = create<CartState>()(
 
       getShipping: () => (get().getSubtotal() > 1000 ? 0 : 100),
 
-      getTax: () => Math.round(get().getSubtotal() * 0.18),
+      getTax: () => 0,
 
       getTotal: () =>
-        get().getSubtotal() + get().getShipping() + get().getTax(),
+        get().getSubtotal() + get().getShipping(),
 
       getItemCount: () =>
         get().items.reduce((sum, i) => sum + i.quantity, 0),

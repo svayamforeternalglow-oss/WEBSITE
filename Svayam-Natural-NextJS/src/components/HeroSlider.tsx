@@ -109,13 +109,13 @@ export default function HeroSlider() {
   const heroHeightStyle = heroViewportHeight ? { height: `${heroViewportHeight}px` } : undefined;
 
   return (
-    <section ref={sectionRef} className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden border-b border-neutral-300/70">
-      <div className="relative" style={heroHeightStyle}>
+    <section ref={sectionRef} className="relative w-full overflow-hidden border-b border-neutral-300/70">
+      <div className="relative overflow-hidden" style={heroHeightStyle}>
         <Image
           src={activeSlide.backgroundImage}
           alt={`${activeSlide.title} background`}
           fill
-          sizes="100vw"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px"
           className="object-cover"
           style={{ objectPosition: activeSlide.backgroundPosition }}
           priority={current === 0}
@@ -136,7 +136,7 @@ export default function HeroSlider() {
           <span className="sr-only">{activeSlide.cta.label}</span>
         </Link>
 
-        <div className="relative z-10 mx-auto flex max-w-[1520px] items-center px-4 sm:px-6 lg:px-10" style={heroHeightStyle}>
+        <div className="relative z-10 flex mx-auto max-w-[1400px] h-full items-center px-6 lg:px-10">
           <div className="flex w-full items-center">
             <div key={`copy-${activeSlide.title}`} className="hidden max-w-2xl animate-fadeInUp md:block">
               <p className="mb-4 inline-flex rounded-full border border-white/35 bg-black/25 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-sand">
