@@ -159,30 +159,7 @@ export default function AdminOrdersPage() {
     addToast('Invoice downloaded', 'success');
   };
 
-  /** Trigger bulk download via form POST so it's a direct user gesture */
-  const bulkShipInvoices = () => {
-    if (!token) return;
-    setBulkInvoicesLoading(true);
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/api/download-bulk-invoices';
-    form.target = '_blank';
-    form.style.display = 'none';
-    const dateInput = document.createElement('input');
-    dateInput.name = 'date';
-    dateInput.value = bulkDate;
-    const tokenInput = document.createElement('input');
-    tokenInput.name = 'token';
-    tokenInput.value = token;
-    form.appendChild(dateInput);
-    form.appendChild(tokenInput);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-    addToast('Shipping invoices downloaded', 'success');
-    fetchOrders();
-    setBulkInvoicesLoading(false);
-  };
+
 
   const filteredOrders = search
     ? orders.filter((o) => {
