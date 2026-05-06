@@ -25,7 +25,7 @@ const PRODUCT_IMAGE_UPDATES = [
   { slug: 'sonamoti-wheat', images: ['/images/Sonamoti_Wheat.jpeg'] },
   { slug: 'triphala-natural-soap', images: ['/images/Trifala_Orange_Soap.jpeg'] },
   { slug: 'tejasamrit', images: ['/images/Tejasamrit_New.jpeg'] },
-  { slug: 'face-polishing-scrub', images: ['/images/Face polishing scrub.jpeg'] },
+  { slug: 'face-polishing-scrub', images: ['/images/face-polishing-mask.jpeg'] },
 ];
 
 async function run() {
