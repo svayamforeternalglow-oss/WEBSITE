@@ -8,6 +8,7 @@ import {
   renderHtmlToPdf,
   invoicePdfOptions,
   shippingLabelsPdfOptions,
+  PDF_WEB_FONT_LINKS,
 } from '../utils/htmlToPdf.js';
 import {
   getOrderState,
@@ -15,6 +16,15 @@ import {
   ORDER_STATES,
   CANCELLATION_REASONS,
 } from '../services/orderStateMachine.js';
+
+/** Seller / return address for invoice PDFs (wrapped for meta blocks). */
+const PDF_SELLER_FROM_HTML = `<p style="margin:2px 0;font-size:13px;line-height:1.35;"><strong>Svayam Natural</strong><br>116A, Chhatrapati Nagar, Nagpur 440015<br>8446555705</p>`;
+
+/** Same address for shipping labels (line breaks only, no outer &lt;p&gt;). */
+const PDF_SELLER_FROM_LABEL_HTML = `<strong>Svayam Natural</strong><br>116A, Chhatrapati Nagar, Nagpur 440015<br>8446555705`;
+
+const PDF_LABEL_RETURN_NOTE =
+  '<span style="font-size:0.75em;color:#444;display:block;margin-top:6px;">If undelivered, return to this address.</span>';
 
 // Helper: Auto-generate Shiprocket Shipment
 async function autoGenerateShipment(order) {
@@ -814,34 +824,36 @@ export const downloadInvoice = async (req, res) => {
     const itemRows = (order.orderItems || []).map((item, i) => {
       const qty = item.qty || item.quantity || 1;
       return `<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;">${i + 1}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;">${item.name}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;text-align:center;">${qty}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;text-align:right;">₹${item.price}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;text-align:right;">₹${item.price * qty}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #e5e5e5;">${i + 1}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #e5e5e5;">${item.name}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #e5e5e5;text-align:center;">${qty}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #e5e5e5;text-align:right;">₹${item.price}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #e5e5e5;text-align:right;">₹${item.price * qty}</td>
       </tr>`;
     }).join('');
 
     const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Invoice - ${order._id}</title>
+<html><head><meta charset="utf-8">${PDF_WEB_FONT_LINKS}<title>Invoice - ${order._id}</title>
 <style>
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display:none; } }
-  body { font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:20px; background:#f9f9f6; color:#1a2e1a; }
+  body { font-family: 'Noto Sans', 'Segoe UI', 'DejaVu Sans', Arial, sans-serif; margin:0; padding:12px 14px; background:#f9f9f6; color:#1a2e1a; }
   .invoice { max-width:800px; margin:0 auto; background:#fff; border:1px solid #e0ddd5; border-radius:8px; overflow:hidden; }
-  .header { background:#1a2e1a; color:#f5f0e6; padding:24px 32px; display:flex; justify-content:space-between; align-items:center; }
+  .header { background:#1a2e1a; color:#f5f0e6; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
   .header h1 { margin:0; font-size:22px; letter-spacing:1px; }
   .header .inv-num { font-size:13px; opacity:0.85; }
-  .body { padding:24px 32px; }
-  .meta { display:flex; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
+  .body { padding:16px 24px; }
+  .meta { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
+  .meta.meta-address-row { margin-bottom:18px; }
+  .meta-block { flex: 1 1 220px; }
   .meta-block h3 { margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#8b7e6a; }
   .meta-block p { margin:2px 0; font-size:13px; }
-  table { width:100%; border-collapse:collapse; margin-bottom:24px; font-size:13px; }
+  table { width:100%; border-collapse:collapse; margin-bottom:18px; font-size:13px; }
   thead { background:#f5f0e6; }
-  th { padding:10px 12px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#1a2e1a; border-bottom:2px solid #c2a25d; }
+  th { padding:8px 10px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#1a2e1a; border-bottom:2px solid #c2a25d; }
   .totals { width:280px; margin-left:auto; font-size:13px; }
-  .totals tr td { padding:4px 12px; }
+  .totals tr td { padding:4px 10px; }
   .totals .grand { font-size:16px; font-weight:bold; color:#1a2e1a; border-top:2px solid #c2a25d; }
-  .footer { text-align:center; padding:16px; font-size:11px; color:#8b7e6a; border-top:1px solid #e0ddd5; }
+  .footer { text-align:center; padding:12px 14px; font-size:11px; color:#8b7e6a; border-top:1px solid #e0ddd5; }
   .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; }
   .badge-paid { background:#d1fae5; color:#065f46; }
   .badge-pending { background:#fef3c7; color:#92400e; }
@@ -869,23 +881,28 @@ export const downloadInvoice = async (req, res) => {
           <p>${customerPhone}</p>
         </div>
         <div class="meta-block">
+          <h3>Payment</h3>
+          <p>${order.paymentMethod || 'Razorpay'}</p>
+          <p><span class="badge ${order.isPaid ? 'badge-paid' : 'badge-pending'}">${order.isPaid ? 'PAID' : 'PENDING'}</span></p>
+        </div>
+      </div>
+      <div class="meta meta-address-row">
+        <div class="meta-block">
           <h3>Ship To</h3>
           <p>${customerAddress}</p>
         </div>
         <div class="meta-block">
-          <h3>Payment</h3>
-          <p>${order.paymentMethod || 'Razorpay'}</p>
-          <p><span class="badge ${order.isPaid ? 'badge-paid' : 'badge-pending'}">${order.isPaid ? 'PAID' : 'PENDING'}</span></p>
+          <h3>From</h3>
+          ${PDF_SELLER_FROM_HTML}
         </div>
       </div>
       <table>
         <thead><tr>
           <th>#</th><th>Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Price</th><th style="text-align:right;">Total</th>
         </tr></thead>
-        <tbody>${itemRows || '<tr><td colspan="5" style="padding:12px;text-align:center;color:#8b7e6a;">No items</td></tr>'}</tbody>
+        <tbody>${itemRows || '<tr><td colspan="5" style="padding:10px;text-align:center;color:#8b7e6a;">No items</td></tr>'}</tbody>
       </table>
       <table class="totals">
-        <tr><td>Subtotal</td><td style="text-align:right;">₹${pricing.subtotal}</td></tr>
         <tr><td>GST (18%)</td><td style="text-align:right;">₹${pricing.tax}</td></tr>
         <tr><td>Shipping</td><td style="text-align:right;">${pricing.shipping === 0 ? 'FREE' : '₹' + pricing.shipping}</td></tr>
         <tr class="grand"><td>Grand Total</td><td style="text-align:right;">₹${pricing.grandTotal}</td></tr>
@@ -1266,19 +1283,23 @@ export const generateBulkInvoicesHTML = async (req, res) => {
     <html>
     <head>
       <meta charset="utf-8">
+      ${PDF_WEB_FONT_LINKS}
       <title>Bulk Invoices</title>
       <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.6; }
-        .invoice-page { padding: 30px; max-width: 800px; margin: 0 auto; box-sizing: border-box; }
+        body { font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, 'DejaVu Sans', Arial, sans-serif; color: #333; line-height: 1.55; }
+        .invoice-page { padding: 22px 24px; max-width: 800px; margin: 0 auto; box-sizing: border-box; }
+        .addr-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+        .addr-col { flex: 1 1 240px; }
+        .addr-col h3 { margin: 0 0 8px; border-bottom: 2px solid #e5e5e5; padding-bottom: 4px; font-size: 14px; }
         @media print {
           .page-break { page-break-after: always; clear: both; }
           body { background: #fff; margin: 0; padding: 0; }
           .no-print { display: none !important; }
         }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e5e5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e5e5; }
         th { background-color: #f8f9fa; font-weight: bold; }
-        .print-bar { text-align: center; padding: 16px; background: #f5f0e6; border-bottom: 1px solid #e0ddd5; }
+        .print-bar { text-align: center; padding: 14px; background: #f5f0e6; border-bottom: 1px solid #e0ddd5; }
         .print-bar button { padding: 10px 24px; background: #1a2e1a; color: #f5f0e6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
       </style>
     </head>
@@ -1312,7 +1333,7 @@ export const generateBulkInvoicesHTML = async (req, res) => {
 
       combinedHtml += `
       <div class="invoice-page">
-        <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:22px;">
           <div>
             <h1 style="margin:0;color:#2c5e50;">Svayam Natural</h1>
             <p style="margin:5px 0 0;color:#666;">Invoice #${shortRef}</p>
@@ -1323,13 +1344,19 @@ export const generateBulkInvoicesHTML = async (req, res) => {
           </div>
         </div>
         
-        <div style="margin-bottom:30px;">
-          <h3 style="margin-bottom:10px; border-bottom: 2px solid #e5e5e5; padding-bottom:5px;">Bill To / Ship To:</h3>
-          <p style="margin:0;"><strong>${shipToName}</strong></p>
-          ${addr.email ? `<p style="margin:0;">${addr.email}</p>` : ''}
-          ${addrLine ? `<p style="margin:0;">${addrLine}</p>` : ''}
-          ${cityLine ? `<p style="margin:0;">${cityLine}</p>` : ''}
-          <p style="margin:0;">Phone: ${addr.phone || ''}</p>
+        <div class="addr-row">
+          <div class="addr-col">
+            <h3>Bill To / Ship To</h3>
+            <p style="margin:0;"><strong>${shipToName}</strong></p>
+            ${addr.email ? `<p style="margin:0;">${addr.email}</p>` : ''}
+            ${addrLine ? `<p style="margin:0;">${addrLine}</p>` : ''}
+            ${cityLine ? `<p style="margin:0;">${cityLine}</p>` : ''}
+            <p style="margin:0;">Phone: ${addr.phone || ''}</p>
+          </div>
+          <div class="addr-col">
+            <h3>From</h3>
+            ${PDF_SELLER_FROM_HTML}
+          </div>
         </div>
 
         <table>
@@ -1337,9 +1364,8 @@ export const generateBulkInvoicesHTML = async (req, res) => {
           <tbody>${itemsHtml || '<tr><td colspan="5">No items found</td></tr>'}</tbody>
         </table>
 
-        <div style="margin-top:20px; width:300px; float:right;">
+        <div style="margin-top:14px; width:300px; float:right;">
           <table style="margin-top:0;">
-            <tr><td>Subtotal</td><td style="text-align:right;">₹${pricing.subtotal || 0}</td></tr>
             <tr><td>Shipping</td><td style="text-align:right;">${pricing.shipping === 0 ? 'FREE' : '₹' + pricing.shipping}</td></tr>
             <tr style="font-weight:bold; font-size:18px;"><td>Grand Total</td><td style="text-align:right;">₹${pricing.grandTotal ?? order.totalAmount}</td></tr>
           </table>
@@ -1379,9 +1405,10 @@ export const generateBulkLabelsHTML = async (req, res) => {
     <html>
     <head>
       <meta charset="utf-8">
+      ${PDF_WEB_FONT_LINKS}
       <title>Bulk Shipping Labels</title>
       <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; margin: 0; padding: 20px; background: #eaebec; }
+        body { font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, 'DejaVu Sans', Arial, sans-serif; color: #000; margin: 0; padding: 20px; background: #eaebec; }
         .label-page { 
           width: 4in; height: 6in; 
           background: #fff; margin: 0 auto 20px auto; padding: 20px; 
@@ -1433,8 +1460,8 @@ export const generateBulkLabelsHTML = async (req, res) => {
           
           <div class="from-address">
             <strong style="color:#555;">FROM:</strong><br>
-            <strong>Svayam Natural</strong><br>
-            India
+            ${PDF_SELLER_FROM_LABEL_HTML}
+            ${PDF_LABEL_RETURN_NOTE}
           </div>
         </div>
 

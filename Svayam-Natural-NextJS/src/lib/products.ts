@@ -256,7 +256,7 @@ export const products: Product[] = [
     originalPrice: 999,
     weight: '30ml',
     sku: 'SN-BP-TJA-030',
-    image: '/images/Tejasamrit Golden Night Ritual.jpeg',
+    image: '/images/Tejasamrit_New.jpeg',
     badges: ['7 Precious Oils', 'Multi-Purpose', 'Fast-Absorbing', 'Anti-Aging'],
     concerns: ['glow-radiance'],
     ingredients: [
@@ -375,12 +375,12 @@ export const products: Product[] = [
   { slug: 'snehchandan-natural-soap', name: 'Snehchandan natural soap', tagline: 'Sandalwood luxury', description: 'Sandalwood-infused natural soap.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-SNS', image: '/images/Snehchandan Natural Soap.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'mango-body-butter', name: 'Mango body butter', tagline: 'Tropical nourishment', description: 'Rich mango body butter.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-MBB', image: '/images/Mango Body Butter.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'kayashuddhi-abhyanga-body-oil', name: 'Kayashuddhi abhyanga body oil', tagline: 'Purifying body oil', description: 'Detoxifying body massage oil.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-KAB', image: '/images/Kayashuddhi Abhyanga Body Oil.jpeg', badges: [], ingredients: [], benefits: [] },
-  { slug: 'triphala-natural-soap', name: 'Triphala Natural Soap', tagline: 'Purifying cleanse', description: 'Triphala-infused natural soap.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-TNS', image: '/images/Triphala Natural Soap.jpeg', badges: [], ingredients: [], benefits: [] },
+  { slug: 'triphala-natural-soap', name: 'Triphala Natural Soap', tagline: 'Purifying cleanse', description: 'Triphala-infused natural soap.', story: '', category: 'wellness', theme: 'wellness', price: 0, originalPrice: 0, weight: '', sku: 'SN-WL-TNS', image: '/images/Trifala_Orange_Soap.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'keshvardhini-hair-oil', name: 'Keshvardhini hair oil', tagline: 'Hair growth elixir', description: 'Traditional hair oil for growth.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-KVO', image: '/images/Keshvardhini Hair Oil.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'bhruhshakti-roll-on', name: 'Bhruhshakti roll on', tagline: 'Eyebrow care', description: 'Natural eyebrow roll-on.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-BSR', image: '/images/Bhruhshakti Roll On.jpeg', badges: [], ingredients: [], benefits: [] },
   { slug: 'kesh-shuddhi', name: 'Kesh shuddhi', tagline: 'Scalp cleansing', description: 'Scalp cleansing formulation.', story: '', category: 'hair-care', theme: 'herbal', price: 0, originalPrice: 0, weight: '', sku: 'SN-HC-KSH', image: '/images/shudhi/1.jpeg', images: ['/images/shudhi/1.jpeg', '/images/shudhi/2.jpeg', '/images/shudhi/3.jpeg'], badges: [], ingredients: [], benefits: [] },
   { slug: 'swarnahairdra-turmeric', name: 'Swarnahairdra Stone grounded 100% pure turmeric', tagline: 'Pure turmeric', description: 'Stone-ground pure turmeric powder.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-SHT', image: '/images/Swarnahairdra Turmeric Powder (400gms).jpeg', badges: [], ingredients: [], benefits: [] },
-  { slug: 'sonamoti-wheat', name: "Sonamoti Wheat – Nature's Gift", tagline: 'Natural wheat', description: 'Premium wheat product.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-SMW', image: '/images/Sonamoti Wheat.jpeg', badges: [], ingredients: [], benefits: [] },
+  { slug: 'sonamoti-wheat', name: "Sonamoti Wheat – Nature's Gift", tagline: 'Natural wheat', description: 'Premium wheat product.', story: '', category: 'natural-food', theme: 'food', price: 0, originalPrice: 0, weight: '', sku: 'SN-NF-SMW', image: '/images/Sonamoti_Wheat.jpeg', badges: [], ingredients: [], benefits: [] },
 ];
 
 export function getProductBySlug(slug: string): Product | undefined {

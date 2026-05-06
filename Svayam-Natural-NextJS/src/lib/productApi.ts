@@ -1,4 +1,11 @@
 import { api } from './api';
+import {
+  editorialBySlug,
+  CATEGORY_THEMES,
+  normalizeConcernQuery,
+  type Product,
+  type ProductTheme,
+} from './products';
 
 /* ---- Backend product shape ---- */
 export interface BackendProduct {
@@ -49,18 +56,22 @@ export interface MergedProduct {
   howToUse?: string;
 }
 
-/* ---- Import editorial data ---- */
-import {
-  editorialBySlug,
-  CATEGORY_THEMES,
-  normalizeConcernQuery,
-  type ProductTheme,
-} from './products';
-
 /* ---- Merge helper ---- */
+function editorialImageGallery(editorial: Product | undefined): string[] {
+  if (!editorial) return [];
+  if (editorial.images?.length) return editorial.images.filter(Boolean);
+  if (editorial.image) return [editorial.image];
+  return [];
+}
+
 export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedProduct[] {
   return backendProducts.map((bp) => {
     const editorial = editorialBySlug[bp.slug];
+    const backendImages = (bp.images || []).filter(Boolean);
+    const staticGallery = editorialImageGallery(editorial);
+    const images =
+      staticGallery.length > 0 ? staticGallery : backendImages.length > 0 ? backendImages : ['/images/All-Products.jpeg'];
+    const image = images[0] || '/images/All-Products.jpeg';
     // Parse comma-separated concerns from backend into array
     const backendConcerns = bp.concern
       ? bp.concern
@@ -77,8 +88,8 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
       price: bp.price,
       originalPrice: bp.originalPrice,
       inventory: bp.inventory,
-      image: bp.images?.[0] || '/images/All-Products.jpeg',
-      images: bp.images || [],
+      image,
+      images,
       category: bp.category,
       concern: bp.concern,
       isActive: bp.isActive,

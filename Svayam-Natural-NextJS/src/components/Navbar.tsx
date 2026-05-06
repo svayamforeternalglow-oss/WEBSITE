@@ -125,9 +125,11 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  const menuEase = "ease-[cubic-bezier(0.22,1,0.36,1)]";
+
   return (
     <header
-      className={`sticky inset-x-0 top-0 z-50 transition-all duration-500 ${
+      className={`sticky inset-x-0 top-0 z-50 transition-colors duration-300 ${menuEase} motion-reduce:transition-none ${
         mobileOpen
           ? "bg-forest"
           : solid
@@ -137,7 +139,7 @@ export default function Navbar() {
     >
       {/* Top accent line */}
       <div
-        className={`h-[1px] transition-opacity duration-500 ${
+        className={`h-[1px] transition-opacity duration-300 ${menuEase} motion-reduce:transition-none ${
           solid
             ? "bg-gradient-to-r from-transparent via-neutral-300 to-transparent opacity-100"
             : "bg-gradient-to-r from-transparent via-gold/30 to-transparent opacity-100"
@@ -148,15 +150,16 @@ export default function Navbar() {
         {/* Mobile Left: Hamburger + Logo */}
         <div className="flex items-center gap-1 lg:hidden">
           <button
+            type="button"
             className="relative -ml-1 flex h-9 w-9 items-center justify-center"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
           >
             <div className="flex w-5 flex-col items-start gap-[5px]">
-              <span className={`h-[1.5px] transition-all duration-300 ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-5 translate-y-[6.5px] rotate-45" : "w-5"}`} />
-              <span className={`h-[1.5px] transition-all duration-300 ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-0 opacity-0" : "w-4"}`} />
-              <span className={`h-[1.5px] transition-all duration-300 ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-5 -translate-y-[6.5px] -rotate-45" : "w-3"}`} />
+              <span className={`h-[1.5px] transition-all duration-[400ms] ${menuEase} motion-reduce:transition-none ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-5 translate-y-[6.5px] rotate-45" : "w-5"}`} />
+              <span className={`h-[1.5px] transition-all duration-[400ms] ${menuEase} motion-reduce:transition-none ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-0 opacity-0" : "w-4"}`} />
+              <span className={`h-[1.5px] transition-all duration-[400ms] ${menuEase} motion-reduce:transition-none ${solid ? "bg-forest" : "bg-gold"} ${mobileOpen ? "w-5 -translate-y-[6.5px] -rotate-45" : "w-3"}`} />
             </div>
           </button>
 
@@ -353,13 +356,12 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu — full-screen overlay, logo in same place (white washed) */}
+      {/* Mobile Menu — slides in from left; links stagger after panel motion */}
       <div
-        className={`fixed inset-0 z-50 flex flex-col bg-forest/[0.98] backdrop-blur-2xl transition-all duration-500 lg:hidden ${
-          mobileOpen
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0"
+        className={`fixed inset-0 z-50 flex flex-col bg-forest/[0.98] backdrop-blur-2xl transition-transform duration-300 lg:hidden ${menuEase} motion-reduce:transition-none ${
+          mobileOpen ? "pointer-events-auto translate-x-0" : "pointer-events-none -translate-x-full"
         }`}
+        aria-hidden={!mobileOpen}
       >
         {/* Header: logo (same position as navbar) + close */}
         <div className="flex flex-shrink-0 items-center justify-between px-4 py-[2px] sm:px-5">
@@ -390,15 +392,11 @@ export default function Navbar() {
               {link.children ? (
                 <>
                   <button
+                    type="button"
                     onClick={() => setOpenSubmenu(openSubmenu === link.label ? null : link.label)}
-                    className="flex items-center gap-2 py-3 text-center text-lg font-medium tracking-[0.1em] text-sand/70 transition-all duration-300 hover:text-gold"
-                    style={{
-                      transitionDelay: mobileOpen ? `${i * 60}ms` : "0ms",
-                      opacity: mobileOpen ? 1 : 0,
-                      transform: mobileOpen
-                        ? "translateY(0)"
-                        : "translateY(12px)",
-                    }}
+                    className={`flex items-center gap-2 py-3 text-center text-lg font-medium tracking-[0.1em] text-sand/70 transition-[opacity,transform] duration-[220ms] ease-out motion-reduce:transition-none hover:text-gold ${
+                      mobileOpen ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                    } ${mobileOpen ? `[transition-delay:${i * 42}ms]` : "!transition-delay-0"}`}
                   >
                     {link.label}
                     <svg
@@ -412,7 +410,7 @@ export default function Navbar() {
                     </svg>
                   </button>
                   <div
-                    className={`flex flex-col items-center gap-0.5 overflow-hidden transition-all duration-300 ${
+                    className={`flex flex-col items-center gap-0.5 overflow-hidden transition-[max-height,opacity] duration-300 motion-reduce:transition-none ${menuEase} ${
                       openSubmenu === link.label ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                     }`}
                   >
@@ -432,21 +430,20 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="py-3 text-center text-lg font-medium tracking-[0.1em] text-sand/70 transition-all duration-300 hover:text-gold"
-                  style={{
-                    transitionDelay: mobileOpen ? `${i * 60}ms` : "0ms",
-                    opacity: mobileOpen ? 1 : 0,
-                    transform: mobileOpen
-                      ? "translateY(0)"
-                      : "translateY(12px)",
-                  }}
+                  className={`py-3 text-center text-lg font-medium tracking-[0.1em] text-sand/70 transition-[opacity,transform] duration-[220ms] ease-out motion-reduce:transition-none hover:text-gold ${
+                    mobileOpen ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                  } ${mobileOpen ? `[transition-delay:${i * 42}ms]` : "!transition-delay-0"}`}
                 >
                   {link.label}
                 </Link>
               )}
             </div>
           ))}
-          <div className="mt-6 flex flex-col items-center gap-4">
+          <div
+            className={`mt-6 flex flex-col items-center gap-4 transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+              mobileOpen ? "opacity-100 [transition-delay:200ms]" : "opacity-0 !transition-delay-0"
+            }`}
+          >
             {showAuthenticatedMenu ? (
               <div className="flex flex-col items-center gap-3">
                 <span className="text-sm font-medium tracking-wider text-sand">

@@ -22,9 +22,9 @@ const PRODUCT_IMAGE_UPDATES = [
   { slug: 'keshvardhini-hair-oil', images: ['/images/Keshvardhini Hair Oil.jpeg'] },
   { slug: 'bhruhshakti-roll-on', images: ['/images/Bhruhshakti Roll On.jpeg'] },
   { slug: 'swarnahairdra-turmeric', images: ['/images/Swarnahairdra Turmeric Powder (400gms).jpeg'] },
-  { slug: 'sonamoti-wheat', images: ['/images/Sonamoti Wheat.jpeg'] },
-  { slug: 'triphala-natural-soap', images: ['/images/Triphala Natural Soap.jpeg'] },
-  { slug: 'tejasamrit', images: ['/images/Tejasamrit Golden Night Ritual.jpeg'] },
+  { slug: 'sonamoti-wheat', images: ['/images/Sonamoti_Wheat.jpeg'] },
+  { slug: 'triphala-natural-soap', images: ['/images/Trifala_Orange_Soap.jpeg'] },
+  { slug: 'tejasamrit', images: ['/images/Tejasamrit_New.jpeg'] },
   { slug: 'face-polishing-scrub', images: ['/images/Face polishing scrub.jpeg'] },
 ];
 
