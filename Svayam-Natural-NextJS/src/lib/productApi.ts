@@ -80,11 +80,15 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
           .filter(Boolean)
       : [];
     const editorialConcerns = (editorial?.concerns || []).map((c) => normalizeConcernQuery(c)).filter(Boolean);
+    const displayName =
+      editorial?.name?.trim() ? editorial.name.trim() : bp.title;
+    const displayDescription =
+      editorial?.description?.trim() ? editorial.description.trim() : bp.description;
     return {
       _id: bp._id,
       slug: bp.slug,
-      name: bp.title,
-      description: bp.description,
+      name: displayName,
+      description: displayDescription,
       price: bp.price,
       originalPrice: bp.originalPrice,
       inventory: bp.inventory,

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLongRightIcon } from "./icons";
 
+/** Homepage hero backgrounds — paths under /public. Replace with HQ JPEG/WebP (~1600–1920px wide); compress for LCP. */
 const slides = [
   {
     backgroundImage: "/images/Complete-Radiance-Kit.jpeg",
@@ -91,7 +92,7 @@ export default function HeroSlider() {
           src={activeSlide.backgroundImage}
           alt={`${activeSlide.title} background`}
           fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, min(1920px, 100vw)"
           className="object-cover"
           style={{ objectPosition: activeSlide.backgroundPosition }}
           priority={current === 0}

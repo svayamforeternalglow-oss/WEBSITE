@@ -120,6 +120,18 @@ const products = [
     concern: 'General',
   },
   {
+    title: 'Tridosha Rasayan',
+    slug: 'tridosha-rasayan',
+    description:
+      'Ayurvedic rasayana blend for tridosha balance. Distinct from Triphala Detox Tea — different formulation and intent.',
+    price: 299,
+    originalPrice: 449,
+    inventory: 100,
+    images: ['/images/Tridosha_Rasayana.jpeg'],
+    category: 'natural-food',
+    concern: 'General',
+  },
+  {
     title: 'Gulkand Rose Preserve',
     slug: 'gulkand',
     description: 'Traditional sweet rose petal preserve. Natural coolant with digestive benefits. Made from organic rose petals and sugar.',

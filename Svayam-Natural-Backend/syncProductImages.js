@@ -26,6 +26,7 @@ const PRODUCT_IMAGE_UPDATES = [
   { slug: 'triphala-natural-soap', images: ['/images/Trifala_Orange_Soap.jpeg'] },
   { slug: 'tejasamrit', images: ['/images/Tejasamrit_New.jpeg'] },
   { slug: 'face-polishing-scrub', images: ['/images/face-polishing-mask.jpeg'] },
+  { slug: 'tridosha-rasayan', images: ['/images/Tridosha_Rasayana.jpeg'] },
 ];
 
 async function run() {

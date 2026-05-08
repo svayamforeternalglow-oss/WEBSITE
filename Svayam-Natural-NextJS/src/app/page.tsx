@@ -1,6 +1,5 @@
 import Link from "next/link";
 import HeroSlider from "@/components/HeroSlider";
-import HomeSearch from "@/components/HomeSearch";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import ShopByConcern from "@/components/ShopByConcern";
 import SeasonalPicks from "@/components/SeasonalPicks";
@@ -124,9 +123,6 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Search Bar (Top of Home Page) */}
-      <HomeSearch />
-
       {/* Hero */}
       <HeroSlider />
 

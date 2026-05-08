@@ -320,9 +320,9 @@ export const addOrderItems = async (req, res) => {
       });
     }
 
-    const tax = Math.round(subtotal * 0.18);
+    const tax = 0;
     const shipping = subtotal > 1000 ? 0 : 100;
-    const finalTotal = subtotal + tax + shipping;
+    const finalTotal = subtotal + shipping;
 
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
@@ -903,7 +903,7 @@ export const downloadInvoice = async (req, res) => {
         <tbody>${itemRows || '<tr><td colspan="5" style="padding:10px;text-align:center;color:#8b7e6a;">No items</td></tr>'}</tbody>
       </table>
       <table class="totals">
-        <tr><td>GST (18%)</td><td style="text-align:right;">₹${pricing.tax}</td></tr>
+        ${pricing.tax ? `<tr><td>GST (18%)</td><td style="text-align:right;">₹${pricing.tax}</td></tr>` : ''}
         <tr><td>Shipping</td><td style="text-align:right;">${pricing.shipping === 0 ? 'FREE' : '₹' + pricing.shipping}</td></tr>
         <tr class="grand"><td>Grand Total</td><td style="text-align:right;">₹${pricing.grandTotal}</td></tr>
       </table>
@@ -1039,9 +1039,9 @@ export const createGuestOrder = async (req, res) => {
       });
     }
 
-    const tax = Math.round(subtotal * 0.18);
+    const tax = 0;
     const shipping = subtotal > 1000 ? 0 : 100;
-    const finalTotal = subtotal + tax + shipping;
+    const finalTotal = subtotal + shipping;
 
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,

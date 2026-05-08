@@ -304,6 +304,35 @@ export const products: Product[] = [
     howToUse: 'Add 1 teaspoon to a cup of hot water. Steep for 5 minutes. Drink warm, preferably in the morning.',
   },
   {
+    slug: 'tridosha-rasayan',
+    name: 'Tridosha Rasayan',
+    tagline: 'Harmony for Vata, Pitta & Kapha',
+    description:
+      'Ayurvedic rasayana blend crafted to support balance across all three doshas. A distinct formulation from our Triphala Detox Tea — focused on restorative daily nourishment rather than the triphala-forward detox tea profile.',
+    story:
+      'Tridosha Rasayan draws on classical rasayana ideas — nourishing the body while encouraging equilibrium between Vata, Pitta, and Kapha. We formulate this as its own SKU so it is never confused with Triphala Detox Tea on shelf or online.',
+    category: 'natural-food',
+    theme: 'food',
+    price: 299,
+    originalPrice: 449,
+    weight: '100g',
+    sku: 'SN-NF-TDR-100',
+    image: '/images/Tridosha_Rasayana.jpeg',
+    badges: ['Dosha Balance', 'Rasayana', 'Traditional Blend'],
+    concerns: [],
+    ingredients: [
+      { name: 'Adaptogenic herbs', icon: '🌿', description: 'Carefully chosen botanicals to support steady energy and calm.' },
+      { name: 'Digestive supports', icon: '🫚', description: 'Gentle warming notes that complement daily meals.' },
+      { name: 'Antioxidant botanicals', icon: '🍃', description: 'Plant allies traditionally valued for vitality.' },
+    ],
+    benefits: [
+      { title: 'Daily balance', description: 'Thoughtfully blended for those seeking tridosha harmony.', icon: '☯️' },
+      { title: 'Restorative ritual', description: 'A nourishing complement to your morning or evening routine.', icon: '✨' },
+      { title: 'Clearly separate', description: 'Not the same product as Triphala Detox Tea — different formula and intent.', icon: '📌' },
+    ],
+    howToUse: 'Use as directed on pack or by your Ayurvedic practitioner. Typically taken with warm water or milk.',
+  },
+  {
     slug: 'gulkand',
     name: 'Gulkand Rose Preserve',
     tagline: 'A Jar of Ancient Sweetness',
@@ -410,8 +439,8 @@ export const PRODUCTS_PAGE_CATEGORIES = [
   { id: "hair-care", label: "Hair Care", slugs: ["keshvardhini-hair-oil", "hibiscus-hair-gel", "bhruhshakti-roll-on", "kesh-shuddhi", "kesh-samraksha"] },
   { id: "body-care", label: "Body Care", slugs: ["abhyanga-natural-soap", "snehchandan-natural-soap", "abhyanga-udvartana", "mango-body-butter", "kayashuddhi-abhyanga-body-oil", "triphala-natural-soap", "glowup-night-gel"] },
   { id: "food", label: "Eat to Glow", slugs: ["tejasamrit", "autea", "gulkand"] },
-  { id: "detox", label: "Detox", slugs: ["triphala-detox", "swarnahairdra-turmeric"] },
-  { id: "natural-food", label: "Natural Food", slugs: ["swarnahairdra-turmeric", "sonamoti-wheat", "triphala-detox", "autea", "gulkand"] },
+  { id: "detox", label: "Detox", slugs: ["triphala-detox", "tridosha-rasayan", "swarnahairdra-turmeric"] },
+  { id: "natural-food", label: "Natural Food", slugs: ["swarnahairdra-turmeric", "sonamoti-wheat", "triphala-detox", "tridosha-rasayan", "autea", "gulkand"] },
 ] as const;
 
 export const CATEGORY_QUERY_ALIASES: Record<string, string> = {
@@ -479,6 +508,7 @@ export const COLLECTION_ROUTE_PRODUCTS: Record<string, string[]> = {
     'sonamoti-wheat',
     'swarnahairdra-turmeric',
     'triphala-detox',
+    'tridosha-rasayan',
     'autea',
     'tejasamrit',
     'gulkand',

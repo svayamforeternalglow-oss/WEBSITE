@@ -121,7 +121,7 @@ if (isCorsOpenMode) {
   }));
 }
 
-// Rate limiting
+// Rate limiting — tune max upward if legitimate storefront traffic hits 429s behind carrier NAT.
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs

@@ -3,10 +3,12 @@
 import { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { ShoppingBagIcon, UserIcon, HeartIcon } from "./icons";
 import { useCartStore } from "@/lib/cart";
 import { useWishlistStore } from "@/lib/wishlist";
 import { useAuthStore } from "@/lib/auth";
+import HomeSearch from "./HomeSearch";
 
 interface NavChild {
   label: string;
@@ -57,6 +59,7 @@ const navLinks: NavItem[] = [
       { label: "Rose Lip Balm", href: "/products/rose-lip-balm" },
       { label: "Tejasamrit Ritual", href: "/products/tejasamrit" },
       { label: "Triphala Detox Tea", href: "/products/triphala-detox" },
+      { label: "Tridosha Rasayan", href: "/products/tridosha-rasayan" },
       { label: "Gulkand Preserve", href: "/products/gulkand" },
       { label: "Abhyanga Udvartana", href: "/products/abhyanga-udvartana" },
     ],
@@ -89,6 +92,9 @@ const useStoreHydrated = (store: PersistHydrationStore) => {
 };
 
 export default function Navbar() {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   
@@ -355,6 +361,12 @@ export default function Navbar() {
           </Link>
         </div>
       </nav>
+
+      {isHome && (
+        <div className="relative z-[1] border-t border-neutral-200/70 bg-white/[0.97] backdrop-blur-xl">
+          <HomeSearch />
+        </div>
+      )}
 
       {/* Mobile Menu — slides in from left; links stagger after panel motion */}
       <div
