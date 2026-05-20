@@ -7,6 +7,7 @@ import CartDrawer from "@/components/CartDrawer";
 import ToastContainer from "@/components/Toast";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import TopBanner from "@/components/TopBanner";
+import { Analytics } from '@vercel/analytics/next';
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -66,6 +67,7 @@ export default function RootLayout({
         <CartDrawer />
         <ToastContainer />
         <WhatsAppFloat />
+        <Analytics />
       </body>
     </html>
   );
