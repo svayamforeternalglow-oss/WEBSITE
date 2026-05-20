@@ -106,7 +106,18 @@ const orderSchema = new mongoose.Schema({
   courierName: {
     type: String,
     default: ''
-  }
+  },
+  shiprocketSyncStatus: {
+    type: String,
+    default: '',
+  },
+  shiprocketSyncError: {
+    type: String,
+    default: '',
+  },
+  shiprocketSyncAt: {
+    type: Date,
+  },
 }, {
   timestamps: true
 });

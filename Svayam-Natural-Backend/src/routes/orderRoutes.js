@@ -15,7 +15,8 @@ import {
   generateBulkLabelsHTML,
   createGuestOrder,
   verifyGuestPayment,
-  verifyWebhook
+  verifyWebhook,
+  resyncShiprocketOrder,
 } from '../controllers/orderController.js';
 import { protect, admin } from '../middlewares/authMiddleware.js';
 
@@ -41,6 +42,7 @@ router.route('/admin/all').get(protect, admin, getAdminOrders);
 router.route('/admin/bulk-ship-invoices').get(protect, admin, downloadBulkInvoices);
 router.route('/admin/bulk-invoices-html').post(protect, admin, generateBulkInvoicesHTML);
 router.route('/admin/bulk-labels-html').post(protect, admin, generateBulkLabelsHTML);
+router.route('/admin/:id/shiprocket-sync').post(protect, admin, resyncShiprocketOrder);
 router.route('/admin/:id/status').patch(protect, admin, updateOrderStatus);
 router.route('/admin/:id/refund').post(protect, admin, refundOrder);
 router.route('/admin/:id/invoice').get(protect, admin, downloadInvoice);

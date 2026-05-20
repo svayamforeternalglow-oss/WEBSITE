@@ -1,34 +1,124 @@
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import {
+  paidOrderMatch,
+  revenueDateExpression,
+  parseStatsDays,
+  statsWindow,
+  dateRangeMatch,
+} from '../utils/adminMetrics.js';
 
-// @desc    Get revenue stats
-// @route   GET /api/v1/admin/stats/revenue
+const buildPaidStatsPipeline = (windowStart, windowEnd, groupStage) => [
+  { $match: paidOrderMatch() },
+  { $match: dateRangeMatch(windowStart, windowEnd) },
+  { $group: groupStage },
+  { $sort: { _id: 1 } },
+];
+
+// @desc    Dashboard summary (paid-only revenue and counts)
+// @route   GET /api/v1/admin/stats/summary
 // @access  Private/Admin
-export const getRevenueStats = async (req, res) => {
+export const getStatsSummary = async (req, res) => {
   try {
-    const revenue = await Order.aggregate([
-      {
-        $match: {
-          lifecycleStatus: { $nin: ["Cancelled", "Refunded", "Returned"] }
-        }
-      },
+    const days = parseStatsDays(req.query);
+    const { windowStart, windowEnd } = statsWindow(days);
+
+    const [totals] = await Order.aggregate([
+      { $match: paidOrderMatch() },
+      { $match: dateRangeMatch(windowStart, windowEnd) },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          revenue: { $sum: "$totalAmount" },
-          orders: { $sum: 1 }
-        }
+          _id: null,
+          revenuePaid: { $sum: '$totalAmount' },
+          ordersPaid: { $sum: 1 },
+          deliveredCount: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    { $toLower: { $ifNull: ['$lifecycleStatus', ''] } },
+                    ['delivered'],
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
       },
-      { $sort: { _id: 1 } },
-      { $limit: 30 }
     ]);
-    res.json({ success: true, data: revenue });
+
+    const revenuePaid = totals?.revenuePaid ?? 0;
+    const ordersPaid = totals?.ordersPaid ?? 0;
+    const deliveredCount = totals?.deliveredCount ?? 0;
+
+    const activeFulfillmentCount = await Order.countDocuments({
+      $and: [
+        paidOrderMatch(),
+        {
+          lifecycleStatus: { $in: ['Paid', 'Processing', 'Shipped'] },
+        },
+      ],
+    });
+
+    res.json({
+      success: true,
+      data: {
+        revenuePaid,
+        ordersPaid,
+        aovPaid: ordersPaid > 0 ? Math.round(revenuePaid / ordersPaid) : 0,
+        deliveredCount,
+        deliveredRate: ordersPaid > 0 ? Math.round((deliveredCount / ordersPaid) * 100) : 0,
+        activeFulfillmentCount,
+        windowStart: windowStart.toISOString(),
+        windowEnd: windowEnd.toISOString(),
+        days,
+        currency: 'INR',
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Get order status stats
+// @desc    Get revenue stats (paid orders only)
+// @route   GET /api/v1/admin/stats/revenue
+// @access  Private/Admin
+export const getRevenueStats = async (req, res) => {
+  try {
+    const days = parseStatsDays(req.query);
+    const { windowStart, windowEnd } = statsWindow(days);
+
+    const revenue = await Order.aggregate(
+      buildPaidStatsPipeline(windowStart, windowEnd, {
+        _id: {
+          $dateToString: {
+            format: '%Y-%m-%d',
+            date: revenueDateExpression(),
+          },
+        },
+        revenue: { $sum: '$totalAmount' },
+        orders: { $sum: 1 },
+      })
+    );
+
+    res.json({
+      success: true,
+      data: revenue,
+      meta: {
+        windowStart: windowStart.toISOString(),
+        windowEnd: windowEnd.toISOString(),
+        days,
+        scope: 'paid',
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get order status stats (all orders by lifecycle)
 // @route   GET /api/v1/admin/stats/orders
 // @access  Private/Admin
 export const getOrderStatusStats = async (req, res) => {
@@ -38,12 +128,12 @@ export const getOrderStatusStats = async (req, res) => {
         $group: {
           _id: {
             $toLower: {
-              $ifNull: ['$lifecycleStatus', '$trackingStatus']
-            }
+              $ifNull: ['$lifecycleStatus', '$trackingStatus'],
+            },
           },
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
     res.json({ success: true, data: stats });
   } catch (error) {
@@ -51,30 +141,67 @@ export const getOrderStatusStats = async (req, res) => {
   }
 };
 
-// @desc    Get payment stats
+// @desc    Get payment stats (daily breakdown)
 // @route   GET /api/v1/admin/stats/payments
 // @access  Private/Admin
 export const getPaymentStats = async (req, res) => {
   try {
+    const days = parseStatsDays(req.query);
+    const { windowStart, windowEnd } = statsWindow(days);
+
     const stats = await Order.aggregate([
+      { $match: dateRangeMatch(windowStart, windowEnd, '$createdAt') },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          completed: { 
-            $sum: { $cond: [{ $eq: [{ $toLower: "$paymentStatus.status" }, "completed"] }, 1, 0] } 
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          completed: {
+            $sum: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: ['$isPaid', true] },
+                    { $eq: [{ $toLower: '$paymentStatus.status' }, 'completed'] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
           },
-          pending: { 
-            $sum: { $cond: [{ $eq: [{ $toLower: "$paymentStatus.status" }, "pending"] }, 1, 0] } 
+          pending: {
+            $sum: {
+              $cond: [{ $eq: [{ $toLower: '$paymentStatus.status' }, 'pending'] }, 1, 0],
+            },
           },
-          failed: { 
-            $sum: { $cond: [{ $eq: [{ $toLower: "$paymentStatus.status" }, "failed"] }, 1, 0] } 
-          }
-        }
+          failed: {
+            $sum: {
+              $cond: [{ $eq: [{ $toLower: '$paymentStatus.status' }, 'failed'] }, 1, 0],
+            },
+          },
+          refunded: {
+            $sum: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: [{ $toLower: '$paymentStatus.status' }, 'refunded'] },
+                    { $eq: [{ $toLower: '$lifecycleStatus' }, 'refunded'] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
       },
       { $sort: { _id: 1 } },
-      { $limit: 30 }
     ]);
-    res.json({ success: true, data: stats });
+
+    res.json({
+      success: true,
+      data: stats,
+      meta: { windowStart: windowStart.toISOString(), windowEnd: windowEnd.toISOString(), days },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -86,15 +213,13 @@ export const getPaymentStats = async (req, res) => {
 export const exportPhones = async (req, res) => {
   try {
     const query = {};
-    
-    // Optional date range filter
+
     if (req.query.dateFrom || req.query.dateTo) {
       query.createdAt = {};
       if (req.query.dateFrom) query.createdAt.$gte = new Date(req.query.dateFrom);
       if (req.query.dateTo) query.createdAt.$lte = new Date(req.query.dateTo + 'T23:59:59.999Z');
     }
-    
-    // Optional status filter
+
     if (req.query.status) {
       const statusRegex = new RegExp(`^${req.query.status}$`, 'i');
       query.$or = [
@@ -107,25 +232,28 @@ export const exportPhones = async (req, res) => {
       .populate('user', 'name email phone')
       .sort({ createdAt: -1 });
 
-    // Deduplicate by phone number
     const phoneMap = new Map();
 
     for (const order of orders) {
-      // Extract phone from shipping address (primary source) or user
-      const phone = order.shippingAddress?.phone || 
-                    (order.user && typeof order.user === 'object' ? order.user.phone : '') || '';
-      
+      const phone =
+        order.shippingAddress?.phone ||
+        (order.user && typeof order.user === 'object' ? order.user.phone : '') ||
+        '';
+
       if (!phone || phone === 'N/A') continue;
 
-      const name = order.shippingAddress?.fullName || 
-                   (order.user && typeof order.user === 'object' ? order.user.name : '') || 'Guest';
-      const email = order.shippingAddress?.email || 
-                    (order.user && typeof order.user === 'object' ? order.user.email : '') || '';
+      const name =
+        order.shippingAddress?.fullName ||
+        (order.user && typeof order.user === 'object' ? order.user.name : '') ||
+        'Guest';
+      const email =
+        order.shippingAddress?.email ||
+        (order.user && typeof order.user === 'object' ? order.user.email : '') ||
+        '';
 
       if (phoneMap.has(phone)) {
         const existing = phoneMap.get(phone);
         existing.orderCount += 1;
-        // Keep the latest order date
         if (new Date(order.createdAt) > new Date(existing.lastOrderDate)) {
           existing.lastOrderDate = order.createdAt;
         }
@@ -140,21 +268,24 @@ export const exportPhones = async (req, res) => {
       }
     }
 
-    // Build CSV
     const rows = Array.from(phoneMap.values());
     let csv = 'Phone,Name,Email,LastOrderDate,OrderCount\n';
     for (const row of rows) {
       const date = new Date(row.lastOrderDate).toLocaleDateString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric'
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
       });
-      // Escape commas in name/email
       const safeName = `"${(row.name || '').replace(/"/g, '""')}"`;
       const safeEmail = `"${(row.email || '').replace(/"/g, '""')}"`;
       csv += `${row.phone},${safeName},${safeEmail},${date},${row.orderCount}\n`;
     }
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="customer-phones-${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="customer-phones-${new Date().toISOString().slice(0, 10)}.csv"`
+    );
     res.send(csv);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

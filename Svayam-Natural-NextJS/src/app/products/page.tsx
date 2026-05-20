@@ -231,9 +231,24 @@ function ProductsContent() {
             </div>
             {products.length === 0 && (
               <div className="text-center text-clay py-12">
-                {searchQuery
-                  ? `No products found for "${searchQuery}".`
-                  : "No products found in this category."}
+                {activeConcern ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <p>
+                      No products found for concern &ldquo;{activeConcern.replace(/-/g, ' ')}&rdquo;.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleConcernClear}
+                      className="rounded-full border border-forest/30 bg-white px-6 py-2.5 text-sm font-semibold text-forest transition-colors hover:border-gold hover:bg-gold/10"
+                    >
+                      Clear concern filter
+                    </button>
+                  </div>
+                ) : searchQuery ? (
+                  `No products found for "${searchQuery}".`
+                ) : (
+                  'No products found in this category.'
+                )}
               </div>
             )}
           </>

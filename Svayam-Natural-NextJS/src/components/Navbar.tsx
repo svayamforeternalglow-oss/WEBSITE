@@ -153,7 +153,7 @@ export default function Navbar() {
         }`}
       />
 
-      <nav className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-[2px] lg:px-10">
+      <nav className="relative z-30 mx-auto flex max-w-[1400px] items-center justify-between px-6 py-[2px] lg:px-10">
         {/* Mobile Left: Hamburger + Logo */}
         <div className="flex items-center gap-1 lg:hidden">
           <button
@@ -237,9 +237,9 @@ export default function Navbar() {
               {/* Dropdown */}
               {link.children && (
                 <div
-                  className="absolute left-1/2 top-full -translate-x-1/2 pt-2 transition-all duration-200 pointer-events-none translate-y-2 opacity-0 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100"
+                  className="absolute left-1/2 top-full z-40 -translate-x-1/2 pt-2 transition-all duration-200 pointer-events-none translate-y-2 opacity-0 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100"
                 >
-                  <div className="min-w-[200px] rounded-xl border border-neutral-300 bg-white/[0.98] py-2 shadow-[0_12px_40px_rgba(0,0,0,0.1)] backdrop-blur-xl">
+                  <div className="relative z-40 min-w-[200px] rounded-xl border border-neutral-300 bg-white/[0.98] py-2 shadow-[0_12px_40px_rgba(0,0,0,0.1)] backdrop-blur-xl">
                     {link.children.map((child) => (
                       <Link
                         key={child.href}
@@ -307,7 +307,7 @@ export default function Navbar() {
                         : "border-gold/40 text-gold hover:bg-gold/10"
                     }`}
                   >
-                    Admin Dashboard
+                    Admin
                   </Link>
                 </div>
               )}
@@ -378,7 +378,7 @@ export default function Navbar() {
       </nav>
 
       {isHome && (
-        <div className="relative z-[1] border-t border-neutral-200/70 bg-white/[0.97] backdrop-blur-xl">
+        <div className="relative z-10 border-t border-neutral-200/70 bg-white/[0.97] backdrop-blur-xl">
           <HomeSearch />
         </div>
       )}
@@ -482,7 +482,7 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="rounded-full border border-gold/40 px-8 py-2 text-xs font-semibold tracking-widest text-gold transition-all hover:bg-gold hover:text-forest"
                   >
-                    ADMIN DASHBOARD
+                    ADMIN
                   </Link>
                 )}
                 <button

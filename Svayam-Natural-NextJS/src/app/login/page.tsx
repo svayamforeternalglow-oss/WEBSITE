@@ -37,7 +37,7 @@ export default function LoginPage() {
       addToast('Welcome back!', 'success');
       
       if (data.role === 'admin') {
-        router.push('/admin/orders');
+        router.push('/admin');
       } else {
         router.push('/');
       }

@@ -58,10 +58,20 @@ interface Order {
   tracking?: { carrier?: string; trackingNumber?: string; trackingUrl?: string };
 }
 
+interface OrderSummary {
+  total: number;
+  pending: number;
+  processing: number;
+  shipped: number;
+  delivered: number;
+  paid: number;
+}
+
 interface OrdersResponse {
   success: boolean;
   data: {
     orders: Order[];
+    summary?: OrderSummary;
     pagination: { page: number; limit: number; total: number; totalPages: number };
   };
 }
@@ -91,9 +101,13 @@ export default function AdminOrdersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
+  const [queueFilter, setQueueFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const [summary, setSummary] = useState<OrderSummary | null>(null);
+  const [resyncing, setResyncing] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [creatingShipment, setCreatingShipment] = useState<string | null>(null);
@@ -108,11 +122,14 @@ export default function AdminOrdersPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: '20' });
       if (statusFilter) params.set('status', statusFilter);
+      if (queueFilter) params.set('queue', queueFilter);
       if (dateFrom) params.set('dateFrom', dateFrom);
       if (dateTo) params.set('dateTo', dateTo);
+      if (searchDebounced.trim()) params.set('q', searchDebounced.trim());
 
       const { data } = await api.get<OrdersResponse>(`/orders/admin/all?${params}`, token);
       setOrders(data.orders);
+      setSummary(data.summary ?? null);
       setTotalPages(data.pagination.totalPages);
       setTotal(data.pagination.total);
     } catch (err) {
@@ -120,9 +137,28 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, statusFilter, dateFrom, dateTo, addToast]);
+  }, [token, page, statusFilter, queueFilter, dateFrom, dateTo, searchDebounced, addToast]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  const resyncShiprocket = async (orderId: string) => {
+    if (!token) return;
+    setResyncing(orderId);
+    try {
+      await api.post(`/orders/admin/${orderId}/shiprocket-sync`, {}, token);
+      addToast('Shiprocket sync requested', 'success');
+      fetchOrders();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Shiprocket sync failed', 'error');
+    } finally {
+      setResyncing(null);
+    }
+  };
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     if (!token) return;
@@ -193,16 +229,6 @@ export default function AdminOrdersPage() {
 
 
 
-  const filteredOrders = search
-    ? orders.filter((o) => {
-        const s = search.toLowerCase();
-        const userName = typeof o.userId === 'object'
-          ? `${o.userId.firstName || ''} ${o.userId.lastName || ''} ${o.userId.email || ''}`
-          : '';
-        return o.orderId.toLowerCase().includes(s) || userName.toLowerCase().includes(s);
-      })
-    : orders;
-
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -216,21 +242,15 @@ export default function AdminOrdersPage() {
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-clay">Pending</p>
-          <p className="mt-1 font-heading text-3xl font-bold text-amber-600">
-            {orders.filter((o) => o.status === 'pending').length}
-          </p>
+          <p className="mt-1 font-heading text-3xl font-bold text-amber-600">{summary?.pending ?? '—'}</p>
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-clay">Processing</p>
-          <p className="mt-1 font-heading text-3xl font-bold text-blue-600">
-            {orders.filter((o) => o.status === 'processing').length}
-          </p>
+          <p className="mt-1 font-heading text-3xl font-bold text-blue-600">{summary?.processing ?? '—'}</p>
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-clay">Delivered</p>
-          <p className="mt-1 font-heading text-3xl font-bold text-green-600">
-            {orders.filter((o) => o.status === 'delivered').length}
-          </p>
+          <p className="mt-1 font-heading text-3xl font-bold text-green-600">{summary?.delivered ?? '—'}</p>
         </div>
       </div>
 
@@ -244,12 +264,22 @@ export default function AdminOrdersPage() {
           className="rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-gold"
         />
         <select
+          value={queueFilter}
+          onChange={(e) => { setQueueFilter(e.target.value); setPage(1); }}
+          className="rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-gold"
+        >
+          <option value="">All queues</option>
+          <option value="active">Active fulfillment</option>
+          <option value="payment_pending">Payment pending</option>
+          <option value="needs_shipment">Needs shipment</option>
+        </select>
+        <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           className="rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-gold"
         >
           <option value="">All Statuses</option>
-          {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((s) => (
+          {['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'].map((s) => (
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
         </select>
@@ -375,10 +405,10 @@ export default function AdminOrdersPage() {
               <th className="px-5 py-3.5 font-medium w-10">
                 <input
                   type="checkbox"
-                  checked={selectedOrderIds.size === filteredOrders.length && filteredOrders.length > 0}
+                  checked={selectedOrderIds.size === orders.length && orders.length > 0}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setSelectedOrderIds(new Set(filteredOrders.map(o => o._id)));
+                      setSelectedOrderIds(new Set(orders.map(o => o._id)));
                     } else {
                       setSelectedOrderIds(new Set());
                     }
@@ -407,14 +437,14 @@ export default function AdminOrdersPage() {
                   ))}
                 </tr>
               ))
-            ) : filteredOrders.length === 0 ? (
+            ) : orders.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-5 py-12 text-center text-clay">
                   No orders found
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order) => {
+              orders.map((order) => {
                 const customer = typeof order.userId === 'object' && order.userId
                   ? `${order.userId.firstName || ''} ${order.userId.lastName || ''}`
                   : 'Guest';
@@ -604,13 +634,22 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 pt-2">
+                {selectedOrder.payment.status === 'completed' && (
+                  <button
+                    onClick={() => resyncShiprocket(selectedOrder._id)}
+                    disabled={resyncing === selectedOrder._id}
+                    className="rounded-lg border border-forest/30 px-4 py-2 text-sm font-semibold text-forest hover:bg-forest/5 disabled:opacity-50"
+                  >
+                    {resyncing === selectedOrder._id ? 'Syncing…' : 'Sync Shiprocket order'}
+                  </button>
+                )}
                 {selectedOrder.payment.status === 'completed' && !selectedOrder.tracking?.trackingNumber && (
                   <button
                     onClick={() => createShipment(selectedOrder._id)}
                     disabled={creatingShipment === selectedOrder._id}
                     className="rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-sand hover:bg-forest-dark disabled:opacity-50"
                   >
-                    {creatingShipment === selectedOrder._id ? 'Creating…' : 'Create Shipment'}
+                    {creatingShipment === selectedOrder._id ? 'Creating…' : 'Create Shipment (AWB)'}
                   </button>
                 )}
                 {selectedOrder.tracking?.trackingNumber && (

@@ -23,6 +23,7 @@ interface PaymentPoint { _id: string; completed: number; failed: number; pending
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#F59E0B',
+  paid: '#3B82F6',
   confirmed: '#3B82F6',
   processing: '#6366F1',
   shipped: '#8B5CF6',
@@ -65,8 +66,9 @@ export default function AdminDevDashboardPage() {
   const orderStats = MOCK_ORDER_STATS;
   const paymentStats = MOCK_PAYMENT_STATS;
 
-  const totalRevenue = revenue.reduce((s, r) => s + r.revenue, 0);
-  const totalOrders = orderStats.reduce((s, o) => s + o.count, 0);
+  const totalPaidRevenue = revenue.reduce((s, r) => s + r.revenue, 0);
+  const totalPaidOrders = revenue.reduce((s, r) => s + r.orders, 0);
+  const deliveredCount = orderStats.find((o) => o._id === 'delivered')?.count || 0;
 
   const revenueChartData = {
     labels: revenue.map((r) => r._id.slice(5)),
@@ -106,26 +108,27 @@ export default function AdminDevDashboardPage() {
 
   return (
     <div>
+      <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+        Mock data — paid revenue/orders use MOCK_REVENUE only; lifecycle chart includes all statuses.
+      </p>
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Total Revenue</p>
-          <p className="mt-1 font-heading text-3xl font-bold text-forest">₹{totalRevenue.toLocaleString('en-IN')}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Paid revenue (mock)</p>
+          <p className="mt-1 font-heading text-3xl font-bold text-forest">₹{totalPaidRevenue.toLocaleString('en-IN')}</p>
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Total Orders</p>
-          <p className="mt-1 font-heading text-3xl font-bold text-forest">{totalOrders}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Paid orders (mock)</p>
+          <p className="mt-1 font-heading text-3xl font-bold text-forest">{totalPaidOrders}</p>
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Avg Order Value</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-clay">AOV (paid, mock)</p>
           <p className="mt-1 font-heading text-3xl font-bold text-forest">
-            ₹{totalOrders > 0 ? Math.round(totalRevenue / totalOrders).toLocaleString('en-IN') : 0}
+            ₹{totalPaidOrders > 0 ? Math.round(totalPaidRevenue / totalPaidOrders).toLocaleString('en-IN') : 0}
           </p>
         </div>
         <div className="rounded-xl border border-neutral-300 bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Completion Rate</p>
-          <p className="mt-1 font-heading text-3xl font-bold text-green-600">
-            {totalOrders > 0 ? Math.round(((orderStats.find((o) => o._id === 'delivered')?.count || 0) / totalOrders) * 100) : 0}%
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-clay">Delivered (mock lifecycle)</p>
+          <p className="mt-1 font-heading text-3xl font-bold text-green-600">{deliveredCount}</p>
         </div>
       </div>
 

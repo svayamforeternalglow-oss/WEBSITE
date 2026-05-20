@@ -638,6 +638,160 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function buildAdminOrderQuery(req) {
+  const clauses = [];
+
+  if (req.query.dateFrom || req.query.dateTo) {
+    const createdAt = {};
+    if (req.query.dateFrom) createdAt.$gte = new Date(req.query.dateFrom);
+    if (req.query.dateTo) createdAt.$lte = new Date(`${req.query.dateTo}T23:59:59.999Z`);
+    clauses.push({ createdAt });
+  }
+
+  const queue = (req.query.queue || '').toLowerCase();
+  if (queue === 'active') {
+    clauses.push({
+      $or: [{ isPaid: true }, { 'paymentStatus.status': /^completed$/i }],
+      lifecycleStatus: { $in: ['Paid', 'Processing', 'Shipped'] },
+    });
+  } else if (queue === 'payment_pending') {
+    clauses.push({
+      isPaid: false,
+      lifecycleStatus: 'Pending',
+      'paymentStatus.status': { $in: ['Pending', 'Failed'] },
+    });
+  } else if (queue === 'needs_shipment') {
+    clauses.push({
+      $and: [
+        { $or: [{ isPaid: true }, { 'paymentStatus.status': /^completed$/i }] },
+        { lifecycleStatus: { $in: ['Paid', 'Processing'] } },
+        {
+          $or: [
+            { awbCode: { $exists: false } },
+            { awbCode: '' },
+            { trackingNumber: { $exists: false } },
+            { trackingNumber: '' },
+          ],
+        },
+      ],
+    });
+  }
+
+  const paymentFilter = (req.query.payment || '').toLowerCase();
+  if (paymentFilter === 'paid') {
+    clauses.push({
+      $or: [{ isPaid: true }, { 'paymentStatus.status': /^completed$/i }],
+    });
+  } else if (paymentFilter === 'unpaid') {
+    clauses.push({ isPaid: false, 'paymentStatus.status': { $ne: 'Completed' } });
+  } else if (paymentFilter === 'refunded') {
+    clauses.push({
+      $or: [
+        { lifecycleStatus: 'Refunded' },
+        { 'paymentStatus.status': 'Refunded' },
+      ],
+    });
+  }
+
+  if (req.query.status) {
+    const statusRegex = new RegExp(`^${escapeRegex(req.query.status)}$`, 'i');
+    clauses.push({
+      $or: [{ lifecycleStatus: statusRegex }, { trackingStatus: statusRegex }],
+    });
+  }
+
+  const q = (req.query.q || req.query.search || '').trim();
+  if (q.length > 0) {
+    const safe = escapeRegex(q.slice(0, 80));
+    const regex = new RegExp(safe, 'i');
+    const orClause = [
+      { 'shippingAddress.email': regex },
+      { 'shippingAddress.phone': regex },
+      { 'shippingAddress.fullName': regex },
+    ];
+    if (mongoose.Types.ObjectId.isValid(q)) {
+      orClause.push({ _id: new mongoose.Types.ObjectId(q) });
+    }
+    clauses.push({ $or: orClause });
+  }
+
+  if (clauses.length === 0) return {};
+  if (clauses.length === 1) return clauses[0];
+  return { $and: clauses };
+}
+
+async function buildAdminOrderSummary(query) {
+  const rows = await Order.aggregate([
+    { $match: query },
+    {
+      $group: {
+        _id: { $toLower: { $ifNull: ['$lifecycleStatus', '$trackingStatus'] } },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+  const summary = { total: 0, pending: 0, processing: 0, shipped: 0, delivered: 0, paid: 0 };
+  for (const row of rows) {
+    summary.total += row.count;
+    if (row._id === 'pending') summary.pending = row.count;
+    if (row._id === 'processing' || row._id === 'paid') summary.processing += row.count;
+    if (row._id === 'shipped') summary.shipped = row.count;
+    if (row._id === 'delivered') summary.delivered = row.count;
+  }
+  summary.paid = await Order.countDocuments({
+    $and: [
+      query,
+      { $or: [{ isPaid: true }, { 'paymentStatus.status': /^completed$/i }] },
+    ],
+  });
+  return summary;
+}
+
+// @desc    Resync Shiprocket order creation for a paid order (no AWB / no Shipped transition)
+// @route   POST /api/v1/orders/admin/:id/shiprocket-sync
+// @access  Private/Admin
+export const resyncShiprocketOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (!order.isPaid && order.paymentStatus?.status !== 'Completed') {
+      return res.status(400).json({ success: false, message: 'Order must be paid before Shiprocket sync' });
+    }
+
+    const result = await ensureShiprocketOrder(order, 'admin_resync');
+    await order.save();
+
+    if (result?.error) {
+      return res.status(502).json({
+        success: false,
+        message: result.message || 'Shiprocket sync failed',
+        data: {
+          shiprocketSyncStatus: order.shiprocketSyncStatus,
+          shiprocketSyncError: order.shiprocketSyncError,
+        },
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: result?.created ? 'Shiprocket order synced' : 'No sync needed',
+      data: {
+        shiprocketOrderId: order.shiprocketOrderId,
+        shiprocketShipmentId: order.shiprocketShipmentId,
+        shiprocketSyncStatus: order.shiprocketSyncStatus,
+        result,
+      },
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+  }
+};
+
 // Helper: compute pricing breakdown from an order
 function computePricing(order) {
   const subtotal = (order.orderItems || []).reduce((sum, item) => {
@@ -658,16 +812,10 @@ export const getAdminOrders = async (req, res) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const startIndex = (page - 1) * limit;
 
-    const query = {};
-    if (req.query.status) {
-      const statusRegex = new RegExp(`^${req.query.status}$`, 'i');
-      query.$or = [
-        { lifecycleStatus: statusRegex },
-        { trackingStatus: statusRegex },
-      ];
-    }
+    const query = buildAdminOrderQuery(req);
 
     const total = await Order.countDocuments(query);
+    const summary = await buildAdminOrderSummary(query);
     const ordersRaw = await Order.find(query)
       .populate('user', 'name email firstName lastName phone')
       .sort({ createdAt: -1 })
@@ -723,9 +871,15 @@ export const getAdminOrders = async (req, res) => {
         createdAt: order.createdAt,
         estimatedDelivery: order.estimatedDelivery || null,
         tracking: {
-          trackingNumber: order.trackingNumber,
-          carrier: 'Courier'
-        }
+          trackingNumber: order.trackingNumber || order.awbCode,
+          carrier: order.courierName || 'Courier',
+        },
+        shiprocket: {
+          orderId: order.shiprocketOrderId || '',
+          shipmentId: order.shiprocketShipmentId || '',
+          syncStatus: order.shiprocketSyncStatus || null,
+          syncError: order.shiprocketSyncError || '',
+        },
       };
     });
 
@@ -733,6 +887,7 @@ export const getAdminOrders = async (req, res) => {
       success: true,
       data: {
         orders,
+        summary,
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
       }
     });

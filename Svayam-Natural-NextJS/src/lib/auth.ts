@@ -1,5 +1,6 @@
 'use client';
 
+import { useSyncExternalStore } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -32,3 +33,11 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+/** Wait for persisted auth before gating admin routes (avoids false redirect to /login). */
+export const useAuthHydrated = () =>
+  useSyncExternalStore(
+    (onStoreChange) => useAuthStore.persist.onFinishHydration(onStoreChange),
+    () => useAuthStore.persist.hasHydrated(),
+    () => false
+  );

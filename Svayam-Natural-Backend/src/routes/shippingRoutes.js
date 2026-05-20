@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.get('/track/:orderId', optionalProtect, trackOrder);
 router.post('/create/:orderId', protect, admin, createShipment);
+router.post('/shiprocket/orders/:orderId', protect, admin, createShipment);
 router.get('/label/:orderId', protect, admin, getShippingLabel);
 router.get('/invoice/:orderId', protect, admin, getShippingInvoice);
 router.post('/manifest', protect, admin, generateManifest);
