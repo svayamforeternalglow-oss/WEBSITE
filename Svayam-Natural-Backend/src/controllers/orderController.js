@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import shiprocket from '../services/shiprocketService.js';
+import { ensureShiprocketOrder } from '../services/shiprocketAutomation.js';
 import {
   renderHtmlToPdf,
   invoicePdfOptions,
@@ -25,6 +26,12 @@ const PDF_SELLER_FROM_LABEL_HTML = `<strong>Svayam Natural</strong><br>116A, Chh
 
 const PDF_LABEL_RETURN_NOTE =
   '<span style="font-size:0.75em;color:#444;display:block;margin-top:6px;">If undelivered, return to this address.</span>';
+
+const SHIPPING_FREE_THRESHOLD = Number(process.env.SHIPPING_FREE_THRESHOLD || 1500);
+const SHIPPING_FEE = Number(process.env.SHIPPING_FEE || 200);
+
+const calculateShipping = (subtotal) =>
+  subtotal >= SHIPPING_FREE_THRESHOLD ? 0 : SHIPPING_FEE;
 
 // Helper: Auto-generate Shiprocket Shipment
 async function autoGenerateShipment(order) {
@@ -321,7 +328,7 @@ export const addOrderItems = async (req, res) => {
     }
 
     const tax = 0;
-    const shipping = subtotal > 1000 ? 0 : 100;
+    const shipping = calculateShipping(subtotal);
     const finalTotal = subtotal + shipping;
 
     const instance = new Razorpay({
@@ -452,6 +459,7 @@ export const verifyPayment = async (req, res) => {
       signature: razorpaySignature,
     });
 
+    await ensureShiprocketOrder(order, 'verifyPayment');
     await order.save();
     return res.status(200).json({ success: true, message: "Payment verified successfully" });
   } catch (error) {
@@ -636,7 +644,7 @@ function computePricing(order) {
     return sum + (item.price * (item.qty || item.quantity || 1));
   }, 0);
   const tax = 0;
-  const shipping = subtotal > 1000 ? 0 : 100;
+  const shipping = calculateShipping(subtotal);
   const grandTotal = order.totalAmount || (subtotal + shipping);
   return { subtotal, tax, shipping, grandTotal };
 }
@@ -1040,7 +1048,7 @@ export const createGuestOrder = async (req, res) => {
     }
 
     const tax = 0;
-    const shipping = subtotal > 1000 ? 0 : 100;
+    const shipping = calculateShipping(subtotal);
     const finalTotal = subtotal + shipping;
 
     const instance = new Razorpay({
@@ -1171,6 +1179,7 @@ export const verifyGuestPayment = async (req, res) => {
       signature: razorpaySignature,
     });
 
+    await ensureShiprocketOrder(order, 'verifyGuestPayment');
     await order.save();
 
     try {
@@ -1241,6 +1250,7 @@ export const verifyWebhook = async (req, res) => {
           paymentId: payment.id,
           signature: 'webhook_verified',
         });
+        await ensureShiprocketOrder(order, 'verifyWebhook');
         await order.save();
 
         try {
@@ -1341,6 +1351,7 @@ export const generateBulkInvoicesHTML = async (req, res) => {
           <div style="text-align:right;">
             <p style="margin:0">Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
             <p style="margin:0">Payment: ${payLabel}</p>
+            ${order.awbCode ? `<p style="margin:0"><strong>AWB: ${order.awbCode}</strong></p>` : ''}
           </div>
         </div>
         
@@ -1440,6 +1451,7 @@ export const generateBulkLabelsHTML = async (req, res) => {
       const shortRef = order._id ? String(order._id).slice(-10).toUpperCase() : '';
       const cityLine = [address.city, address.state, address.pincode].filter(Boolean).join(', ');
       const itemCount = (order.orderItems || []).reduce((s, it) => s + (it.qty || it.quantity || 1), 0);
+      const trackingDetails = order.awbCode ? `<div style="margin-top: 10px; padding: 10px; border: 2px dashed #000; text-align: center;"><strong>AWB: ${order.awbCode}</strong><br>Courier: ${order.courierName || 'Shiprocket'}</div>` : '';
 
       combinedHtml += `
       <div class="label-page">
@@ -1456,6 +1468,7 @@ export const generateBulkLabelsHTML = async (req, res) => {
             ${cityLine ? `${cityLine}<br>` : ''}
             <br>
             <strong>Phone:</strong> ${address.phone || ''}
+            ${trackingDetails}
           </div>
           
           <div class="from-address">

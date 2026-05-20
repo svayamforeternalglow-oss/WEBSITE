@@ -9,6 +9,8 @@ import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
 import { api } from '@/lib/api';
 import { openRazorpayCheckout } from '@/lib/razorpay';
+import FreeDeliveryProgress from '@/components/FreeDeliveryProgress';
+import { CheckoutPageSkeleton } from '@/components/SkeletonLoader';
 
 const STEPS = ['Shipping', 'Review', 'Payment'] as const;
 
@@ -54,13 +56,17 @@ const generateIdempotencyKey = (): string => {
 export default function CheckoutPage() {
   const router = useRouter();
   const { isAuthenticated, token } = useAuthStore();
-  const { items, getSubtotal, getShipping, getTotal, clearCart } = useCartStore();
+  const { items, getSubtotal, getShipping, getTotal, clearCart, hasHydrated } = useCartStore();
   const { addToast } = useToastStore();
 
   const [step, setStep] = useState(0);
   const [shipping, setShipping] = useState<ShippingForm>(INITIAL_SHIPPING);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<ShippingForm>>({});
+
+  if (!hasHydrated) {
+    return <CheckoutPageSkeleton />;
+  }
 
   if (items.length === 0) {
     return (
@@ -106,6 +112,9 @@ export default function CheckoutPage() {
     if (loading) {
       return;
     }
+
+    const orderSubtotal = getSubtotal();
+    const orderShipping = getShipping();
 
     setLoading(true);
     try {
@@ -172,7 +181,12 @@ export default function CheckoutPage() {
 
             clearCart();
             addToast('Payment successful! Order confirmed.', 'success');
-            router.push(`/order-success?order=${orderRef}`);
+            const successParams = new URLSearchParams({
+              order: orderRef,
+              fd: orderShipping === 0 ? '1' : '0',
+              sub: String(orderSubtotal),
+            });
+            router.push(`/order-success?${successParams.toString()}`);
           } catch (err) {
             console.error("Verification error:", err);
             addToast('Payment captured but confirmation is pending. Redirecting to tracking.', 'warning', 8000);
@@ -340,6 +354,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-2">
             <div className="sticky top-28 rounded-2xl border border-neutral-300 bg-white p-6">
               <h2 className="mb-4 font-heading text-lg font-bold text-forest">Order Summary</h2>
+              <FreeDeliveryProgress subtotal={subtotal} className="mb-4" />
               <div className="space-y-2 border-b border-neutral-300 pb-4 text-sm">
                 <div className="flex justify-between text-clay">
                   <span>Subtotal ({items.length} items)</span>

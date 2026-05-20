@@ -4,9 +4,21 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore } from '@/lib/cart';
+import FreeDeliveryProgress from '@/components/FreeDeliveryProgress';
+import { CartItemSkeleton } from '@/components/SkeletonLoader';
 
 export default function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, updateQuantity, getSubtotal, getTotal, getItemCount } = useCartStore();
+  const {
+    items,
+    isOpen,
+    hasHydrated,
+    closeCart,
+    removeItem,
+    updateQuantity,
+    getSubtotal,
+    getTotal,
+    getItemCount,
+  } = useCartStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -18,6 +30,34 @@ export default function CartDrawer() {
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const subtotal = getSubtotal();
+  const total = getTotal();
+
+  if (!hasHydrated) {
+    return (
+      <>
+        <div className="fixed inset-0 z-[90] bg-forest/40 backdrop-blur-sm" onClick={closeCart} />
+        <div className="fixed top-0 right-0 z-[95] flex h-full w-full max-w-md flex-col bg-neutral-100 shadow-2xl animate-slideInRight">
+          <div className="flex items-center justify-between border-b border-neutral-300 px-6 py-5">
+            <h2 className="font-heading text-xl font-bold text-forest">Your Cart</h2>
+            <button onClick={closeCart} className="text-2xl text-clay hover:text-forest" aria-label="Close cart">
+              ×
+            </button>
+          </div>
+          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+            {[1, 2, 3].map((n) => (
+              <CartItemSkeleton key={n} />
+            ))}
+          </div>
+          <div className="border-t border-neutral-300 bg-white px-6 py-5">
+            <div className="mb-4 h-16 rounded-xl bg-neutral-200 animate-shimmer" />
+            <div className="h-10 rounded-full bg-neutral-200 animate-shimmer" />
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -93,20 +133,21 @@ export default function CartDrawer() {
 
             {/* Footer */}
             <div className="border-t border-neutral-300 bg-white px-6 py-5">
+              <FreeDeliveryProgress subtotal={subtotal} className="mb-4" />
               <div className="mb-1 flex justify-between text-sm text-clay">
                 <span>Subtotal</span>
-                <span>₹{getSubtotal()}</span>
+                <span>₹{subtotal}</span>
               </div>
               <div className="mb-3 flex justify-between text-sm font-semibold text-forest">
                 <span>Total</span>
-                <span>₹{getTotal()}</span>
+                <span>₹{total}</span>
               </div>
               <Link
                 href="/checkout"
                 onClick={closeCart}
                 className="block w-full rounded-full bg-gold py-3 text-center text-sm font-bold text-forest transition-colors hover:bg-gold-dark"
               >
-                Checkout · ₹{getTotal()}
+                Checkout · ₹{total}
               </Link>
               <button
                 onClick={closeCart}

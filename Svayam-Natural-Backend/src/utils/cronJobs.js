@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { transitionOrder, ORDER_STATES, CANCELLATION_REASONS } from '../services/orderStateMachine.js';
+import { ensureShiprocketOrder } from '../services/shiprocketAutomation.js';
 
 const startCronJobs = () => {
   // Run every 15 minutes
@@ -41,6 +42,43 @@ const startCronJobs = () => {
       }
     } catch (error) {
       console.error('[Cron] Error running unpaid order cleanup:', error);
+    }
+  });
+
+  // Run every 30 minutes for paid orders missing Shiprocket IDs
+  cron.schedule('*/30 * * * *', async () => {
+    if (process.env.SHIPROCKET_ENABLED !== 'true') {
+      return;
+    }
+
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const pendingShiprocket = await Order.find({
+        isPaid: true,
+        createdAt: { $gte: sevenDaysAgo },
+        $or: [
+          { shiprocketOrderId: { $exists: false } },
+          { shiprocketOrderId: '' },
+          { shiprocketShipmentId: { $exists: false } },
+          { shiprocketShipmentId: '' },
+        ],
+      }).limit(25);
+
+      if (pendingShiprocket.length === 0) {
+        return;
+      }
+
+      console.log(`[Cron] Found ${pendingShiprocket.length} paid orders missing Shiprocket IDs.`);
+
+      for (const order of pendingShiprocket) {
+        const result = await ensureShiprocketOrder(order, 'cron');
+        if (result?.created) {
+          await order.save();
+          console.log(`[Cron] Shiprocket order created for ${order._id}`);
+        }
+      }
+    } catch (error) {
+      console.error('[Cron] Shiprocket order sync failed:', error);
     }
   });
 

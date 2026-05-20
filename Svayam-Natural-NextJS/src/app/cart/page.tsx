@@ -4,15 +4,30 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore } from '@/lib/cart';
 import { useToastStore } from '@/lib/toast';
+import FreeDeliveryProgress from '@/components/FreeDeliveryProgress';
+import { CartPageSkeleton } from '@/components/SkeletonLoader';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart, getSubtotal, getShipping, getTotal, getItemCount } = useCartStore();
+  const {
+    items,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    getSubtotal,
+    getTotal,
+    getItemCount,
+    hasHydrated,
+  } = useCartStore();
   const { addToast } = useToastStore();
 
   const handleRemove = (slug: string, name: string) => {
     removeItem(slug);
     addToast(`${name} removed from cart`, 'info');
   };
+
+  if (!hasHydrated) {
+    return <CartPageSkeleton />;
+  }
 
   if (items.length === 0) {
     return (
@@ -35,7 +50,6 @@ export default function CartPage() {
   }
 
   const subtotal = getSubtotal();
-  const shipping = getShipping();
   const total = getTotal();
 
   return (
@@ -117,18 +131,12 @@ export default function CartPage() {
                   <span>Subtotal</span>
                   <span>₹{subtotal}</span>
                 </div>
-                <div className="flex justify-between text-clay">
-                  <span>Shipping</span>
-                  <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
-                </div>
               </div>
               <div className="flex justify-between pt-4 text-lg font-bold text-forest">
                 <span>Total</span>
                 <span>₹{total}</span>
               </div>
-              {shipping > 0 && (
-                <p className="mt-2 text-xs text-clay">Free shipping on orders over ₹999</p>
-              )}
+              <FreeDeliveryProgress subtotal={subtotal} className="mt-4" />
               <Link
                 href="/checkout"
                 className="mt-6 block w-full rounded-full bg-gold py-3.5 text-center font-semibold text-forest transition-colors hover:bg-gold-dark"

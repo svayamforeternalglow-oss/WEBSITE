@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getShippingFee } from '@/lib/shipping';
 
 export interface CartItem {
   productId: string;
@@ -18,6 +19,9 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
+  hasHydrated: boolean;
+
+  setHasHydrated: (value: boolean) => void;
 
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
   removeItem: (slug: string) => void;
@@ -39,6 +43,9 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      hasHydrated: false,
+
+      setHasHydrated: (value) => set({ hasHydrated: value }),
 
       addItem: (item, quantity = 1) => {
         set((state) => {
@@ -82,7 +89,7 @@ export const useCartStore = create<CartState>()(
       getSubtotal: () =>
         get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
 
-      getShipping: () => (get().getSubtotal() > 1000 ? 0 : 100),
+      getShipping: () => getShippingFee(get().getSubtotal()),
 
       getTax: () => 0,
 
@@ -95,6 +102,9 @@ export const useCartStore = create<CartState>()(
     {
       name: 'svayam-cart',
       partialize: (state) => ({ items: state.items }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

@@ -8,6 +8,11 @@ export const getRevenueStats = async (req, res) => {
   try {
     const revenue = await Order.aggregate([
       {
+        $match: {
+          lifecycleStatus: { $nin: ["Cancelled", "Refunded", "Returned"] }
+        }
+      },
+      {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           revenue: { $sum: "$totalAmount" },
