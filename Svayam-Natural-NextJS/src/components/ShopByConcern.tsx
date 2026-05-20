@@ -75,11 +75,11 @@ export default function ShopByConcern() {
   }, []);
 
   return (
-    <section className="bg-[#f5f2eb] py-16 sm:py-20 lg:py-24" id="concerns">
-      <div className="mx-auto max-w-[1400px] px-6 lg:px-10">
+    <section className="bg-[#f5f2eb] py-12 sm:py-20 lg:py-24" id="concerns">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10">
         <AnimateOnScroll animation="fadeInUp">
-          <div className="mb-12">
-            <h2 className="font-heading text-4xl sm:text-5xl lg:text-[44px] font-bold text-forest mb-4 tracking-tight">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="font-heading text-4xl sm:text-5xl lg:text-[44px] font-bold text-forest mb-3 sm:mb-4 tracking-tight">
               Special Care for Special Needs
             </h2>
             <h3 className="font-sans text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#b39568]">
@@ -88,9 +88,9 @@ export default function ShopByConcern() {
           </div>
         </AnimateOnScroll>
         
-        <div className="relative mt-8">
+        <div className="relative mt-6 sm:mt-8">
           {/* Mobile: Scrollable row | Desktop: Responsive grid */}
-          <div className="flex lg:grid lg:grid-cols-4 xl:grid-cols-8 overflow-x-auto lg:overflow-visible pb-6 pt-2 hide-scrollbar gap-4 sm:gap-6 lg:gap-4 lg:justify-items-center">
+          <div className="flex lg:grid lg:grid-cols-4 xl:grid-cols-8 overflow-x-auto lg:overflow-visible pb-4 pt-1 sm:pb-6 sm:pt-2 hide-scrollbar gap-4 sm:gap-6 lg:gap-4 lg:justify-items-center">
             {concerns.map((concern, i) => (
               <AnimateOnScroll key={concern.slug} animation="fadeInUp" delay={i * 50}>
                 <Link

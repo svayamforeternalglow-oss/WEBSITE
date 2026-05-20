@@ -103,13 +103,14 @@ export default function Navbar() {
   
   const wishlistCount = useWishlistStore((s) => s.items.length);
 
-  const { isAuthenticated, username, logout } = useAuthStore();
+  const { isAuthenticated, username, role, logout } = useAuthStore();
   const cartHydrated = useStoreHydrated(useCartStore as unknown as PersistHydrationStore);
   const wishlistHydrated = useStoreHydrated(useWishlistStore as unknown as PersistHydrationStore);
   const authHydrated = useStoreHydrated(useAuthStore as unknown as PersistHydrationStore);
   const showCartCount = cartHydrated && itemCount > 0;
   const showWishlistCount = wishlistHydrated && wishlistCount > 0;
   const showAuthenticatedMenu = authHydrated && isAuthenticated;
+  const showAdminLink = showAuthenticatedMenu && role === "admin";
   const mobileProfileHref = showAuthenticatedMenu ? "/my-orders" : "/login";
 
   // Since Navbar is 'sticky' and takes up flow space rather than overlapping absolute heroes,
@@ -296,6 +297,20 @@ export default function Navbar() {
               <span className={`text-[12px] font-medium tracking-wider truncate max-w-[100px] sm:max-w-[140px] inline-block align-bottom ${solid ? "text-forest" : "text-sand"}`}>
                 Hi, {username}
               </span>
+              {showAdminLink && (
+                <div className="group relative">
+                  <Link
+                    href="/admin"
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[11px] font-semibold tracking-[0.1em] transition-all duration-300 ${
+                      solid
+                        ? "border-forest/20 text-forest hover:bg-forest/5"
+                        : "border-gold/40 text-gold hover:bg-gold/10"
+                    }`}
+                  >
+                    Admin Dashboard
+                  </Link>
+                </div>
+              )}
               <div className="group relative">
                 <Link
                   href="/my-orders"
@@ -461,6 +476,15 @@ export default function Navbar() {
                 <span className="text-sm font-medium tracking-wider text-sand">
                   Hi, {username}
                 </span>
+                {showAdminLink && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-full border border-gold/40 px-8 py-2 text-xs font-semibold tracking-widest text-gold transition-all hover:bg-gold hover:text-forest"
+                  >
+                    ADMIN DASHBOARD
+                  </Link>
+                )}
                 <button
                   onClick={() => { logout(); setMobileOpen(false); }}
                   className="rounded-full border border-gold/40 px-8 py-2 text-xs font-semibold tracking-widest text-gold transition-all hover:bg-gold hover:text-forest"
