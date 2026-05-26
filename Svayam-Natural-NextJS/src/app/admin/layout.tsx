@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 alt="Svayam Natural"
                 fill
                 sizes="132px"
-                className="object-cover object-center"
+                className="object-cover object-center brightness-0 invert"
                 priority
               />
             </span>

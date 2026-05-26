@@ -59,7 +59,7 @@ export default function LoginPage() {
                 alt="Svayam Natural"
                 fill
                 sizes="168px"
-                className="object-cover object-center"
+                className="object-cover object-center brightness-0 invert"
                 priority
               />
             </span>

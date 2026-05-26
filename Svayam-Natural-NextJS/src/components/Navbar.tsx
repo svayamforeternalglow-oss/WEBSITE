@@ -295,7 +295,7 @@ export default function Navbar() {
           {showAuthenticatedMenu ? (
             <div className="flex items-center gap-4">
               <span className={`text-[12px] font-medium tracking-wider truncate max-w-[100px] sm:max-w-[140px] inline-block align-bottom ${solid ? "text-forest" : "text-sand"}`}>
-                Hi, {username}
+                {role === "admin" ? "Hi" : `Hi, ${username}`}
               </span>
               {showAdminLink && (
                 <div className="group relative">
@@ -474,7 +474,7 @@ export default function Navbar() {
             {showAuthenticatedMenu ? (
               <div className="flex flex-col items-center gap-3">
                 <span className="text-sm font-medium tracking-wider text-sand">
-                  Hi, {username}
+                  {role === "admin" ? "Hi" : `Hi, ${username}`}
                 </span>
                 {showAdminLink && (
                   <Link
