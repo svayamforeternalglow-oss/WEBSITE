@@ -27,6 +27,14 @@ export const getProducts = async (req, res) => {
       query.concern = { $regex: new RegExp(escapeRegex(req.query.concern), 'i') };
     }
 
+    // Seasonal filter
+    if (req.query.seasonal === 'true') {
+      query.isSeasonal = true;
+      if (req.query.active === undefined) {
+        query.isActive = true;
+      }
+    }
+
     // Featured filter
     if (req.query.featured === 'true') {
       query.isFeatured = true;
@@ -51,6 +59,8 @@ export const getProducts = async (req, res) => {
     // If text search, sort alphabetically by title
     if (searchTerm) {
       productsQuery = productsQuery.sort({ title: 1 });
+    } else if (req.query.seasonal === 'true') {
+      productsQuery = productsQuery.sort({ seasonalRank: 1, createdAt: -1 });
     } else if (req.query.featured === 'true') {
       // Randomize featured products
       const count = parseInt(req.query.limit) || 8;
@@ -116,7 +126,21 @@ export const getProductBySlug = async (req, res) => {
 // @access  Private/Admin
 export const createProduct = async (req, res) => {
   try {
-    const { title, slug, price, originalPrice, description, images, category, concern, inventory, isActive, isFeatured } = req.body;
+    const {
+      title,
+      slug,
+      price,
+      originalPrice,
+      description,
+      images,
+      category,
+      concern,
+      inventory,
+      isActive,
+      isFeatured,
+      isSeasonal,
+      seasonalRank,
+    } = req.body;
     
     const productTitle = title || 'Sample name';
     
@@ -132,6 +156,8 @@ export const createProduct = async (req, res) => {
       inventory: inventory !== undefined ? inventory : 0,
       isActive: isActive !== undefined ? isActive : true,
       isFeatured: isFeatured !== undefined ? isFeatured : false,
+      isSeasonal: isSeasonal !== undefined ? isSeasonal : false,
+      seasonalRank: seasonalRank !== undefined ? seasonalRank : 0,
     });
 
     const createdProduct = await product.save();
@@ -145,7 +171,21 @@ export const createProduct = async (req, res) => {
 // @route   PUT /api/v1/products/:id
 // @access  Private/Admin
 export const updateProduct = async (req, res) => {
-  const { title, slug, price, originalPrice, description, images, category, concern, inventory, isActive, isFeatured } = req.body;
+  const {
+    title,
+    slug,
+    price,
+    originalPrice,
+    description,
+    images,
+    category,
+    concern,
+    inventory,
+    isActive,
+    isFeatured,
+    isSeasonal,
+    seasonalRank,
+  } = req.body;
 
   try {
     const product = await Product.findById(req.params.id);
@@ -163,6 +203,8 @@ export const updateProduct = async (req, res) => {
       if (inventory !== undefined) product.inventory = inventory;
       if (isActive !== undefined) product.isActive = isActive;
       if (isFeatured !== undefined) product.isFeatured = isFeatured;
+      if (isSeasonal !== undefined) product.isSeasonal = isSeasonal;
+      if (seasonalRank !== undefined) product.seasonalRank = seasonalRank;
 
       const updatedProduct = await product.save();
       res.json(updatedProduct);

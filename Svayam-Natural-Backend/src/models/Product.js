@@ -52,6 +52,14 @@ const productSchema = new mongoose.Schema({
   isFeatured: {
     type: Boolean,
     default: false
+  },
+  isSeasonal: {
+    type: Boolean,
+    default: false
+  },
+  seasonalRank: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
@@ -64,6 +72,7 @@ productSchema.index({ category: 1, isActive: 1 });
 productSchema.index({ concern: 1, isActive: 1 });
 productSchema.index({ slug: 1 });
 productSchema.index({ isFeatured: 1, isActive: 1, inventory: 1 });
+productSchema.index({ isSeasonal: 1, seasonalRank: 1, isActive: 1, inventory: 1 });
 
 const Product = mongoose.model('Product', productSchema);
 

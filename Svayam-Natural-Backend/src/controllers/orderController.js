@@ -461,6 +461,21 @@ export const verifyPayment = async (req, res) => {
 
     await ensureShiprocketOrder(order, 'verifyPayment');
     await order.save();
+
+    try {
+      const emailService = await import('../services/emailService.js');
+      let customerEmail = order.shippingAddress?.email;
+      if (!customerEmail && order.user) {
+        const User = (await import('../models/User.js')).default;
+        const user = await User.findById(order.user);
+        if (user) customerEmail = user.email;
+      }
+      if (customerEmail) {
+        await emailService.sendOrderConfirmationEmail(customerEmail, order);
+      }
+    } catch (err) {
+      console.error('Email error:', err);
+    }
     return res.status(200).json({ success: true, message: "Payment verified successfully" });
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });

@@ -21,6 +21,8 @@ export interface BackendProduct {
   concern: string;
   isActive: boolean;
   isFeatured: boolean;
+  isSeasonal?: boolean;
+  seasonalRank?: number;
   createdAt: string;
   updatedAt: string;
   // When text‑search is used, Mongo adds a score
@@ -43,6 +45,8 @@ export interface MergedProduct {
   concern: string;
   isActive: boolean;
   isFeatured: boolean;
+  isSeasonal: boolean;
+  seasonalRank: number;
   // Editorial (from static data, may be empty for new products)
   tagline: string;
   story: string;
@@ -98,6 +102,8 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
       concern: bp.concern,
       isActive: bp.isActive,
       isFeatured: bp.isFeatured,
+      isSeasonal: Boolean(bp.isSeasonal),
+      seasonalRank: bp.seasonalRank ?? 0,
       // Editorial — fallback to empty defaults
       tagline: editorial?.tagline || '',
       story: editorial?.story || '',
@@ -124,6 +130,7 @@ export interface FetchProductsParams {
   category?: string;
   concern?: string;
   featured?: boolean;
+  seasonal?: boolean;
   active?: boolean;
   limit?: number;
   page?: number;
@@ -140,6 +147,7 @@ export async function fetchProducts(params?: FetchProductsParams): Promise<Merge
     }
   }
   if (params?.featured) qs.set('featured', 'true');
+  if (params?.seasonal) qs.set('seasonal', 'true');
   if (params?.active !== undefined) qs.set('active', String(params.active));
   if (params?.limit) qs.set('limit', String(params.limit));
   if (params?.page) qs.set('page', String(params.page));
@@ -161,6 +169,10 @@ export async function fetchProductBySlug(slug: string): Promise<MergedProduct | 
 
 export async function fetchFeaturedProducts(count = 4): Promise<MergedProduct[]> {
   return fetchProducts({ featured: true, limit: count });
+}
+
+export async function fetchSeasonalProducts(count = 8): Promise<MergedProduct[]> {
+  return fetchProducts({ seasonal: true, limit: count });
 }
 
 export async function fetchProductsBySlugs(slugs: string[]): Promise<MergedProduct[]> {

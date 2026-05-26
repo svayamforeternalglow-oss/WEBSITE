@@ -19,6 +19,8 @@ interface Product {
   sku?: string;
   isActive?: boolean;
   isFeatured?: boolean;
+  isSeasonal?: boolean;
+  seasonalRank?: number;
   weight?: string;
   inStock?: boolean;
   isLowStock?: boolean;
@@ -42,6 +44,7 @@ function normalizeAdminProduct(p: Product): Product {
     ...p,
     isFeatured: featured,
     isActive: p.isActive !== false,
+    isSeasonal: p.isSeasonal === true,
   };
 }
 
@@ -69,6 +72,8 @@ export default function AdminProductsPage() {
     images: '',
     isActive: true,
     isFeatured: false,
+    isSeasonal: false,
+    seasonalRank: 0,
   });
 
   const fetchProducts = useCallback(async () => {
@@ -152,6 +157,39 @@ export default function AdminProductsPage() {
     }
   };
 
+  const toggleSeasonal = async (product: Product) => {
+    if (!token) return;
+    const currentlySeasonal = product.isSeasonal === true;
+    let nextRank = product.seasonalRank ?? 0;
+
+    if (!currentlySeasonal) {
+      const input = prompt(
+        `Set seasonal rank for ${product.title || product.name}:`,
+        String(nextRank || 1)
+      );
+      if (input === null) return;
+      const parsed = Number(input);
+      nextRank = Number.isFinite(parsed) ? parsed : 0;
+    } else {
+      nextRank = 0;
+    }
+
+    try {
+      await api.put(
+        `/products/${product._id}`,
+        { isSeasonal: !currentlySeasonal, seasonalRank: nextRank },
+        token
+      );
+      addToast(
+        `${product.title || product.name} ${currentlySeasonal ? 'removed from' : 'added to'} seasonal picks`,
+        'success'
+      );
+      fetchProducts();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to update', 'error');
+    }
+  };
+
   const toggleActive = async (product: Product) => {
     if (!token) return;
     try {
@@ -167,6 +205,8 @@ export default function AdminProductsPage() {
     setEditingProduct(null);
     setFormData({
       title: '', price: 0, originalPrice: 0, inventory: 0, category: '', concern: '', description: '', images: '', isActive: true, isFeatured: false,
+      isSeasonal: false,
+      seasonalRank: 0,
     });
     setIsModalOpen(true);
   };
@@ -184,6 +224,8 @@ export default function AdminProductsPage() {
       images: p.images ? p.images.join(', ') : '',
       isActive: p.isActive !== undefined ? p.isActive : true,
       isFeatured: p.isFeatured === true || (p as unknown as { featured?: boolean }).featured === true,
+      isSeasonal: p.isSeasonal === true,
+      seasonalRank: p.seasonalRank ?? 0,
     });
     setIsModalOpen(true);
   };
@@ -195,6 +237,7 @@ export default function AdminProductsPage() {
     try {
       const payload = {
         ...formData,
+        seasonalRank: formData.isSeasonal ? formData.seasonalRank : 0,
         images: formData.images.split(',').map(i => i.trim()).filter(Boolean)
       };
 
@@ -264,7 +307,7 @@ export default function AdminProductsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-neutral-300 bg-white">
-        <table className="w-full min-w-[900px] text-left text-sm">
+        table className="w-full min-w-[980px] text-left text-sm">
           <thead>
             <tr className="border-b border-neutral-300 bg-forest text-sand">
               <th className="px-4 py-3.5 font-medium">Image</th>
@@ -275,6 +318,7 @@ export default function AdminProductsPage() {
               <th className="px-4 py-3.5 font-medium">Stock</th>
               <th className="px-4 py-3.5 font-medium text-center">Active</th>
               <th className="px-4 py-3.5 font-medium text-center">Featured</th>
+              <th className="px-4 py-3.5 font-medium text-center">Seasonal</th>
               <th className="px-4 py-3.5 font-medium text-right">Actions</th>
             </tr>
           </thead>
@@ -282,7 +326,7 @@ export default function AdminProductsPage() {
             {loading ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="border-b border-neutral-200">
-                  {[...Array(9)].map((_, j) => (
+                  {[...Array(10)].map((_, j) => (
                     <td key={j} className="px-4 py-4">
                       <div className="h-4 w-20 rounded bg-neutral-200 animate-shimmer" />
                     </td>
@@ -291,13 +335,14 @@ export default function AdminProductsPage() {
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-5 py-12 text-center text-clay">No products found</td>
+                <td colSpan={10} className="px-5 py-12 text-center text-clay">No products found</td>
               </tr>
             ) : (
               filtered.map((product) => {
                 const title = product.title || product.name || 'Unnamed Product';
                 const stock = product.inventory !== undefined ? product.inventory : (product.stock || 0);
                 const image = product.images && product.images.length > 0 ? product.images[0] : '/images/All-Products.jpeg';
+                const seasonalRank = product.seasonalRank ?? 0;
                 
                 return (
                   <tr key={product._id} className={`border-b border-neutral-200 transition-colors hover:bg-neutral-100/50 ${product.isActive === false ? 'opacity-50' : ''}`}>
@@ -347,6 +392,15 @@ export default function AdminProductsPage() {
                         title={product.isFeatured === true ? 'Featured — click to remove' : 'Not featured — click to feature'}
                       >
                         ★
+                      </button>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <button
+                        onClick={() => toggleSeasonal(product)}
+                        className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${product.isSeasonal === true ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-neutral-300 text-clay hover:border-emerald-300 hover:text-emerald-700'}`}
+                        title={product.isSeasonal === true ? `Seasonal — rank ${seasonalRank}` : 'Not seasonal — click to add'}
+                      >
+                        {product.isSeasonal === true ? `Seasonal #${seasonalRank || 0}` : 'Seasonal'}
                       </button>
                     </td>
                     <td className="px-4 py-4 text-right">
@@ -544,7 +598,7 @@ export default function AdminProductsPage() {
               </div>
 
               {/* Toggle switches */}
-              <div className="flex items-center gap-8 pt-2">
+              <div className="grid gap-4 pt-2 sm:grid-cols-3 sm:items-center">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <button
                     type="button"
@@ -565,6 +619,30 @@ export default function AdminProductsPage() {
                   </button>
                   <span className="text-sm font-medium text-forest">Featured</span>
                 </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, isSeasonal: !formData.isSeasonal})}
+                    className={`h-6 w-11 rounded-full transition-colors ${formData.isSeasonal ? 'bg-emerald-500' : 'bg-neutral-300'} relative`}
+                  >
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${formData.isSeasonal ? 'left-[22px]' : 'left-0.5'}`} />
+                  </button>
+                  <span className="text-sm font-medium text-forest">Seasonal</span>
+                </label>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-semibold text-forest mb-1">Seasonal Rank</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.seasonalRank}
+                    onChange={e => setFormData({...formData, seasonalRank: Number(e.target.value)})}
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                  />
+                  <p className="mt-1 text-xs text-clay">Lower numbers appear first.</p>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-neutral-200 flex justify-end gap-3">
