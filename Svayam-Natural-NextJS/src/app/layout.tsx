@@ -8,6 +8,7 @@ import ToastContainer from "@/components/Toast";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import TopBanner from "@/components/TopBanner";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -68,6 +69,7 @@ export default function RootLayout({
         <ToastContainer />
         <WhatsAppFloat />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
