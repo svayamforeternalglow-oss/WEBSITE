@@ -14,7 +14,6 @@ const FOOTER_LINKS = [
   { label: "Sustainability", href: "/radiance-rituals" },
   { label: "Shipping", href: "/shipping-policy" },
   { label: "Privacy Policy", href: "/privacy-policy" },
-  { label: "Contact", href: "/#contact" },
 ];
 
 // WhatsApp SVG icon component
@@ -33,6 +32,11 @@ const DEFAULT_SOCIALS = [
   { label: "WhatsApp", href: "#", icon: WhatsAppIcon, configKey: "whatsapp_group_link" },
 ];
 
+const DEFAULT_CONTACT = {
+  email: 'support@svayam-natural.com',
+  phone: '',
+};
+
 type FooterVariant = "forest" | "light";
 
 interface FooterProps {
@@ -41,6 +45,7 @@ interface FooterProps {
 
 export default function Footer({ variant = "forest" }: FooterProps) {
   const [socials, setSocials] = useState(DEFAULT_SOCIALS);
+  const [contact, setContact] = useState(DEFAULT_CONTACT);
   const isLight = variant === "light";
 
   useEffect(() => {
@@ -57,6 +62,10 @@ export default function Footer({ variant = "forest" }: FooterProps) {
             ...s,
             href: map[s.configKey] || s.href,
           })));
+          setContact({
+            email: map.support_email || DEFAULT_CONTACT.email,
+            phone: map.support_phone || DEFAULT_CONTACT.phone,
+          });
         }
       } catch {
         // Keep defaults when remote config is unavailable.
@@ -65,6 +74,9 @@ export default function Footer({ variant = "forest" }: FooterProps) {
   }, []);
 
   const visibleSocials = socials.filter((social) => social.href && social.href !== "#");
+  const contactEmail = contact.email?.trim();
+  const contactPhone = contact.phone?.trim();
+  const contactPhoneHref = contactPhone ? contactPhone.replace(/[^\d+]/g, '') : '';
 
   return (
     <footer className={isLight ? "border-t border-neutral-300 bg-white" : "border-t border-forest-dark bg-forest"}>
@@ -85,6 +97,28 @@ export default function Footer({ variant = "forest" }: FooterProps) {
               </Link>
             ))}
           </nav>
+
+          <div className="flex flex-col items-center gap-1 text-center">
+            <span className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${isLight ? "text-clay/60" : "text-sand/60"}`}>
+              Contact
+            </span>
+            {contactEmail && (
+              <a
+                href={`mailto:${contactEmail}`}
+                className={`text-[11px] font-medium transition-colors duration-200 ${isLight ? "text-clay/80 hover:text-gold-dark" : "text-sand/80 hover:text-gold"}`}
+              >
+                {contactEmail}
+              </a>
+            )}
+            {contactPhone && (
+              <a
+                href={`tel:${contactPhoneHref}`}
+                className={`text-[11px] font-medium transition-colors duration-200 ${isLight ? "text-clay/80 hover:text-gold-dark" : "text-sand/80 hover:text-gold"}`}
+              >
+                {contactPhone}
+              </a>
+            )}
+          </div>
 
           <div className="flex items-center justify-center gap-2.5">
             {visibleSocials.map((social) => (

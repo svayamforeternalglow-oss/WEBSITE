@@ -86,7 +86,6 @@ export const products: Product[] = [
     ingredients: [
       { name: 'Hibiscus Extract', icon: '🌺', description: 'Rich in amino acids and vitamins that nourish hair while providing natural hold.' },
       { name: 'Aloe Vera', icon: '🌿', description: 'Hydrates and soothes the scalp, preventing dryness and flaking.' },
-      { name: 'Glycerin', icon: '💧', description: 'Natural humectant that locks in moisture for all-day softness.' },
     ],
     benefits: [
       { title: 'Define Curls', description: 'Shape and define curls naturally without crunchiness.', icon: '🌀' },

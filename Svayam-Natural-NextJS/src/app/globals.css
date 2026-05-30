@@ -75,6 +75,17 @@
   }
 }
 
+@keyframes toastPop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes kenBurns {
   0% {
     transform: scale(1) translate(0, 0);
@@ -132,6 +143,10 @@
 
 .animate-slideInRight {
   animation: slideInRight 0.6s ease-out both;
+}
+
+.animate-toastPop {
+  animation: toastPop 0.35s ease-out both;
 }
 
 .animate-kenBurns {

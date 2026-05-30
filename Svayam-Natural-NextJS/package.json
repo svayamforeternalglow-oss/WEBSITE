@@ -9,8 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+<<<<<<< Updated upstream
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+=======
+<<<<<<< HEAD
+    "canvas-confetti": "^1.9.3",
+=======
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
+>>>>>>> ec236a2cc98f3795f335f63c762e1eb127e7fdf1
+>>>>>>> Stashed changes
     "chart.js": "^4.5.1",
     "next": "16.1.6",
     "react": "19.2.3",

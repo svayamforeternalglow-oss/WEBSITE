@@ -291,3 +291,57 @@ export const exportPhones = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Export users with orders as JSON
+// @route   GET /api/v1/admin/export/users
+// @access  Private/Admin
+export const exportUsersWithOrders = async (req, res) => {
+  try {
+    const includeGuests = String(req.query.includeGuests || 'true').toLowerCase() !== 'false';
+    const query = {};
+
+    if (req.query.dateFrom || req.query.dateTo) {
+      query.createdAt = {};
+      if (req.query.dateFrom) query.createdAt.$gte = new Date(req.query.dateFrom);
+      if (req.query.dateTo) query.createdAt.$lte = new Date(req.query.dateTo + 'T23:59:59.999Z');
+    }
+
+    const [users, orders] = await Promise.all([
+      User.find({}).lean(),
+      Order.find(query).lean(),
+    ]);
+
+    const ordersByUser = new Map();
+    const guestOrders = [];
+
+    for (const order of orders) {
+      if (order.user) {
+        const key = String(order.user);
+        if (!ordersByUser.has(key)) {
+          ordersByUser.set(key, []);
+        }
+        ordersByUser.get(key).push(order);
+      } else if (includeGuests) {
+        guestOrders.push(order);
+      }
+    }
+
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      users: users.map((user) => ({
+        ...user,
+        orders: ordersByUser.get(String(user._id)) || [],
+      })),
+      guestOrders: includeGuests ? guestOrders : [],
+    };
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="users-orders-${new Date().toISOString().slice(0, 10)}.json"`
+    );
+    res.json(payload);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
