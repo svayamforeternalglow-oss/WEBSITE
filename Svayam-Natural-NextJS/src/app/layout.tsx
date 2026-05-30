@@ -7,17 +7,8 @@ import CartDrawer from "@/components/CartDrawer";
 import ToastContainer from "@/components/Toast";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import TopBanner from "@/components/TopBanner";
-<<<<<<< Updated upstream
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-=======
-<<<<<<< HEAD
-import CartSync from "@/components/CartSync";
-=======
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
->>>>>>> ec236a2cc98f3795f335f63c762e1eb127e7fdf1
->>>>>>> Stashed changes
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -74,7 +65,6 @@ export default function RootLayout({
         <ConditionalNavbar />
         <main>{children}</main>
         <ConditionalFooter />
-        <CartSync />
         <CartDrawer />
         <ToastContainer />
         <WhatsAppFloat />

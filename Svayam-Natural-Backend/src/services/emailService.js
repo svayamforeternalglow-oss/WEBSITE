@@ -53,35 +53,3 @@ export const sendShippingUpdateEmail = async (email, order) => {
     console.error('Error sending email:', error);
   }
 };
-
-export const sendAbandonedCartEmail = async ({ email, name, recoveryUrl, items = [], subtotal = 0, currency = 'INR', reminderNumber = 1 }) => {
-  const safeName = name || 'there';
-  const itemList = items
-    .slice(0, 6)
-    .map((item) => `<li>${item.name || 'Product'} x ${item.quantity || 1}</li>`)
-    .join('');
-  const moreCount = items.length > 6 ? items.length - 6 : 0;
-  const moreLine = moreCount > 0 ? `<p>+ ${moreCount} more item(s)</p>` : '';
-
-  const msg = {
-    to: email,
-    from: process.env.FROM_EMAIL,
-    subject: reminderNumber > 1 ? 'Reminder: your Svayam cart is waiting' : 'Complete your Svayam cart',
-    html: `
-      <h2>Hi ${safeName},</h2>
-      <p>Your cart is still saved with us. Complete your order before items sell out.</p>
-      <ul>${itemList}</ul>
-      ${moreLine}
-      <p><strong>Total:</strong> ${currency} ${subtotal}</p>
-      <p><a href="${recoveryUrl}">Return to your cart</a></p>
-      <p>If you have questions, reply to this email and we will help.</p>
-    `,
-  };
-
-  try {
-    await transporter.sendMail(msg);
-    console.log('Abandoned cart email sent to', email);
-  } catch (error) {
-    console.error('Error sending abandoned cart email:', error);
-  }
-};
