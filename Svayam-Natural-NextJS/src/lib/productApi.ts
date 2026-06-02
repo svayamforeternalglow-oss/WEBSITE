@@ -86,8 +86,24 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
     const backendWeight = typeof bp.weight === 'string' && bp.weight.trim() ? bp.weight.trim() : '';
     const backendStory = typeof bp.story === 'string' && bp.story.trim() ? bp.story.trim() : '';
     const backendHowToUse = typeof bp.howToUse === 'string' && bp.howToUse.trim() ? bp.howToUse.trim() : '';
-    const backendIngredients = Array.isArray(bp.ingredients) && bp.ingredients.length > 0 ? bp.ingredients : undefined;
-    const backendBenefits = Array.isArray(bp.benefits) && bp.benefits.length > 0 ? bp.benefits : undefined;
+    const backendIngredients = Array.isArray(bp.ingredients) && bp.ingredients.length > 0
+      ? bp.ingredients
+          .filter((ing) => Boolean(ing?.name))
+          .map((ing) => ({
+            name: ing.name,
+            icon: ing.icon || '',
+            description: ing.description || '',
+          }))
+      : undefined;
+    const backendBenefits = Array.isArray(bp.benefits) && bp.benefits.length > 0
+      ? bp.benefits
+          .filter((benefit) => Boolean(benefit?.title))
+          .map((benefit) => ({
+            title: benefit.title,
+            icon: benefit.icon || '',
+            description: benefit.description || '',
+          }))
+      : undefined;
     // Parse comma-separated concerns from backend into array
     const backendConcerns = bp.concern
       ? bp.concern
