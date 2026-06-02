@@ -140,10 +140,18 @@ export const createProduct = async (req, res) => {
       isFeatured,
       isSeasonal,
       seasonalRank,
+      sku,
+      weight,
+      story,
+      ingredients,
+      benefits,
+      howToUse,
     } = req.body;
     
     const productTitle = title || 'Sample name';
     
+    const normalizeList = (value) => (Array.isArray(value) ? value : undefined);
+
     const product = new Product({
       title: productTitle,
       slug: slug || productTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now(),
@@ -158,6 +166,12 @@ export const createProduct = async (req, res) => {
       isFeatured: isFeatured !== undefined ? isFeatured : false,
       isSeasonal: isSeasonal !== undefined ? isSeasonal : false,
       seasonalRank: seasonalRank !== undefined ? seasonalRank : 0,
+      sku: sku !== undefined ? sku : undefined,
+      weight: weight !== undefined ? weight : undefined,
+      story: story !== undefined ? story : undefined,
+      howToUse: howToUse !== undefined ? howToUse : undefined,
+      ingredients: normalizeList(ingredients),
+      benefits: normalizeList(benefits),
     });
 
     const createdProduct = await product.save();
@@ -185,6 +199,12 @@ export const updateProduct = async (req, res) => {
     isFeatured,
     isSeasonal,
     seasonalRank,
+    sku,
+    weight,
+    story,
+    ingredients,
+    benefits,
+    howToUse,
   } = req.body;
 
   try {
@@ -205,6 +225,12 @@ export const updateProduct = async (req, res) => {
       if (isFeatured !== undefined) product.isFeatured = isFeatured;
       if (isSeasonal !== undefined) product.isSeasonal = isSeasonal;
       if (seasonalRank !== undefined) product.seasonalRank = seasonalRank;
+      if (sku !== undefined) product.sku = sku;
+      if (weight !== undefined) product.weight = weight;
+      if (story !== undefined) product.story = story;
+      if (howToUse !== undefined) product.howToUse = howToUse;
+      if (ingredients !== undefined) product.ingredients = ingredients;
+      if (benefits !== undefined) product.benefits = benefits;
 
       const updatedProduct = await product.save();
       res.json(updatedProduct);

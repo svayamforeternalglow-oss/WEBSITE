@@ -1,11 +1,17 @@
 import cron from 'node-cron';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import User from '../models/User.js';
 import { transitionOrder, ORDER_STATES, CANCELLATION_REASONS } from '../services/orderStateMachine.js';
 import { ensureShiprocketOrder } from '../services/shiprocketAutomation.js';
 import { paidMissingShiprocketMatch } from './adminMetrics.js';
 
 const startCronJobs = () => {
+  const abandonedCartHoursRaw = Number(process.env.ABANDONED_CART_HOURS);
+  const abandonedCartHours = Number.isFinite(abandonedCartHoursRaw)
+    ? abandonedCartHoursRaw
+    : 6;
+
   cron.schedule('*/15 * * * *', async () => {
     try {
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
@@ -67,6 +73,43 @@ const startCronJobs = () => {
       }
     } catch (error) {
       console.error('[Cron] Shiprocket order sync failed:', error);
+    }
+  });
+
+  cron.schedule('*/30 * * * *', async () => {
+    try {
+      const cutoff = new Date(Date.now() - abandonedCartHours * 60 * 60 * 1000);
+      const candidates = await User.find({
+        'savedCart.items.0': { $exists: true },
+        'savedCart.updatedAt': { $lte: cutoff },
+        $or: [
+          { abandonedCartEmailSentAt: { $exists: false } },
+          { abandonedCartEmailSentAt: null },
+        ],
+      }).limit(50);
+
+      if (candidates.length === 0) {
+        return;
+      }
+
+      const emailService = await import('../services/emailService.js');
+
+      for (const user of candidates) {
+        if (!user.email) {
+          continue;
+        }
+
+        try {
+          await emailService.sendAbandonedCartEmail(user.email, user.savedCart, user.name);
+          user.abandonedCartEmailSentAt = new Date();
+          await user.save();
+          console.log(`[Cron] Abandoned cart email sent to ${user.email}`);
+        } catch (error) {
+          console.error('[Cron] Abandoned cart email failed:', error.message || error);
+        }
+      }
+    } catch (error) {
+      console.error('[Cron] Abandoned cart job failed:', error);
     }
   });
 
