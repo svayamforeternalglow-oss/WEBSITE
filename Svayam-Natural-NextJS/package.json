@@ -9,9 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@uploadthing/react": "^7.3.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "@uploadthing/react": "^7.3.0",
     "canvas-confetti": "^1.9.3",
     "chart.js": "^4.5.1",
     "next": "16.1.6",
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "20.19.37",
     "@types/react": "19.2.14",
     "@types/react-dom": "^19",
