@@ -1,5 +1,21 @@
 import Product from '../models/Product.js';
 
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizeList = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => `${item}`.trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
 // @desc    Fetch all products (with optional search, category, concern, featured, active filters)
 // @route   GET /api/v1/products
 // @access  Public
@@ -37,10 +53,10 @@ export const getProducts = async (req, res) => {
       const searchTerm = req.query.search.trim();
       if (searchTerm.length < 3) {
         // Short queries: prefix match on title (case-insensitive)
-        query.title = { $regex: new RegExp(`^${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i') };
+        query.title = { $regex: new RegExp(`^${escapeRegex(searchTerm)}`, 'i') };
       } else {
         // Longer queries: also use regex for partial/prefix matching
-        query.title = { $regex: new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
+        query.title = { $regex: new RegExp(escapeRegex(searchTerm), 'i') };
       }
     }
 
@@ -114,16 +130,40 @@ export const getProductBySlug = async (req, res) => {
 // @access  Private/Admin
 export const createProduct = async (req, res) => {
   try {
-    const { title, slug, price, originalPrice, description, images, category, concern, inventory, isActive, isFeatured } = req.body;
+    const {
+      title,
+      slug,
+      sku,
+      price,
+      originalPrice,
+      description,
+      story,
+      howToUse,
+      weight,
+      ingredients,
+      images,
+      category,
+      concern,
+      inventory,
+      isActive,
+      isFeatured,
+      isSeasonal,
+      seasonalRank,
+    } = req.body;
     
     const productTitle = title || 'Sample name';
     
     const product = new Product({
       title: productTitle,
       slug: slug || productTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now(),
+      sku: sku || undefined,
       price: price !== undefined ? price : 0,
       originalPrice: originalPrice !== undefined ? originalPrice : 0,
       description: description || 'Sample description',
+      story: story || '',
+      howToUse: howToUse || '',
+      weight: weight || '',
+      ingredients: normalizeList(ingredients),
       images: images && images.length > 0 ? images : ['/images/sample.jpg'],
       category: category || 'General',
       concern: concern || 'General',
@@ -143,7 +183,26 @@ export const createProduct = async (req, res) => {
 // @route   PUT /api/v1/products/:id
 // @access  Private/Admin
 export const updateProduct = async (req, res) => {
-  const { title, slug, price, originalPrice, description, images, category, concern, inventory, isActive, isFeatured } = req.body;
+  const {
+    title,
+    slug,
+    sku,
+    price,
+    originalPrice,
+    description,
+    story,
+    howToUse,
+    weight,
+    ingredients,
+    images,
+    category,
+    concern,
+    inventory,
+    isActive,
+    isFeatured,
+    isSeasonal,
+    seasonalRank,
+  } = req.body;
 
   try {
     const product = await Product.findById(req.params.id);
@@ -152,9 +211,14 @@ export const updateProduct = async (req, res) => {
       // Use explicit undefined checks so 0 and false are valid values
       if (title !== undefined) product.title = title;
       if (slug !== undefined) product.slug = slug;
+      if (sku !== undefined) product.sku = sku;
       if (price !== undefined) product.price = price;
       if (originalPrice !== undefined) product.originalPrice = originalPrice;
       if (description !== undefined) product.description = description;
+      if (story !== undefined) product.story = story;
+      if (howToUse !== undefined) product.howToUse = howToUse;
+      if (weight !== undefined) product.weight = weight;
+      if (ingredients !== undefined) product.ingredients = normalizeList(ingredients);
       if (images !== undefined) product.images = images;
       if (category !== undefined) product.category = category;
       if (concern !== undefined) product.concern = concern;

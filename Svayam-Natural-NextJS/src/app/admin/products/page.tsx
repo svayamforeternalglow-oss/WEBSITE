@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import { UploadButton } from '@uploadthing/react';
+import Image from 'next/image';
 import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
 import { api } from '@/lib/api';
@@ -20,11 +22,45 @@ interface Product {
   isActive?: boolean;
   isFeatured?: boolean;
   weight?: string;
+  story?: string;
+  howToUse?: string;
+  ingredients?: string[];
   inStock?: boolean;
   isLowStock?: boolean;
   description?: string;
   images?: string[];
 }
+
+const parseDelimitedList = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith('data:')) {
+    return [trimmed];
+  }
+
+  const lines = trimmed
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (lines.length > 1) {
+    return lines;
+  }
+
+  return trimmed
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const fileToDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
 
 interface TaxonomyItem {
   _id: string;
@@ -46,14 +82,20 @@ export default function AdminProductsPage() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [imageUploadBusy, setImageUploadBusy] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
+    sku: '',
     price: 0,
     originalPrice: 0,
     inventory: 0,
     category: '',
     concern: '',
     description: '',
+    story: '',
+    howToUse: '',
+    weight: '',
+    ingredients: '',
     images: '',
     isActive: true,
     isFeatured: false,
@@ -142,7 +184,21 @@ export default function AdminProductsPage() {
   const openAddModal = () => {
     setEditingProduct(null);
     setFormData({
-      title: '', price: 0, originalPrice: 0, inventory: 0, category: '', concern: '', description: '', images: '', isActive: true, isFeatured: false,
+      title: '',
+      sku: '',
+      price: 0,
+      originalPrice: 0,
+      inventory: 0,
+      category: '',
+      concern: '',
+      description: '',
+      story: '',
+      howToUse: '',
+      weight: '',
+      ingredients: '',
+      images: '',
+      isActive: true,
+      isFeatured: false,
     });
     setIsModalOpen(true);
   };
@@ -151,13 +207,18 @@ export default function AdminProductsPage() {
     setEditingProduct(p);
     setFormData({
       title: p.title || p.name || '',
+      sku: p.sku || '',
       price: p.price || 0,
       originalPrice: p.originalPrice || 0,
       inventory: p.inventory !== undefined ? p.inventory : (p.stock || 0),
       category: p.category || '',
       concern: p.concern || '',
       description: p.description || '',
-      images: p.images ? p.images.join(', ') : '',
+      story: p.story || '',
+      howToUse: p.howToUse || '',
+      weight: p.weight || '',
+      ingredients: Array.isArray(p.ingredients) ? p.ingredients.join('\n') : '',
+      images: p.images ? p.images.join('\n') : '',
       isActive: p.isActive !== undefined ? p.isActive : true,
       isFeatured: p.isFeatured || false,
     });
@@ -171,7 +232,9 @@ export default function AdminProductsPage() {
     try {
       const payload = {
         ...formData,
-        images: formData.images.split(',').map(i => i.trim()).filter(Boolean)
+      sku: formData.sku.trim() || undefined,
+      images: parseDelimitedList(formData.images),
+      ingredients: parseDelimitedList(formData.ingredients),
       };
 
       if (editingProduct) {
@@ -185,6 +248,26 @@ export default function AdminProductsPage() {
       fetchProducts();
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to save product', 'error');
+    }
+  };
+
+  const handleImageFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    setImageUploadBusy(true);
+    try {
+      const uploaded = await Promise.all(Array.from(files).map(fileToDataUrl));
+      setFormData((prev) => {
+        const currentImages = parseDelimitedList(prev.images);
+        return {
+          ...prev,
+          images: [...currentImages, ...uploaded].join('\n'),
+        };
+      });
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Failed to load image files', 'error');
+    } finally {
+      setImageUploadBusy(false);
     }
   };
 
@@ -278,8 +361,8 @@ export default function AdminProductsPage() {
                 return (
                   <tr key={product._id} className={`border-b border-neutral-200 transition-colors hover:bg-neutral-100/50 ${product.isActive === false ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-3">
-                      <div className="h-12 w-12 overflow-hidden rounded-md border border-neutral-200 bg-neutral-50">
-                        <img src={image} alt={title} className="h-full w-full object-cover" />
+                      <div className="relative h-12 w-12 overflow-hidden rounded-md border border-neutral-200 bg-neutral-50">
+                        <Image src={image} alt={title} fill sizes="48px" unoptimized className="object-cover" />
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -486,6 +569,29 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-forest mb-1">SKU</label>
+                  <input
+                    type="text"
+                    value={formData.sku}
+                    onChange={e => setFormData({...formData, sku: e.target.value.toUpperCase()})}
+                    placeholder="Leave blank to auto-generate"
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-forest mb-1">Weight / Size</label>
+                  <input
+                    type="text"
+                    value={formData.weight}
+                    onChange={e => setFormData({...formData, weight: e.target.value})}
+                    placeholder="e.g. 100g, 50ml"
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-forest mb-1">Description</label>
                 <textarea 
@@ -497,14 +603,76 @@ export default function AdminProductsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-forest mb-1">Image URLs (comma separated)</label>
+                <label className="block text-sm font-semibold text-forest mb-1">Story</label>
+                <textarea
+                  rows={4}
+                  value={formData.story}
+                  onChange={e => setFormData({...formData, story: e.target.value})}
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-forest mb-1">How To Use</label>
+                <textarea
+                  rows={3}
+                  value={formData.howToUse}
+                  onChange={e => setFormData({...formData, howToUse: e.target.value})}
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-forest mb-1">Ingredients</label>
+                <textarea
+                  rows={3}
+                  placeholder="One ingredient per line, or comma-separated"
+                  value={formData.ingredients}
+                  onChange={e => setFormData({...formData, ingredients: e.target.value})}
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                />
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label className="block text-sm font-semibold text-forest">Image URLs / uploads</label>
+                  <div className="flex items-center gap-2">
+                    <UploadButton
+                      endpoint="image"
+                      onClientUploadComplete={(res) => {
+                        // res: ClientUploadedFileData[] -> each has `file` with `url`
+                        const urls = res.map(r => r.file.url);
+                        setFormData((prev) => {
+                          const current = parseDelimitedList(prev.images);
+                          return { ...prev, images: [...current, ...urls].join('\n') };
+                        });
+                      }}
+                      auth={undefined}
+                      url={typeof window !== 'undefined' ? `${window.location.origin}/api/uploadthing` : undefined}
+                    >
+                      <span className="inline-flex cursor-pointer items-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-forest hover:border-gold hover:text-gold-dark">
+                        {imageUploadBusy ? 'Uploading…' : 'Upload images'}
+                      </span>
+                    </UploadButton>
+                  </div>
+                </div>
+                <label className="block text-xs text-clay mb-1">Paste URLs one per line. Uploaded files are added automatically.</label>
                 <textarea 
-                  rows={2}
-                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                  rows={4}
+                  placeholder="https://example.com/image1.jpg\nhttps://example.com/image2.jpg"
                   value={formData.images} 
                   onChange={e => setFormData({...formData, images: e.target.value})}
                   className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-clay outline-none focus:border-gold"
                 />
+                {parseDelimitedList(formData.images).length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-3">
+                    {parseDelimitedList(formData.images).slice(0, 6).map((src, index) => (
+                      <div key={`${src}-${index}`} className="relative aspect-square overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50">
+                        <Image src={src} alt={`Preview ${index + 1}`} fill sizes="(max-width: 768px) 33vw, 160px" unoptimized className="object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Toggle switches */}

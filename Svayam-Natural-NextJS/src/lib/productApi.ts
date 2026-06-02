@@ -6,12 +6,17 @@ export interface BackendProduct {
   title: string;
   slug: string;
   description: string;
+  story?: string;
   price: number;
   originalPrice: number;
   inventory: number;
   images: string[];
   category: string;
   concern: string;
+  sku?: string;
+  weight?: string;
+  ingredients?: string[];
+  howToUse?: string;
   isActive: boolean;
   isFeatured: boolean;
   createdAt: string;
@@ -76,16 +81,16 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
       isFeatured: bp.isFeatured,
       // Editorial — fallback to empty defaults
       tagline: editorial?.tagline || '',
-      story: editorial?.story || '',
+      story: editorial?.story || bp.story || '',
       theme: editorial?.theme || CATEGORY_THEMES[bp.category] || 'herbal',
-      weight: editorial?.weight || '',
-      sku: editorial?.sku || '',
+      weight: editorial?.weight || bp.weight || '',
+      sku: editorial?.sku || bp.sku || '',
       badges: editorial?.badges || [],
       // Prefer backend concerns if they exist, otherwise fall back to editorial
       concerns: backendConcerns.length > 0 ? backendConcerns : (editorial?.concerns || []),
-      ingredients: editorial?.ingredients || [],
+      ingredients: editorial?.ingredients || (bp.ingredients || []).map((name) => ({ name, icon: '•', description: '' })),
       benefits: editorial?.benefits || [],
-      howToUse: editorial?.howToUse,
+      howToUse: editorial?.howToUse || bp.howToUse,
     };
   });
 }

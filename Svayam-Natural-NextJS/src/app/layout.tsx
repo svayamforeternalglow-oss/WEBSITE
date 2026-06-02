@@ -7,6 +7,9 @@ import CartDrawer from "@/components/CartDrawer";
 import ToastContainer from "@/components/Toast";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import TopBanner from "@/components/TopBanner";
+import CartSync from "@/components/CartSync";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -49,11 +52,14 @@ export default function RootLayout({
       <body className="antialiased">
         <TopBanner />
         <ConditionalNavbar />
+        <CartSync />
         <main>{children}</main>
         <ConditionalFooter />
         <CartDrawer />
         <ToastContainer />
         <WhatsAppFloat />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
