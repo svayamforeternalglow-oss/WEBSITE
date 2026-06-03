@@ -13,6 +13,8 @@ export interface BackendProduct {
   title: string;
   slug: string;
   description: string;
+  story?: string;
+  howToUse?: string;
   price: number;
   originalPrice: number;
   inventory: number;
@@ -23,6 +25,10 @@ export interface BackendProduct {
   isFeatured: boolean;
   isSeasonal?: boolean;
   seasonalRank?: number;
+  sku?: string;
+  weight?: string;
+  ingredients?: { name: string; icon?: string; description?: string }[];
+  benefits?: { title: string; icon?: string; description?: string }[];
   createdAt: string;
   updatedAt: string;
   // When text‑search is used, Mongo adds a score
@@ -76,6 +82,28 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
     const images =
       staticGallery.length > 0 ? staticGallery : backendImages.length > 0 ? backendImages : ['/images/All-Products.jpeg'];
     const image = images[0] || '/images/All-Products.jpeg';
+    const backendSku = typeof bp.sku === 'string' && bp.sku.trim() ? bp.sku.trim() : '';
+    const backendWeight = typeof bp.weight === 'string' && bp.weight.trim() ? bp.weight.trim() : '';
+    const backendStory = typeof bp.story === 'string' && bp.story.trim() ? bp.story.trim() : '';
+    const backendHowToUse = typeof bp.howToUse === 'string' && bp.howToUse.trim() ? bp.howToUse.trim() : '';
+    const backendIngredients = Array.isArray(bp.ingredients) && bp.ingredients.length > 0
+      ? bp.ingredients
+          .filter((ing) => Boolean(ing?.name))
+          .map((ing) => ({
+            name: ing.name,
+            icon: ing.icon || '',
+            description: ing.description || '',
+          }))
+      : undefined;
+    const backendBenefits = Array.isArray(bp.benefits) && bp.benefits.length > 0
+      ? bp.benefits
+          .filter((benefit) => Boolean(benefit?.title))
+          .map((benefit) => ({
+            title: benefit.title,
+            icon: benefit.icon || '',
+            description: benefit.description || '',
+          }))
+      : undefined;
     // Parse comma-separated concerns from backend into array
     const backendConcerns = bp.concern
       ? bp.concern
@@ -106,16 +134,16 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
       seasonalRank: bp.seasonalRank ?? 0,
       // Editorial — fallback to empty defaults
       tagline: editorial?.tagline || '',
-      story: editorial?.story || '',
+      story: backendStory || editorial?.story || '',
       theme: editorial?.theme || CATEGORY_THEMES[bp.category] || 'herbal',
-      weight: editorial?.weight || '',
-      sku: editorial?.sku || '',
+      weight: backendWeight || editorial?.weight || '',
+      sku: backendSku || editorial?.sku || '',
       badges: editorial?.badges || [],
       // Prefer backend concerns if they exist, otherwise fall back to editorial
       concerns: backendConcerns.length > 0 ? backendConcerns : editorialConcerns,
-      ingredients: editorial?.ingredients || [],
-      benefits: editorial?.benefits || [],
-      howToUse: editorial?.howToUse,
+      ingredients: backendIngredients || editorial?.ingredients || [],
+      benefits: backendBenefits || editorial?.benefits || [],
+      howToUse: backendHowToUse || editorial?.howToUse,
     };
   });
 }

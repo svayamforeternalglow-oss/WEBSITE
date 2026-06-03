@@ -28,7 +28,6 @@ export default function AdminSettingsPage() {
   const [configs, setConfigs] = useState<ConfigItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
 
@@ -87,40 +86,6 @@ export default function AdminSettingsPage() {
       setSaveMessage('✗ Network error');
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleExportUsers() {
-    if (!token) return;
-    setExporting(true);
-    setSaveMessage('');
-    try {
-      const res = await fetch(`${API}/admin/export/users?includeGuests=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || 'Export failed');
-      }
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `users-orders-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(url);
-      setSaveMessage('✓ Export downloaded');
-      setTimeout(() => setSaveMessage(''), 3000);
-    } catch (err) {
-      setSaveMessage(err instanceof Error ? `✗ ${err.message}` : '✗ Export failed');
-    } finally {
-      setExporting(false);
     }
   }
 
@@ -189,13 +154,6 @@ export default function AdminSettingsPage() {
             className="rounded-lg border border-forest/20 px-4 py-2 text-sm font-medium text-forest transition-colors hover:bg-forest/5"
           >
             + Add Key
-          </button>
-          <button
-            onClick={handleExportUsers}
-            disabled={exporting}
-            className="rounded-lg border border-gold/40 px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-gold/10 disabled:opacity-60"
-          >
-            {exporting ? 'Exporting...' : 'Download Users JSON'}
           </button>
           <button
             onClick={handleSaveAll}

@@ -14,8 +14,6 @@ const DEFAULT_CONFIGS = [
   { key: 'support_phone', value: '', label: 'Support Phone', group: 'contact' },
   { key: 'announcement_bar_text', value: '', label: 'Announcement Bar Text', group: 'general' },
   { key: 'announcement_bar_link', value: '', label: 'Announcement Bar Link', group: 'general' },
-  { key: 'announcement_bar_flair', value: '', label: 'Announcement Bar Flair', group: 'general' },
-  { key: 'announcement_bar_tone', value: 'info', label: 'Announcement Bar Tone (info|warning|urgent)', group: 'general' },
 ];
 
 // Seed defaults on first load

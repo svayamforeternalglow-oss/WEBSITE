@@ -1,6 +1,14 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { registerUser, authUser, getUserProfile, addWishlist, removeWishlist } from '../controllers/userController.js';
+import {
+  registerUser,
+  authUser,
+  getUserProfile,
+  addWishlist,
+  removeWishlist,
+  updateSavedCart,
+  getSavedCart,
+} from '../controllers/userController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { validateRequest } from '../middlewares/validate.js';
 
@@ -20,5 +28,7 @@ router.post('/login', [
 router.get('/profile', protect, getUserProfile);
 router.post('/wishlist', protect, addWishlist);
 router.delete('/wishlist/:productId', protect, removeWishlist);
+router.get('/cart', protect, getSavedCart);
+router.post('/cart', protect, updateSavedCart);
 
 export default router;

@@ -24,7 +24,6 @@ interface CartState {
   setHasHydrated: (value: boolean) => void;
 
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
-  setItems: (items: CartItem[]) => void;
   removeItem: (slug: string) => void;
   updateQuantity: (slug: string, quantity: number) => void;
   clearCart: () => void;
@@ -63,8 +62,6 @@ export const useCartStore = create<CartState>()(
           return { items: [...state.items, { ...item, quantity }] };
         });
       },
-
-      setItems: (items) => set({ items }),
 
       removeItem: (slug) => {
         set((state) => ({
