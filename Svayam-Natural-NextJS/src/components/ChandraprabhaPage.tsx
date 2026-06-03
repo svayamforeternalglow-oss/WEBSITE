@@ -233,37 +233,35 @@ export default function ChandraprabhaPage({ product }: ChandraprabhaPageProps) {
       </section>
 
       {/* ───────────────── Ingredients Section ───────────────── */}
-      {product.ingredients?.length > 0 && (
-        <section className="bg-[#0B1026] py-24">
-          <div className="mx-auto max-w-7xl px-6 lg:px-10">
-            <div className="mb-16 text-center">
-              <h2 className="font-heading text-3xl font-bold text-white/90 md:text-4xl">
-                Sacred Ingredients
-              </h2>
-              <div className="mx-auto mt-4 h-[2px] w-16 bg-gradient-to-r from-[#B0C4DE]/60 to-transparent" />
-              <p className="mx-auto mt-5 max-w-xl font-accent text-lg italic text-white/60">
-                Rare botanicals chosen for their nighttime potency.
-              </p>
-            </div>
-
-            <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
-              {product.ingredients.map((ing) => (
-                <div
-                  key={ing.name}
-                  className="group rounded-2xl border border-white/10 bg-white/[0.05] p-8 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#B0C4DE]/30 hover:bg-white/[0.08]"
-                >
-                  <h3 className="mb-3 font-heading text-lg font-semibold text-white">
-                    {ing.name}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-white/60">
-                    {ing.description}
-                  </p>
-                </div>
-              ))}
-            </div>
+      <section className="bg-[#0B1026] py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-10">
+          <div className="mb-16 text-center">
+            <h2 className="font-heading text-3xl font-bold text-white/90 md:text-4xl">
+              Sacred Ingredients
+            </h2>
+            <div className="mx-auto mt-4 h-[2px] w-16 bg-gradient-to-r from-[#B0C4DE]/60 to-transparent" />
+            <p className="mx-auto mt-5 max-w-xl font-accent text-lg italic text-white/60">
+              Rare botanicals chosen for their nighttime potency.
+            </p>
           </div>
-        </section>
-      )}
+
+          <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
+            {product.ingredients.map((ing) => (
+              <div
+                key={ing.name}
+                className="group rounded-2xl border border-white/10 bg-white/[0.05] p-8 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#B0C4DE]/30 hover:bg-white/[0.08]"
+              >
+                <h3 className="mb-3 font-heading text-lg font-semibold text-white">
+                  {ing.name}
+                </h3>
+                <p className="text-sm leading-relaxed text-white/60">
+                  {ing.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ──── Benefits — Overnight Transformation Timeline ──── */}
       <section className="bg-[#0D1230] py-24">

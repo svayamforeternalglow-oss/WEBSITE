@@ -6,7 +6,7 @@ import ConditionalFooter from "@/components/ConditionalFooter";
 import CartDrawer from "@/components/CartDrawer";
 import ToastContainer from "@/components/Toast";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import CartSync from "@/components/CartSync";
+import TopBanner from "@/components/TopBanner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -61,11 +61,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable} ${cormorant.variable}`}>
       <body className="antialiased">
+        <TopBanner />
         <ConditionalNavbar />
         <main>{children}</main>
         <ConditionalFooter />
         <CartDrawer />
-        <CartSync />
         <ToastContainer />
         <WhatsAppFloat />
         <Analytics />

@@ -1,12 +1,8 @@
-'use client';
-
-import { useEffect, useRef } from 'react';
 import {
   FREE_DELIVERY_THRESHOLD,
   getFreeDeliveryProgress,
   getFreeDeliveryRemaining,
 } from '@/lib/shipping';
-import { fireFreeDeliveryConfetti } from '@/lib/confetti';
 
 interface FreeDeliveryProgressProps {
   subtotal: number;
@@ -22,31 +18,6 @@ export default function FreeDeliveryProgress({
   const isUnlocked = remaining <= 0;
   const progressPercent = Math.round(progress * 100);
   const rupee = '\u20B9';
-  const wasUnlockedRef = useRef(false);
-
-  useEffect(() => {
-    if (!isUnlocked) {
-      wasUnlockedRef.current = false;
-      return;
-    }
-
-    if (wasUnlockedRef.current) {
-      return;
-    }
-
-    wasUnlockedRef.current = true;
-
-    try {
-      const key = 'svayam-free-delivery-confetti';
-      if (sessionStorage.getItem(key)) {
-        return;
-      }
-      sessionStorage.setItem(key, '1');
-      void fireFreeDeliveryConfetti();
-    } catch {
-      void fireFreeDeliveryConfetti();
-    }
-  }, [isUnlocked]);
 
   return (
     <div className={`rounded-2xl border border-neutral-300 bg-neutral-50 px-4 py-3 ${className}`}>

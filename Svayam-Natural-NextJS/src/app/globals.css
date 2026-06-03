@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@uploadthing/react/styles.css";
 
 @theme inline {
   --color-forest: #0F2E1F;

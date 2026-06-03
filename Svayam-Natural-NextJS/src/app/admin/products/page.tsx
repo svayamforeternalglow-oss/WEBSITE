@@ -4,19 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
 import { api } from '@/lib/api';
-import { UploadDropzone } from '@/lib/uploadthing-client';
-
-interface IngredientInput {
-  name: string;
-  description: string;
-  icon?: string;
-}
-
-interface BenefitInput {
-  title: string;
-  description: string;
-  icon?: string;
-}
 
 interface Product {
   _id: string;
@@ -30,19 +17,15 @@ interface Product {
   stock?: number;
   inventory?: number;
   sku?: string;
-  weight?: string;
-  story?: string;
-  howToUse?: string;
   isActive?: boolean;
   isFeatured?: boolean;
   isSeasonal?: boolean;
   seasonalRank?: number;
+  weight?: string;
   inStock?: boolean;
   isLowStock?: boolean;
   description?: string;
   images?: string[];
-  ingredients?: IngredientInput[];
-  benefits?: BenefitInput[];
 }
 
 interface TaxonomyItem {
@@ -86,14 +69,7 @@ export default function AdminProductsPage() {
     category: '',
     concern: '',
     description: '',
-    images: [] as string[],
-    imageInput: '',
-    sku: '',
-    weight: '',
-    story: '',
-    howToUse: '',
-    ingredients: [] as IngredientInput[],
-    benefits: [] as BenefitInput[],
+    images: '',
     isActive: true,
     isFeatured: false,
     isSeasonal: false,
@@ -228,23 +204,7 @@ export default function AdminProductsPage() {
   const openAddModal = () => {
     setEditingProduct(null);
     setFormData({
-      title: '',
-      price: 0,
-      originalPrice: 0,
-      inventory: 0,
-      category: '',
-      concern: '',
-      description: '',
-      images: [],
-      imageInput: '',
-      sku: '',
-      weight: '',
-      story: '',
-      howToUse: '',
-      ingredients: [],
-      benefits: [],
-      isActive: true,
-      isFeatured: false,
+      title: '', price: 0, originalPrice: 0, inventory: 0, category: '', concern: '', description: '', images: '', isActive: true, isFeatured: false,
       isSeasonal: false,
       seasonalRank: 0,
     });
@@ -261,14 +221,7 @@ export default function AdminProductsPage() {
       category: p.category || '',
       concern: p.concern || '',
       description: p.description || '',
-      images: p.images ? [...p.images] : [],
-      imageInput: '',
-      sku: p.sku || '',
-      weight: p.weight || '',
-      story: p.story || '',
-      howToUse: p.howToUse || '',
-      ingredients: p.ingredients ? [...p.ingredients] : [],
-      benefits: p.benefits ? [...p.benefits] : [],
+      images: p.images ? p.images.join(', ') : '',
       isActive: p.isActive !== undefined ? p.isActive : true,
       isFeatured: p.isFeatured === true || (p as unknown as { featured?: boolean }).featured === true,
       isSeasonal: p.isSeasonal === true,
@@ -277,144 +230,16 @@ export default function AdminProductsPage() {
     setIsModalOpen(true);
   };
 
-  const addImage = (url: string) => {
-    const clean = url.trim();
-    if (!clean) {
-      addToast('Image URL is empty', 'error');
-      return;
-    }
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.includes(clean) ? prev.images : [...prev.images, clean],
-      imageInput: '',
-    }));
-  };
-
-  const removeImage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
-
-  const moveImage = (from: number, to: number) => {
-    setFormData((prev) => {
-      if (to < 0 || to >= prev.images.length) {
-        return prev;
-      }
-      const next = [...prev.images];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return { ...prev, images: next };
-    });
-  };
-
-  const addIngredient = () => {
-    setFormData((prev) => ({
-      ...prev,
-      ingredients: [...prev.ingredients, { name: '', description: '', icon: '' }],
-    }));
-  };
-
-  const updateIngredient = (index: number, field: keyof IngredientInput, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      ingredients: prev.ingredients.map((ing, i) =>
-        i === index ? { ...ing, [field]: value } : ing
-      ),
-    }));
-  };
-
-  const removeIngredient = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      ingredients: prev.ingredients.filter((_, i) => i !== index),
-    }));
-  };
-
-  const addBenefit = () => {
-    setFormData((prev) => ({
-      ...prev,
-      benefits: [...prev.benefits, { title: '', description: '', icon: '' }],
-    }));
-  };
-
-  const updateBenefit = (index: number, field: keyof BenefitInput, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      benefits: prev.benefits.map((benefit, i) =>
-        i === index ? { ...benefit, [field]: value } : benefit
-      ),
-    }));
-  };
-
-  const removeBenefit = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      benefits: prev.benefits.filter((_, i) => i !== index),
-    }));
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
     
     try {
-      const images = formData.images.map((img) => img.trim()).filter(Boolean);
-      const sku = formData.sku.trim();
-      const weight = formData.weight.trim();
-      const story = formData.story.trim();
-      const howToUse = formData.howToUse.trim();
-      const ingredients = formData.ingredients
-        .map((ing) => ({
-          name: ing.name.trim(),
-          description: ing.description.trim(),
-          icon: ing.icon?.trim() || '',
-        }))
-        .filter((ing) => ing.name);
-      const benefits = formData.benefits
-        .map((benefit) => ({
-          title: benefit.title.trim(),
-          description: benefit.description.trim(),
-          icon: benefit.icon?.trim() || '',
-        }))
-        .filter((benefit) => benefit.title);
-
-      const payload: Record<string, unknown> = {
-        title: formData.title,
-        price: formData.price,
-        originalPrice: formData.originalPrice,
-        inventory: formData.inventory,
-        category: formData.category,
-        concern: formData.concern,
-        description: formData.description,
+      const payload = {
+        ...formData,
         seasonalRank: formData.isSeasonal ? formData.seasonalRank : 0,
-        isActive: formData.isActive,
-        isFeatured: formData.isFeatured,
-        isSeasonal: formData.isSeasonal,
+        images: formData.images.split(',').map(i => i.trim()).filter(Boolean)
       };
-
-      if (images.length > 0) {
-        payload.images = images;
-      }
-      if (sku) {
-        payload.sku = sku;
-      }
-      if (weight) {
-        payload.weight = weight;
-      }
-      if (story) {
-        payload.story = story;
-      }
-      if (howToUse) {
-        payload.howToUse = howToUse;
-      }
-      if (ingredients.length > 0) {
-        payload.ingredients = ingredients;
-      }
-      if (benefits.length > 0) {
-        payload.benefits = benefits;
-      }
 
       if (editingProduct) {
         await api.put(`/products/${editingProduct._id}`, payload, token);
@@ -761,236 +586,15 @@ export default function AdminProductsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-forest mb-1">SKU</label>
-                  <input
-                    type="text"
-                    value={formData.sku}
-                    onChange={e => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-forest mb-1">Weight</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 50g"
-                    value={formData.weight}
-                    onChange={e => setFormData({ ...formData, weight: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="block text-sm font-semibold text-forest mb-1">About / Story</label>
-                <textarea
-                  rows={4}
-                  value={formData.story}
-                  onChange={e => setFormData({ ...formData, story: e.target.value })}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                <label className="block text-sm font-semibold text-forest mb-1">Image URLs (comma separated)</label>
+                <textarea 
+                  rows={2}
+                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                  value={formData.images} 
+                  onChange={e => setFormData({...formData, images: e.target.value})}
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-clay outline-none focus:border-gold"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-forest mb-1">How to Use</label>
-                <textarea
-                  rows={3}
-                  value={formData.howToUse}
-                  onChange={e => setFormData({ ...formData, howToUse: e.target.value })}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-forest mb-2">Product Images</label>
-                <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-3">
-                  <UploadDropzone
-                    endpoint="productImages"
-                    headers={{ Authorization: `Bearer ${token ?? ''}` }}
-                    disabled={!token}
-                    onClientUploadComplete={(res) => {
-                      const urls = (res || []).map((file) => file.url).filter(Boolean);
-                      if (urls.length === 0) {
-                        addToast('Upload completed, but no URLs returned', 'warning');
-                        return;
-                      }
-                      setFormData((prev) => ({
-                        ...prev,
-                        images: [...prev.images, ...urls],
-                      }));
-                      addToast('Images uploaded', 'success');
-                    }}
-                    onUploadError={(error) => {
-                      addToast(error.message || 'Upload failed', 'error');
-                    }}
-                    className="ut-allowed-content:hidden"
-                  />
-                </div>
-
-                <div className="mt-3 flex gap-2">
-                  <input
-                    type="url"
-                    placeholder="Paste image URL"
-                    value={formData.imageInput}
-                    onChange={(e) => setFormData({ ...formData, imageInput: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => addImage(formData.imageInput)}
-                    className="rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-forest hover:border-gold"
-                  >
-                    Add
-                  </button>
-                </div>
-
-                {formData.images.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {formData.images.map((img, index) => (
-                      <div key={`${img}-${index}`} className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-2">
-                        <div className="h-12 w-12 overflow-hidden rounded border border-neutral-200 bg-neutral-50">
-                          <img src={img} alt="Product" className="h-full w-full object-cover" />
-                        </div>
-                        <p className="flex-1 truncate text-xs text-clay">{img}</p>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => moveImage(index, index - 1)}
-                            className="rounded border border-neutral-200 px-2 py-1 text-[11px] text-clay hover:text-forest"
-                          >
-                            Up
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moveImage(index, index + 1)}
-                            className="rounded border border-neutral-200 px-2 py-1 text-[11px] text-clay hover:text-forest"
-                          >
-                            Down
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="rounded border border-red-200 px-2 py-1 text-[11px] text-red-600 hover:border-red-300"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-semibold text-forest">Ingredients</label>
-                  <button
-                    type="button"
-                    onClick={addIngredient}
-                    className="rounded border border-neutral-300 px-2.5 py-1 text-[11px] font-semibold text-forest hover:border-gold"
-                  >
-                    + Add Ingredient
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {formData.ingredients.length === 0 ? (
-                    <p className="text-xs text-clay">No ingredients added yet.</p>
-                  ) : (
-                    formData.ingredients.map((ing, index) => (
-                      <div key={`ing-${index}`} className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            placeholder="Name"
-                            value={ing.name}
-                            onChange={(e) => updateIngredient(index, 'name', e.target.value)}
-                            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Icon (optional)"
-                            value={ing.icon || ''}
-                            onChange={(e) => updateIngredient(index, 'icon', e.target.value)}
-                            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                          />
-                        </div>
-                        <textarea
-                          rows={2}
-                          placeholder="Description"
-                          value={ing.description}
-                          onChange={(e) => updateIngredient(index, 'description', e.target.value)}
-                          className="mt-2 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                        />
-                        <div className="mt-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => removeIngredient(index)}
-                            className="text-xs font-semibold text-red-600 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-semibold text-forest">Benefits</label>
-                  <button
-                    type="button"
-                    onClick={addBenefit}
-                    className="rounded border border-neutral-300 px-2.5 py-1 text-[11px] font-semibold text-forest hover:border-gold"
-                  >
-                    + Add Benefit
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {formData.benefits.length === 0 ? (
-                    <p className="text-xs text-clay">No benefits added yet.</p>
-                  ) : (
-                    formData.benefits.map((benefit, index) => (
-                      <div key={`benefit-${index}`} className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            placeholder="Title"
-                            value={benefit.title}
-                            onChange={(e) => updateBenefit(index, 'title', e.target.value)}
-                            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Icon (optional)"
-                            value={benefit.icon || ''}
-                            onChange={(e) => updateBenefit(index, 'icon', e.target.value)}
-                            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                          />
-                        </div>
-                        <textarea
-                          rows={2}
-                          placeholder="Description"
-                          value={benefit.description}
-                          onChange={(e) => updateBenefit(index, 'description', e.target.value)}
-                          className="mt-2 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                        />
-                        <div className="mt-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => removeBenefit(index)}
-                            className="text-xs font-semibold text-red-600 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
               </div>
 
               {/* Toggle switches */}

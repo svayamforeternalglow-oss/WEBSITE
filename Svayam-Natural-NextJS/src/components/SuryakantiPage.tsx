@@ -246,128 +246,124 @@ export default function SuryakantiPage({ product }: SuryakantiPageProps) {
       </section>
 
       {/* ─── Ingredients Section ─── */}
-      {product.ingredients?.length > 0 && (
-        <section className="bg-[#FFFBF2] py-24">
-          <div className="mx-auto max-w-7xl px-6 lg:px-10">
-            <div className="mb-16 text-center">
-              <h2 className="font-heading text-4xl font-bold text-[#3D2B1F]">
-                Key Ingredients
-              </h2>
-              <div className="mx-auto mt-4 h-[2px] w-16 bg-gradient-to-r from-[#E8A317] to-[#F0C75E]" />
-              <p className="mx-auto mt-5 max-w-xl font-accent text-lg italic text-[#5C4033]/70">
-                Nature&apos;s most potent sun-kissed botanicals, chosen with
-                Ayurvedic wisdom.
-              </p>
+      <section className="bg-[#FFFBF2] py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-10">
+          <div className="mb-16 text-center">
+            <h2 className="font-heading text-4xl font-bold text-[#3D2B1F]">
+              Key Ingredients
+            </h2>
+            <div className="mx-auto mt-4 h-[2px] w-16 bg-gradient-to-r from-[#E8A317] to-[#F0C75E]" />
+            <p className="mx-auto mt-5 max-w-xl font-accent text-lg italic text-[#5C4033]/70">
+              Nature&apos;s most potent sun-kissed botanicals, chosen with
+              Ayurvedic wisdom.
+            </p>
+          </div>
+
+          <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
+            {product.ingredients.map((ing) => (
+              <div
+                key={ing.name}
+                className="group rounded-2xl border-l-4 border-[#E8A317] bg-[#FFFDF7] p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#E8A317]/10"
+              >
+                <h3 className="mb-2 font-heading text-lg font-semibold text-[#3D2B1F]">
+                  {ing.name}
+                </h3>
+                <p className="text-sm leading-relaxed text-[#5C4033]/70">
+                  {ing.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Benefits Section — Radial Sun Layout ─── */}
+      <section className="bg-gradient-to-b from-[#FFF8E7] to-[#FFFBF2] py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-10">
+          <div className="mb-16 text-center">
+            <h2 className="font-heading text-4xl font-bold text-[#3D2B1F]">
+              Radiant Benefits
+            </h2>
+            <div className="mx-auto mt-4 h-[2px] w-16 bg-gradient-to-r from-[#E8A317] to-[#F0C75E]" />
+          </div>
+
+          <div className="relative">
+            {/* Central sun icon */}
+            <div className="mx-auto mb-12 flex items-center justify-center lg:absolute lg:left-1/2 lg:top-1/2 lg:z-10 lg:mb-0 lg:-translate-x-1/2 lg:-translate-y-1/2">
+              <div className="relative">
+                <svg
+                  viewBox="0 0 120 120"
+                  className="h-24 w-24 lg:h-32 lg:w-32"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <radialGradient id="benefitSunGlow">
+                      <stop
+                        offset="0%"
+                        stopColor="#E8A317"
+                        stopOpacity="0.25"
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="#E8A317"
+                        stopOpacity="0"
+                      />
+                    </radialGradient>
+                  </defs>
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="58"
+                    fill="url(#benefitSunGlow)"
+                  />
+                  <circle cx="60" cy="60" r="22" fill="#E8A317" opacity="0.85" />
+                  <circle cx="60" cy="60" r="16" fill="#F0C75E" opacity="0.5" />
+                  {Array.from({ length: 8 }).map((_, i) => {
+                    const angle = (i * 45 * Math.PI) / 180;
+                    const x1 = 60 + 28 * Math.cos(angle);
+                    const y1 = 60 + 28 * Math.sin(angle);
+                    const x2 = 60 + 50 * Math.cos(angle);
+                    const y2 = 60 + 50 * Math.sin(angle);
+                    return (
+                      <line
+                        key={i}
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke="#E8A317"
+                        strokeWidth={i % 2 === 0 ? 2.5 : 1}
+                        strokeLinecap="round"
+                        opacity={i % 2 === 0 ? 0.7 : 0.35}
+                      />
+                    );
+                  })}
+                </svg>
+                <div className="animate-warmGlow absolute inset-0 -z-10 rounded-full" />
+              </div>
             </div>
 
+            {/* Benefits grid */}
             <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
-              {product.ingredients.map((ing) => (
+              {product.benefits.map((b) => (
                 <div
-                  key={ing.name}
-                  className="group rounded-2xl border-l-4 border-[#E8A317] bg-[#FFFDF7] p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#E8A317]/10"
+                  key={b.title}
+                  className="group relative rounded-2xl border border-[#E8A317]/15 bg-white/80 p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#E8A317]/10"
                 >
+                  {/* Golden connector line (desktop) */}
+                  <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto hidden h-[2px] w-8 bg-gradient-to-r from-transparent via-[#E8A317]/30 to-transparent lg:block" />
                   <h3 className="mb-2 font-heading text-lg font-semibold text-[#3D2B1F]">
-                    {ing.name}
+                    {b.title}
                   </h3>
                   <p className="text-sm leading-relaxed text-[#5C4033]/70">
-                    {ing.description}
+                    {b.description}
                   </p>
                 </div>
               ))}
             </div>
           </div>
-        </section>
-      )}
-
-      {/* ─── Benefits Section — Radial Sun Layout ─── */}
-      {product.benefits?.length > 0 && (
-        <section className="bg-gradient-to-b from-[#FFF8E7] to-[#FFFBF2] py-24">
-          <div className="mx-auto max-w-7xl px-6 lg:px-10">
-            <div className="mb-16 text-center">
-              <h2 className="font-heading text-4xl font-bold text-[#3D2B1F]">
-                Radiant Benefits
-              </h2>
-              <div className="mx-auto mt-4 h-[2px] w-16 bg-gradient-to-r from-[#E8A317] to-[#F0C75E]" />
-            </div>
-
-            <div className="relative">
-              {/* Central sun icon */}
-              <div className="mx-auto mb-12 flex items-center justify-center lg:absolute lg:left-1/2 lg:top-1/2 lg:z-10 lg:mb-0 lg:-translate-x-1/2 lg:-translate-y-1/2">
-                <div className="relative">
-                  <svg
-                    viewBox="0 0 120 120"
-                    className="h-24 w-24 lg:h-32 lg:w-32"
-                    aria-hidden="true"
-                  >
-                    <defs>
-                      <radialGradient id="benefitSunGlow">
-                        <stop
-                          offset="0%"
-                          stopColor="#E8A317"
-                          stopOpacity="0.25"
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor="#E8A317"
-                          stopOpacity="0"
-                        />
-                      </radialGradient>
-                    </defs>
-                    <circle
-                      cx="60"
-                      cy="60"
-                      r="58"
-                      fill="url(#benefitSunGlow)"
-                    />
-                    <circle cx="60" cy="60" r="22" fill="#E8A317" opacity="0.85" />
-                    <circle cx="60" cy="60" r="16" fill="#F0C75E" opacity="0.5" />
-                    {Array.from({ length: 8 }).map((_, i) => {
-                      const angle = (i * 45 * Math.PI) / 180;
-                      const x1 = 60 + 28 * Math.cos(angle);
-                      const y1 = 60 + 28 * Math.sin(angle);
-                      const x2 = 60 + 50 * Math.cos(angle);
-                      const y2 = 60 + 50 * Math.sin(angle);
-                      return (
-                        <line
-                          key={i}
-                          x1={x1}
-                          y1={y1}
-                          x2={x2}
-                          y2={y2}
-                          stroke="#E8A317"
-                          strokeWidth={i % 2 === 0 ? 2.5 : 1}
-                          strokeLinecap="round"
-                          opacity={i % 2 === 0 ? 0.7 : 0.35}
-                        />
-                      );
-                    })}
-                  </svg>
-                  <div className="animate-warmGlow absolute inset-0 -z-10 rounded-full" />
-                </div>
-              </div>
-
-              {/* Benefits grid */}
-              <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
-                {product.benefits.map((b) => (
-                  <div
-                    key={b.title}
-                    className="group relative rounded-2xl border border-[#E8A317]/15 bg-white/80 p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#E8A317]/10"
-                  >
-                    {/* Golden connector line (desktop) */}
-                    <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto hidden h-[2px] w-8 bg-gradient-to-r from-transparent via-[#E8A317]/30 to-transparent lg:block" />
-                    <h3 className="mb-2 font-heading text-lg font-semibold text-[#3D2B1F]">
-                      {b.title}
-                    </h3>
-                    <p className="text-sm leading-relaxed text-[#5C4033]/70">
-                      {b.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* ─── How to Use ─── */}
       {product.howToUse && (
