@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore } from '@/lib/cart';
 import { useToastStore } from '@/lib/toast';
+import { useFreeDliveryNotification } from '@/hooks/useFreeDliveryNotification';
 import FreeDeliveryProgress from '@/components/FreeDeliveryProgress';
 import { CartPageSkeleton } from '@/components/SkeletonLoader';
 
@@ -19,6 +20,9 @@ export default function CartPage() {
     hasHydrated,
   } = useCartStore();
   const { addToast } = useToastStore();
+
+  // Trigger free delivery celebration if unlocked
+  useFreeDliveryNotification();
 
   const handleRemove = (slug: string, name: string) => {
     removeItem(slug);

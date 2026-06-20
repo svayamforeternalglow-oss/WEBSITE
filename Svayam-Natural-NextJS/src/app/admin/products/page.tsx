@@ -4,6 +4,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/lib/auth';
 import { useToastStore } from '@/lib/toast';
 import { api } from '@/lib/api';
+import { UploadDropzone } from '@/lib/uploadthing-client';
+import { ImagePreviewGallery } from '@/components/ImagePreviewGallery';
+
+interface Ingredient {
+  name: string;
+  description: string;
+  icon?: string;
+}
 
 interface Product {
   _id: string;
@@ -17,11 +25,14 @@ interface Product {
   stock?: number;
   inventory?: number;
   sku?: string;
+  weight?: string;
+  story?: string;
+  howToUse?: string;
+  ingredients?: Ingredient[];
   isActive?: boolean;
   isFeatured?: boolean;
   isSeasonal?: boolean;
   seasonalRank?: number;
-  weight?: string;
   inStock?: boolean;
   isLowStock?: boolean;
   description?: string;
@@ -69,7 +80,12 @@ export default function AdminProductsPage() {
     category: '',
     concern: '',
     description: '',
-    images: '',
+    story: '',
+    howToUse: '',
+    ingredients: [] as Ingredient[],
+    sku: '',
+    weight: '',
+    images: [] as string[],
     isActive: true,
     isFeatured: false,
     isSeasonal: false,
@@ -204,7 +220,7 @@ export default function AdminProductsPage() {
   const openAddModal = () => {
     setEditingProduct(null);
     setFormData({
-      title: '', price: 0, originalPrice: 0, inventory: 0, category: '', concern: '', description: '', images: '', isActive: true, isFeatured: false,
+      title: '', price: 0, originalPrice: 0, inventory: 0, category: '', concern: '', description: '', story: '', howToUse: '', ingredients: [], sku: '', weight: '', images: [], isActive: true, isFeatured: false,
       isSeasonal: false,
       seasonalRank: 0,
     });
@@ -221,7 +237,12 @@ export default function AdminProductsPage() {
       category: p.category || '',
       concern: p.concern || '',
       description: p.description || '',
-      images: p.images ? p.images.join(', ') : '',
+      story: p.story || '',
+      howToUse: p.howToUse || '',
+      ingredients: p.ingredients || [],
+      sku: p.sku || '',
+      weight: p.weight || '',
+      images: p.images || [],
       isActive: p.isActive !== undefined ? p.isActive : true,
       isFeatured: p.isFeatured === true || (p as unknown as { featured?: boolean }).featured === true,
       isSeasonal: p.isSeasonal === true,
@@ -235,10 +256,15 @@ export default function AdminProductsPage() {
     if (!token) return;
     
     try {
+      if (!editingProduct && formData.images.length === 0) {
+        addToast('Please add at least one image', 'error');
+        return;
+      }
+
       const payload = {
         ...formData,
         seasonalRank: formData.isSeasonal ? formData.seasonalRank : 0,
-        images: formData.images.split(',').map(i => i.trim()).filter(Boolean)
+        ingredients: formData.ingredients.filter(ing => ing.name && ing.description),
       };
 
       if (editingProduct) {
@@ -587,14 +613,212 @@ export default function AdminProductsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-forest mb-1">Image URLs (comma separated)</label>
+                <div className="flex items-end justify-between mb-1">
+                  <label className="block text-sm font-semibold text-forest">Story / About</label>
+                  <span className="text-xs text-clay">{formData.story.length} / 8000</span>
+                </div>
                 <textarea 
-                  rows={2}
-                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                  value={formData.images} 
-                  onChange={e => setFormData({...formData, images: e.target.value})}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-clay outline-none focus:border-gold"
+                  rows={3}
+                  maxLength={8000}
+                  value={formData.story} 
+                  onChange={e => setFormData({...formData, story: e.target.value})}
+                  placeholder="Product story, origin, or background narrative..."
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-end justify-between mb-1">
+                  <label className="block text-sm font-semibold text-forest">How to Use</label>
+                  <span className="text-xs text-clay">{formData.howToUse.length} / 2000</span>
+                </div>
+                <textarea 
+                  rows={3}
+                  maxLength={2000}
+                  value={formData.howToUse} 
+                  onChange={e => setFormData({...formData, howToUse: e.target.value})}
+                  placeholder="Usage instructions and application guide..."
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-forest mb-2">Ingredients</label>
+                <div className="space-y-2 mb-3">
+                  {formData.ingredients.map((ingredient, idx) => (
+                    <div key={idx} className="border border-neutral-200 rounded-lg p-3 bg-neutral-50">
+                      <div className="grid gap-2 mb-2">
+                        <input 
+                          type="text"
+                          placeholder="Ingredient name"
+                          value={ingredient.name}
+                          onChange={e => {
+                            const updated = [...formData.ingredients];
+                            updated[idx].name = e.target.value;
+                            setFormData({...formData, ingredients: updated});
+                          }}
+                          className="w-full rounded border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-gold"
+                        />
+                        <input 
+                          type="text"
+                          placeholder="Brief description"
+                          value={ingredient.description}
+                          onChange={e => {
+                            const updated = [...formData.ingredients];
+                            updated[idx].description = e.target.value;
+                            setFormData({...formData, ingredients: updated});
+                          }}
+                          className="w-full rounded border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-gold"
+                        />
+                        <input 
+                          type="text"
+                          placeholder="Icon URL (optional)"
+                          value={ingredient.icon || ''}
+                          onChange={e => {
+                            const updated = [...formData.ingredients];
+                            updated[idx].icon = e.target.value || undefined;
+                            setFormData({...formData, ingredients: updated});
+                          }}
+                          className="w-full rounded border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-gold"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = formData.ingredients.filter((_, i) => i !== idx);
+                          setFormData({...formData, ingredients: updated});
+                        }}
+                        className="w-full rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({
+                      ...formData,
+                      ingredients: [...formData.ingredients, { name: '', description: '', icon: '' }]
+                    });
+                  }}
+                  className="w-full rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-100 transition-colors"
+                >
+                  + Add Ingredient
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-forest mb-1">SKU</label>
+                  <input 
+                    type="text"
+                    maxLength={120}
+                    value={formData.sku}
+                    onChange={e => setFormData({...formData, sku: e.target.value})}
+                    placeholder="Stock keeping unit"
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-forest mb-1">Weight</label>
+                  <input 
+                    type="text"
+                    maxLength={120}
+                    value={formData.weight}
+                    onChange={e => setFormData({...formData, weight: e.target.value})}
+                    placeholder="e.g. 100g, 250ml"
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-baseline mb-3">
+                    <label className="block text-sm font-semibold text-forest">Upload Images (Drag & Drop or Click)</label>
+                    <span className="text-xs text-clay">
+                      {formData.images.length}/6 images
+                    </span>
+                  </div>
+                  {formData.images.length >= 6 ? (
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-center">
+                      <p className="text-sm font-semibold text-amber-800">Maximum images reached (6/6)</p>
+                      <p className="text-xs text-amber-700 mt-1">Delete images or use the fallback below to add more URLs</p>
+                    </div>
+                  ) : (
+                    <UploadDropzone
+                      endpoint="productImages"
+                      onClientUploadComplete={(res) => {
+                        if (res) {
+                          const newUrls = res.map(file => file.url);
+                          const combined = [...formData.images, ...newUrls].slice(0, 6);
+                          setFormData({...formData, images: combined});
+                          addToast(`${res.length} image(s) uploaded`, 'success');
+                        }
+                      }}
+                      onUploadError={(error: Error) => {
+                        addToast(`Upload failed: ${error.message}`, 'error');
+                      }}
+                      className="ut-button:bg-gold ut-button:text-forest ut-button:hover:bg-gold-dark ut-allowed-content:text-clay"
+                    />
+                  )}
+                </div>
+
+                {/* Image Preview Gallery with Lightbox & Reorder */}
+                {formData.images.length > 0 && (
+                  <ImagePreviewGallery
+                    images={formData.images}
+                    onImagesChange={(images) => setFormData({...formData, images})}
+                    maxImages={6}
+                  />
+                )}
+
+                {/* Fallback Manual URL Entry */}
+                <div className="border-t border-neutral-200 pt-4">
+                  <label className="block text-sm font-semibold text-forest mb-2">Or add URLs manually (comma separated)</label>
+                  <textarea 
+                    rows={2}
+                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                    onChange={(e) => {
+                      const input = e.target.value.trim();
+                      if (input.endsWith(',')) {
+                        const urls = input
+                          .slice(0, -1)
+                          .split(',')
+                          .map(url => url.trim())
+                          .filter(url => url.length > 0);
+                        
+                        const validUrls = urls.filter(url => {
+                          try {
+                            new URL(url);
+                            return true;
+                          } catch {
+                            return false;
+                          }
+                        });
+
+                        if (validUrls.length === 0 && urls.length > 0) {
+                          addToast('Invalid URL format. Please check and try again.', 'error');
+                        } else if (validUrls.length > 0) {
+                          const remaining = 6 - formData.images.length;
+                          const toAdd = validUrls.slice(0, remaining);
+                          setFormData({...formData, images: [...formData.images, ...toAdd]});
+                          
+                          if (validUrls.length > remaining) {
+                            addToast(`Added ${toAdd.length} of ${validUrls.length} URLs. Max images limit reached.`, 'warning');
+                          } else {
+                            addToast(`${toAdd.length} URL(s) added`, 'success');
+                          }
+                          e.target.value = '';
+                        }
+                      }
+                    }}
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-clay outline-none focus:border-gold"
+                  />
+                  <p className="mt-1 text-xs text-clay">Paste URLs and press comma after each to add</p>
+                </div>
               </div>
 
               {/* Toggle switches */}
