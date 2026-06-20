@@ -149,6 +149,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   const config: RequestInit = {
     method,
     headers: requestHeaders,
+    ...(typeof window === 'undefined' ? { cache: 'no-store' as const } : {}),
   };
 
   if (typeof body !== 'undefined') {

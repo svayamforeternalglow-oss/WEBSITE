@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { products, getCategoryDisplayName, getProductBySlug as getStaticProduct } from "@/lib/products";
+import { getCategoryDisplayName, getProductBySlug as getStaticProduct } from "@/lib/products";
 import { fetchProductBySlug } from "@/lib/productApi";
 import StorySection from "@/components/StorySection";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
@@ -10,10 +10,6 @@ import ChandraprabhaPage from "@/components/ChandraprabhaPage";
 import SuryakantiPage from "@/components/SuryakantiPage";
 import ProductImageHero from "./ProductImageHero";
 import type { Metadata } from "next";
-
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
-}
 
 export async function generateMetadata({
   params,
@@ -32,8 +28,8 @@ export async function generateMetadata({
   };
 }
 
-// ISR: revalidate every 60 seconds for live data
-export const revalidate = 60;
+// SSR: always fetch fresh data from the backend
+export const dynamic = 'force-dynamic';
 
 export default async function ProductPage({
   params,
