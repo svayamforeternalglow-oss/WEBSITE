@@ -19,13 +19,13 @@ import {
 } from '../services/orderStateMachine.js';
 
 /** Seller / return address for invoice PDFs (wrapped for meta blocks). */
-const PDF_SELLER_FROM_HTML = `<p style="margin:2px 0;font-size:13px;line-height:1.35;"><strong>Svayam Natural</strong><br>116A, Chhatrapati Nagar, Nagpur 440015<br>8446555705</p>`;
+const PDF_SELLER_FROM_HTML = `<p style="margin:2px 0;font-size:14px;font-weight:600;line-height:1.4;"><strong>Svayam Natural</strong><br>116A, Chhatrapati Nagar, Nagpur 440015<br>8446555705</p>`;
 
 /** Same address for shipping labels (line breaks only, no outer &lt;p&gt;). */
 const PDF_SELLER_FROM_LABEL_HTML = `<strong>Svayam Natural</strong><br>116A, Chhatrapati Nagar, Nagpur 440015<br>8446555705`;
 
 const PDF_LABEL_RETURN_NOTE =
-  '<span style="font-size:0.75em;color:#444;display:block;margin-top:6px;">If undelivered, return to this address.</span>';
+  '<span style="font-size:0.8em;color:#444;display:block;margin-top:6px;">If undelivered, return to this address.</span>';
 
 const SHIPPING_FREE_THRESHOLD = Number(process.env.SHIPPING_FREE_THRESHOLD || 1500);
 const SHIPPING_FEE = Number(process.env.SHIPPING_FEE || 200);
@@ -1014,28 +1014,28 @@ export const downloadInvoice = async (req, res) => {
 <html><head><meta charset="utf-8">${PDF_WEB_FONT_LINKS}<title>Invoice - ${order._id}</title>
 <style>
   @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display:none; } }
-  body { font-family: 'Noto Sans', 'Segoe UI', 'DejaVu Sans', Arial, sans-serif; margin:0; padding:12px 14px; background:#f9f9f6; color:#1a2e1a; }
+  body { font-family: 'Noto Sans', 'Segoe UI', 'DejaVu Sans', Arial, sans-serif; margin:0; padding:12px 14px; background:#f9f9f6; color:#1a2e1a; font-weight:600; }
   .invoice { max-width:800px; margin:0 auto; background:#fff; border:1px solid #e0ddd5; border-radius:8px; overflow:hidden; }
   .header { background:#1a2e1a; color:#f5f0e6; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
-  .header h1 { margin:0; font-size:22px; letter-spacing:1px; }
-  .header .inv-num { font-size:13px; opacity:0.85; }
+  .header h1 { margin:0; font-size:22px; letter-spacing:1px; font-weight:700; }
+  .header .inv-num { font-size:14px; font-weight:700; opacity:0.85; }
   .body { padding:16px 24px; }
   .meta { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
   .meta.meta-address-row { margin-bottom:18px; }
   .meta-block { flex: 1 1 220px; }
-  .meta-block h3 { margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#8b7e6a; }
-  .meta-block p { margin:2px 0; font-size:13px; }
-  table { width:100%; border-collapse:collapse; margin-bottom:18px; font-size:13px; }
+  .meta-block h3 { margin:0 0 6px; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#8b7e6a; }
+  .meta-block p { margin:2px 0; font-size:15px; font-weight:600; }
+  table { width:100%; border-collapse:collapse; margin-bottom:18px; font-size:15px; font-weight:600; }
   thead { background:#f5f0e6; }
-  th { padding:8px 10px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#1a2e1a; border-bottom:2px solid #c2a25d; }
-  .totals { width:280px; margin-left:auto; font-size:13px; }
+  th { padding:8px 10px; text-align:left; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#1a2e1a; border-bottom:2px solid #c2a25d; }
+  .totals { width:280px; margin-left:auto; font-size:15px; font-weight:600; }
   .totals tr td { padding:4px 10px; }
-  .totals .grand { font-size:16px; font-weight:bold; color:#1a2e1a; border-top:2px solid #c2a25d; }
-  .footer { text-align:center; padding:12px 14px; font-size:11px; color:#8b7e6a; border-top:1px solid #e0ddd5; }
-  .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+  .totals .grand { font-size:20px; font-weight:700; color:#1a2e1a; border-top:2px solid #c2a25d; }
+  .footer { text-align:center; padding:12px 14px; font-size:13px; font-weight:600; color:#8b7e6a; border-top:1px solid #e0ddd5; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:13px; font-weight:700; }
   .badge-paid { background:#d1fae5; color:#065f46; }
   .badge-pending { background:#fef3c7; color:#92400e; }
-  .print-btn { display:block; margin:20px auto; padding:10px 28px; background:#1a2e1a; color:#f5f0e6; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
+  .print-btn { display:block; margin:20px auto; padding:10px 28px; background:#1a2e1a; color:#f5f0e6; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:700; }
 </style></head>
 <body>
   <button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
@@ -1046,8 +1046,8 @@ export const downloadInvoice = async (req, res) => {
         <div class="inv-num">Tax Invoice</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:13px;">Order #${order._id.toString().slice(-10).toUpperCase()}</div>
-        <div style="font-size:12px;opacity:0.8;">${orderDate}</div>
+        <div style="font-size:16px;font-weight:700;">Order #${order._id.toString().slice(-10).toUpperCase()}</div>
+        <div style="font-size:14px;font-weight:600;opacity:0.8;">${orderDate}</div>
       </div>
     </div>
     <div class="body">
@@ -1466,21 +1466,21 @@ export const generateBulkInvoicesHTML = async (req, res) => {
       ${PDF_WEB_FONT_LINKS}
       <title>Bulk Invoices</title>
       <style>
-        body { font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, 'DejaVu Sans', Arial, sans-serif; color: #333; line-height: 1.55; }
+        body { font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, 'DejaVu Sans', Arial, sans-serif; color: #333; line-height: 1.55; font-weight: 600; }
         .invoice-page { padding: 22px 24px; max-width: 800px; margin: 0 auto; box-sizing: border-box; }
         .addr-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
         .addr-col { flex: 1 1 240px; }
-        .addr-col h3 { margin: 0 0 8px; border-bottom: 2px solid #e5e5e5; padding-bottom: 4px; font-size: 14px; }
+        .addr-col h3 { margin: 0 0 8px; border-bottom: 2px solid #e5e5e5; padding-bottom: 4px; font-size: 16px; font-weight: 700; }
         @media print {
           .page-break { page-break-after: always; clear: both; }
           body { background: #fff; margin: 0; padding: 0; }
           .no-print { display: none !important; }
         }
         table { width: 100%; border-collapse: collapse; margin-top: 14px; }
-        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e5e5; }
-        th { background-color: #f8f9fa; font-weight: bold; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e5e5; font-weight: 600; }
+        th { background-color: #f8f9fa; font-weight: 700; }
         .print-bar { text-align: center; padding: 14px; background: #f5f0e6; border-bottom: 1px solid #e0ddd5; }
-        .print-bar button { padding: 10px 24px; background: #1a2e1a; color: #f5f0e6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .print-bar button { padding: 10px 24px; background: #1a2e1a; color: #f5f0e6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 700; }
       </style>
     </head>
     <body>
@@ -1548,7 +1548,7 @@ export const generateBulkInvoicesHTML = async (req, res) => {
         <div style="margin-top:14px; width:300px; float:right;">
           <table style="margin-top:0;">
             <tr><td>Shipping</td><td style="text-align:right;">${pricing.shipping === 0 ? 'FREE' : '₹' + pricing.shipping}</td></tr>
-            <tr style="font-weight:bold; font-size:18px;"><td>Grand Total</td><td style="text-align:right;">₹${pricing.grandTotal ?? order.totalAmount}</td></tr>
+            <tr style="font-weight:700; font-size:22px;"><td>Grand Total</td><td style="text-align:right;">₹${pricing.grandTotal ?? order.totalAmount}</td></tr>
           </table>
         </div>
         <div style="clear:both;"></div>
@@ -1589,7 +1589,7 @@ export const generateBulkLabelsHTML = async (req, res) => {
       ${PDF_WEB_FONT_LINKS}
       <title>Bulk Shipping Labels</title>
       <style>
-        body { font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, 'DejaVu Sans', Arial, sans-serif; color: #000; margin: 0; padding: 20px; background: #eaebec; }
+        body { font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, 'DejaVu Sans', Arial, sans-serif; color: #000; margin: 0; padding: 20px; background: #eaebec; font-weight: 600; }
         .label-page { 
           width: 4in; height: 6in; 
           background: #fff; margin: 0 auto 20px auto; padding: 20px; 
@@ -1604,12 +1604,13 @@ export const generateBulkLabelsHTML = async (req, res) => {
           .no-print { display: none !important; }
         }
         .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
+        .header h2 { font-weight: 700; }
         .addresses { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; }
-        .to-address { border: 2px solid #000; padding: 12px; font-size: 1.1em; }
-        .from-address { font-size: 0.9em; }
-        .meta { border-top: 1px solid #000; padding-top: 8px; font-size: 0.85em; }
+        .to-address { border: 2px solid #000; padding: 12px; font-size: 1.2em; font-weight: 600; }
+        .from-address { font-size: 1.0em; font-weight: 600; }
+        .meta { border-top: 1px solid #000; padding-top: 8px; font-size: 1.0em; font-weight: 600; }
         .print-bar { text-align: center; padding: 16px; margin-bottom: 16px; }
-        .print-bar button { padding: 10px 24px; background: #1a2e1a; color: #f5f0e6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .print-bar button { padding: 10px 24px; background: #1a2e1a; color: #f5f0e6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 700; }
       </style>
     </head>
     <body>
@@ -1621,36 +1622,36 @@ export const generateBulkLabelsHTML = async (req, res) => {
       const shortRef = order._id ? String(order._id).slice(-10).toUpperCase() : '';
       const cityLine = [address.city, address.state, address.pincode].filter(Boolean).join(', ');
       const itemCount = (order.orderItems || []).reduce((s, it) => s + (it.qty || it.quantity || 1), 0);
-      const trackingDetails = order.awbCode ? `<div style="margin-top: 10px; padding: 10px; border: 2px dashed #000; text-align: center;"><strong>AWB: ${order.awbCode}</strong><br>Courier: ${order.courierName || 'Shiprocket'}</div>` : '';
+      const trackingDetails = order.awbCode ? `<div style="margin-top: 10px; padding: 10px; border: 2px dashed #000; text-align: center; font-weight:700;"><strong style="font-size:1.1em;">AWB: ${order.awbCode}</strong><br>Courier: ${order.courierName || 'Shiprocket'}</div>` : '';
 
       combinedHtml += `
       <div class="label-page">
         <div class="header">
-          <h2 style="margin:0; font-size: 22px; text-transform: uppercase; letter-spacing: 2px;">PREPAID</h2>
-          <p style="margin:4px 0 0; font-weight: bold;">ORDER #: ${shortRef}</p>
+          <h2 style="margin:0; font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">PREPAID</h2>
+          <p style="margin:4px 0 0; font-size:14px; font-weight:700;">ORDER #: ${shortRef}</p>
         </div>
         
         <div class="addresses">
           <div class="to-address">
-            <strong style="font-size:0.9em; color:#555;">SHIP TO:</strong><br>
-            <span style="font-size:1.15em; font-weight:bold;">${address.fullName || 'Guest'}</span><br>
-            ${address.address ? `${address.address}<br>` : ''}
-            ${cityLine ? `${cityLine}<br>` : ''}
+            <strong style="font-size:1.1em; font-weight:700; color:#555;">SHIP TO:</strong><br>
+            <span style="font-size:1.35em; font-weight:700;">${address.fullName || 'Guest'}</span><br>
+            ${address.address ? `<span style="font-size:1.1em;">${address.address}</span><br>` : ''}
+            ${cityLine ? `<span style="font-size:1.1em;">${cityLine}</span><br>` : ''}
             <br>
-            <strong>Phone:</strong> ${address.phone || ''}
+            <span style="font-size:1.1em; font-weight:600;"><strong>Phone:</strong> ${address.phone || ''}</span>
             ${trackingDetails}
           </div>
           
           <div class="from-address">
-            <strong style="color:#555;">FROM:</strong><br>
+            <strong style="font-weight:700; color:#555;">FROM:</strong><br>
             ${PDF_SELLER_FROM_LABEL_HTML}
             ${PDF_LABEL_RETURN_NOTE}
           </div>
         </div>
 
         <div class="meta">
-          <strong>Items:</strong> ${itemCount || 0} units<br>
-          <strong>Date:</strong> ${date}
+          <span style="font-size:1.0em;"><strong>Items:</strong> ${itemCount || 0} units</span><br>
+          <span style="font-size:1.0em;"><strong>Date:</strong> ${date}</span>
         </div>
       </div>`;
 

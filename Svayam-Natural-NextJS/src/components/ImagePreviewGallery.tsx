@@ -105,7 +105,7 @@ export function ImagePreviewGallery({
 
               {/* Reorder hint */}
               {draggedIndex === null && (
-                <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-10 bg-blue-500 flex items-center justify-center transition-opacity">
+                <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-10 bg-blue-500 flex items-center justify-center transition-opacity pointer-events-none">
                   <span className="text-blue-600 font-semibold text-xs">Drag to reorder</span>
                 </div>
               )}

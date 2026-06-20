@@ -4,8 +4,10 @@ import { UploadThingError } from 'uploadthing/server';
 const f = createUploadthing();
 
 const getApiBase = () => {
-  const base = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL_FALLBACK;
-  return base ? base.replace(/\/$/, '') : '';
+  const base = process.env.NEXT_PUBLIC_API_URL
+    || process.env.NEXT_PUBLIC_API_URL_FALLBACK
+    || 'https://api.svayamnatural.com/api/v1';
+  return base.replace(/\/$/, '');
 };
 
 const verifyAdmin = async (req: Request) => {
