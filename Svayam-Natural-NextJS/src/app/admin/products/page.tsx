@@ -750,6 +750,8 @@ export default function AdminProductsPage() {
                   ) : (
                     <UploadDropzone
                       endpoint="productImages"
+                      headers={{ Authorization: `Bearer ${token ?? ''}` }}
+                      disabled={!token}
                       onClientUploadComplete={(res) => {
                         if (res) {
                           const newUrls = res.map(file => file.url);
