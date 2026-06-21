@@ -16,6 +16,15 @@ const FOOTER_LINKS = [
   { label: "Privacy Policy", href: "/privacy-policy" },
 ];
 
+// Mail SVG icon component
+function MailIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+    </svg>
+  );
+}
+
 // WhatsApp SVG icon component
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -30,6 +39,7 @@ const DEFAULT_SOCIALS = [
   { label: "Facebook", href: "#", icon: FacebookIcon, configKey: "facebook_url" },
   { label: "Twitter", href: "#", icon: TwitterIcon, configKey: "twitter_url" },
   { label: "WhatsApp", href: "#", icon: WhatsAppIcon, configKey: "whatsapp_group_link" },
+  { label: "Email", href: "mailto:svayamforeternalglow@gmail.com", icon: MailIcon, configKey: undefined },
 ];
 
 type FooterVariant = "forest" | "light";
@@ -54,7 +64,7 @@ export default function Footer({ variant = "forest" }: FooterProps) {
           const map = data.data.map;
           setSocials(DEFAULT_SOCIALS.map((s) => ({
             ...s,
-            href: map[s.configKey] || s.href,
+            href: (s.configKey && map[s.configKey]) || s.href,
           })));
         }
       } catch {
@@ -100,12 +110,6 @@ export default function Footer({ variant = "forest" }: FooterProps) {
             ))}
           </div>
         </div>
-        <p className={`mt-5 text-center text-[11px] font-medium tracking-[0.14em] ${isLight ? "text-clay/80" : "text-sand/80"}`}>
-          Support:{" "}
-          <a href="mailto:svayamforeternalglow@gmail.com" className={`transition-colors duration-200 ${isLight ? "hover:text-gold-dark" : "hover:text-gold"}`}>
-            svayamforeternalglow@gmail.com
-          </a>
-        </p>
       </div>
     </footer>
   );
