@@ -449,7 +449,7 @@ export function getCategoryDisplayName(category: string): string {
 /** Category filter options for All Products page. */
 export const PRODUCTS_PAGE_CATEGORIES = [
   { id: "all", label: "All Products", slugs: [], categoryQuery: undefined },
-  { id: "kits", label: "Best Selling Kits", slugs: ["complete-radiance-kit", "hair-care-kit", "tejasamrit-golden-latte-family-pack", "royal-bathing-kit", "autea", "tejasamrit"], categoryQuery: "best-selling-kits" },
+  { id: "kits", label: "Best Selling Kits", slugs: ["complete-radiance-kit", "hair-care-kit", "tejasamrit-golden-latte-family-pack", "royal-bathing-kit", "tejasamrit"], categoryQuery: "best-selling-kits" },
   { id: "face", label: "Face Care", slugs: ["chandraprabha-night-nectar", "suryakanti-day-cream", "lavanyam-facepack", "face-polishing-scrub", "tarunya-rose-toner"], categoryQuery: "face-care" },
   { id: "lip-balm", label: "Lip Care", slugs: ["kumkumadi-lip-balm", "rose-lip-balm"], categoryQuery: "lip-care" },
   { id: "hair-care", label: "Hair Care", slugs: ["keshvardhini-hair-oil", "hibiscus-hair-gel", "bhruhshakti-roll-on", "kesh-shuddhi", "kesh-samraksha"], categoryQuery: "hair-care" },

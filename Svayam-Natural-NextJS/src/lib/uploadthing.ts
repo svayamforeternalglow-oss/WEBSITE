@@ -18,20 +18,26 @@ const verifyAdmin = async (req: Request) => {
     throw new UploadThingError('Unauthorized');
   }
 
-  const res = await fetch(`${apiBase}/users/profile`, {
-    headers: { Authorization: auth },
-  });
+  try {
+    const res = await fetch(`${apiBase}/users/profile`, {
+      headers: { Authorization: auth },
+    });
 
-  if (!res.ok) {
+    if (!res.ok) {
+      throw new UploadThingError('Unauthorized');
+    }
+
+    const user = await res.json();
+    if (!user || user.role !== 'admin') {
+      throw new UploadThingError('Unauthorized');
+    }
+
+    return { userId: user._id || 'admin' };
+  } catch (err) {
+    if (err instanceof UploadThingError) throw err;
+    console.error('[UploadThing] verifyAdmin fetch failed:', err);
     throw new UploadThingError('Unauthorized');
   }
-
-  const user = await res.json();
-  if (!user || user.role !== 'admin') {
-    throw new UploadThingError('Unauthorized');
-  }
-
-  return { userId: user._id || 'admin' };
 };
 
 export const ourFileRouter = {

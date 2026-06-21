@@ -11,10 +11,9 @@ import {
 const API = process.env.NEXT_PUBLIC_API_URL || "https://api.svayamnatural.com/api/v1";
 
 const FOOTER_LINKS = [
-  { label: "Sustainability", href: "/radiance-rituals" },
+  { label: "Sustainability", href: "/sustainability" },
   { label: "Shipping", href: "/shipping-policy" },
   { label: "Privacy Policy", href: "/privacy-policy" },
-  { label: "Contact", href: "/#contact" },
 ];
 
 // WhatsApp SVG icon component
@@ -101,6 +100,12 @@ export default function Footer({ variant = "forest" }: FooterProps) {
             ))}
           </div>
         </div>
+        <p className={`mt-5 text-center text-[11px] font-medium tracking-[0.14em] ${isLight ? "text-clay/80" : "text-sand/80"}`}>
+          Support:{" "}
+          <a href="mailto:svayamforeternalglow@gmail.com" className={`transition-colors duration-200 ${isLight ? "hover:text-gold-dark" : "hover:text-gold"}`}>
+            svayamforeternalglow@gmail.com
+          </a>
+        </p>
       </div>
     </footer>
   );
