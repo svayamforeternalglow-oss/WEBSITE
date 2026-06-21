@@ -80,7 +80,7 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
     const backendImages = (bp.images || []).filter(Boolean);
     const staticGallery = editorialImageGallery(editorial);
     const images =
-      staticGallery.length > 0 ? staticGallery : backendImages.length > 0 ? backendImages : ['/images/All-Products.jpeg'];
+      backendImages.length > 0 ? backendImages : (staticGallery.length > 0 ? staticGallery : ['/images/All-Products.jpeg']);
     const image = images[0] || '/images/All-Products.jpeg';
     const backendSku = typeof bp.sku === 'string' && bp.sku.trim() ? bp.sku.trim() : '';
     const backendWeight = typeof bp.weight === 'string' && bp.weight.trim() ? bp.weight.trim() : '';
@@ -113,9 +113,9 @@ export function mergeWithEditorial(backendProducts: BackendProduct[]): MergedPro
       : [];
     const editorialConcerns = (editorial?.concerns || []).map((c) => normalizeConcernQuery(c)).filter(Boolean);
     const displayName =
-      editorial?.name?.trim() ? editorial.name.trim() : bp.title;
+      bp.title?.trim() ? bp.title.trim() : (editorial?.name || bp.title);
     const displayDescription =
-      editorial?.description?.trim() ? editorial.description.trim() : bp.description;
+      bp.description?.trim() ? bp.description.trim() : (editorial?.description || bp.description);
     return {
       _id: bp._id,
       slug: bp.slug,
@@ -190,7 +190,8 @@ export async function fetchProductBySlug(slug: string): Promise<MergedProduct | 
   try {
     const data = await api.get<BackendProduct>(`/products/by-slug/${slug}`);
     return data ? mergeSingleWithEditorial(data) : null;
-  } catch {
+  } catch (err) {
+    if (typeof window !== 'undefined') console.warn('[fetchProductBySlug] Failed for "' + slug + '":', err);
     return null;
   }
 }

@@ -761,8 +761,10 @@ export default function AdminProductsPage() {
                         }
                       }}
                       onUploadError={(error: Error) => {
+                        console.error('[UploadThing] onUploadError:', error);
                         addToast(`Upload failed: ${error.message}`, 'error');
                       }}
+                      config={{ mode: 'auto' }}
                       className="ut-button:bg-gold ut-button:text-forest ut-button:hover:bg-gold-dark ut-allowed-content:text-clay"
                     />
                   )}
