@@ -66,7 +66,6 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [categories, setCategories] = useState<TaxonomyItem[]>([]);
   const [concerns, setConcerns] = useState<TaxonomyItem[]>([]);
   
   // Modal state
@@ -112,20 +111,16 @@ export default function AdminProductsPage() {
     }
   }, [addToast, token]);
 
-  const fetchTaxonomy = useCallback(async () => {
+  const fetchConcerns = useCallback(async () => {
     try {
-      const [cats, cons] = await Promise.all([
-        api.get<TaxonomyItem[]>('/taxonomy/categories'),
-        api.get<TaxonomyItem[]>('/taxonomy/concerns'),
-      ]);
-      setCategories(Array.isArray(cats) ? cats : []);
+      const cons = await api.get<TaxonomyItem[]>('/taxonomy/concerns');
       setConcerns(Array.isArray(cons) ? cons : []);
     } catch {
-      // Taxonomy fetch is non-critical
+      // Concerns fetch is non-critical
     }
   }, []);
 
-  useEffect(() => { fetchProducts(); fetchTaxonomy(); }, [fetchProducts, fetchTaxonomy]);
+  useEffect(() => { fetchProducts(); fetchConcerns(); }, [fetchProducts, fetchConcerns]);
 
   const updateStock = async (id: string, newStock: number) => {
     if (!token) return;
@@ -532,27 +527,22 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-forest mb-1">Category *</label>
-                  {categories.length > 0 ? (
-                    <select
-                      required
-                      value={formData.category}
-                      onChange={e => setFormData({...formData, category: e.target.value})}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                    >
-                      <option value="">Select category</option>
-                      {categories.map(c => (
-                        <option key={c._id} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input 
-                      required type="text"
-                      placeholder="e.g. hair-care"
-                      value={formData.category} 
-                      onChange={e => setFormData({...formData, category: e.target.value})}
-                      className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
-                    />
-                  )}
+                  <select
+                    required
+                    value={formData.category}
+                    onChange={e => setFormData({...formData, category: e.target.value})}
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-gold"
+                  >
+                    <option value="">Select category</option>
+                    <option value="best-selling-kits">Best Selling Kits</option>
+                    <option value="face-care">Face Care</option>
+                    <option value="lip-care">Lip Care</option>
+                    <option value="hair-care">Hair Care</option>
+                    <option value="body-care">Body Care</option>
+                    <option value="eat-to-glow">Eat to Glow</option>
+                    <option value="detox">Detox</option>
+                    <option value="natural-food">Natural Food</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-forest mb-1">Concerns</label>
