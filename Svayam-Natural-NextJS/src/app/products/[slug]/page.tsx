@@ -96,7 +96,7 @@ export default async function ProductPage({
                 {product.tagline}
               </p>
             )}
-            <p className="mb-8 max-w-lg whitespace-pre-wrap leading-relaxed text-clay-light">
+            <p className="mb-8 max-w-lg whitespace-pre-wrap leading-relaxed text-clay-light lg:max-h-48 lg:overflow-y-auto">
               {product.description}
             </p>
 
