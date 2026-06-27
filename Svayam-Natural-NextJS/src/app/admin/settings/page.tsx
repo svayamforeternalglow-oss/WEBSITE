@@ -249,6 +249,119 @@ export default function AdminSettingsPage() {
           </div>
         );
       })}
+
+      {/* Change Password */}
+      <ChangePasswordSection token={token} />
+    </div>
+  );
+}
+
+function ChangePasswordSection({ token }: { token: string | null }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage('');
+    setError('');
+
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/users/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage('Password updated successfully');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setError(data.message || 'Failed to update password');
+      }
+    } catch {
+      setError('Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+      <div className="border-b border-neutral-100 bg-neutral-50 px-5 py-4">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-forest">
+          <span className="text-lg">🔑</span> Change Password
+        </h3>
+        <p className="mt-0.5 text-xs text-clay">Update your admin account password</p>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4 px-5 py-4">
+        {message && (
+          <div className="rounded-lg bg-green-50 px-4 py-3 text-sm font-medium text-green-700">{message}</div>
+        )}
+        {error && (
+          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>
+        )}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-forest">Current Password</label>
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            required
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none transition-colors focus:border-gold/50"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-forest">New Password</label>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            minLength={6}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none transition-colors focus:border-gold/50"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-forest">Confirm New Password</label>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={6}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none transition-colors focus:border-gold/50"
+          />
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-forest px-6 py-2 text-sm font-semibold text-sand transition-all hover:bg-forest/90 disabled:opacity-50"
+          >
+            {loading ? 'Updating...' : 'Update Password'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

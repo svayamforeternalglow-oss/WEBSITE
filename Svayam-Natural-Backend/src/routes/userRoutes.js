@@ -8,6 +8,7 @@ import {
   removeWishlist,
   updateSavedCart,
   getSavedCart,
+  changePassword,
 } from '../controllers/userController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { validateRequest } from '../middlewares/validate.js';
@@ -30,5 +31,6 @@ router.post('/wishlist', protect, addWishlist);
 router.delete('/wishlist/:productId', protect, removeWishlist);
 router.get('/cart', protect, getSavedCart);
 router.post('/cart', protect, updateSavedCart);
+router.put('/change-password', protect, changePassword);
 
 export default router;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -8,6 +8,7 @@ import { ShoppingBagIcon, UserIcon, HeartIcon } from "./icons";
 import { useCartStore } from "@/lib/cart";
 import { useWishlistStore } from "@/lib/wishlist";
 import { useAuthStore } from "@/lib/auth";
+import { fetchProducts } from "@/lib/productApi";
 import HomeSearch from "./HomeSearch";
 
 interface NavChild {
@@ -21,49 +22,19 @@ interface NavItem {
   children?: NavChild[];
 }
 
-const navLinks: NavItem[] = [
-  { label: "Radiance Rituals", href: "/radiance-rituals" },
-  {
-    label: "Categories",
-    href: "/products",
-    children: [
-      { label: "All Products", href: "/products" },
-      { label: "Best Selling Kits", href: "/products?category=kits" },
-      { label: "Face Care", href: "/products?category=face" },
-      { label: "Lip Care", href: "/products?category=lip-balm" },
-      { label: "Hair Care", href: "/products?category=hair-care" },
-      { label: "Body Care", href: "/products?category=body-care" },
-      { label: "Eat to Glow", href: "/products?category=food" },
-      { label: "Detox", href: "/products?category=detox" },
-      { label: "Natural Food", href: "/products?category=natural-food" },
-    ],
-  },
-  {
-    label: "Svayam Collections",
-    href: "/products",
-    children: [
-      { label: "Svayam Soundarya", href: "/products?collection=soundarya" },
-      { label: "Svayam Swasthya", href: "/products?collection=swasthya" },
-    ],
-  },
-  {
-    label: "Explore Products",
-    href: "/products",
-    children: [
-      { label: "Kesh Samraksha", href: "/products/kesh-samraksha" },
-      { label: "Hibiscus Hair Gel", href: "/products/hibiscus-hair-gel" },
-      { label: "Lavanyam Face Pack", href: "/products/lavanyam-facepack" },
-      { label: "Suryakanti Day Cream", href: "/products/suryakanti-day-cream" },
-      { label: "Chandraprabha Night Nectar", href: "/products/chandraprabha-night-nectar" },
-      { label: "Gentle Body Lotion", href: "/products/glowup-night-gel" },
-      { label: "Rose Lip Balm", href: "/products/rose-lip-balm" },
-      { label: "Tejasamrit Ritual", href: "/products/tejasamrit" },
-      { label: "Triphala Detox Tea", href: "/products/triphala-detox" },
-      { label: "Tridosha Rasayan", href: "/products/tridosha-rasayan" },
-      { label: "Gulkand Preserve", href: "/products/gulkand" },
-      { label: "Abhyanga Udvartana", href: "/products/abhyanga-udvartana" },
-    ],
-  },
+const EXPLORE_FALLBACK: NavChild[] = [
+  { label: "Kesh Samraksha", href: "/products/kesh-samraksha" },
+  { label: "Hibiscus Hair Gel", href: "/products/hibiscus-hair-gel" },
+  { label: "Lavanyam Face Pack", href: "/products/lavanyam-facepack" },
+  { label: "Suryakanti Day Cream", href: "/products/suryakanti-day-cream" },
+  { label: "Chandraprabha Night Nectar", href: "/products/chandraprabha-night-nectar" },
+  { label: "Gentle Body Lotion", href: "/products/glowup-night-gel" },
+  { label: "Rose Lip Balm", href: "/products/rose-lip-balm" },
+  { label: "Tejasamrit Ritual", href: "/products/tejasamrit" },
+  { label: "Triphala Detox Tea", href: "/products/triphala-detox" },
+  { label: "Tridosha Rasayan", href: "/products/tridosha-rasayan" },
+  { label: "Gulkand Preserve", href: "/products/gulkand" },
+  { label: "Abhyanga Udvartana", href: "/products/abhyanga-udvartana" },
 ];
 
 type PersistHydrationStore = {
@@ -97,6 +68,7 @@ export default function Navbar() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [exploreProducts, setExploreProducts] = useState<NavChild[]>([]);
   
   const itemCount = useCartStore((s) => s.getItemCount());
   const openCart = useCartStore((s) => s.openCart);
@@ -131,6 +103,49 @@ export default function Navbar() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  useEffect(() => {
+    fetchProducts({ active: true, limit: 10 })
+      .then(products => {
+        setExploreProducts(products.map(p => ({
+          label: p.name,
+          href: `/products/${p.slug}`,
+        })));
+      })
+      .catch(() => {});
+  }, []);
+
+  const navLinks: NavItem[] = useMemo(() => [
+    { label: "Radiance Rituals", href: "/radiance-rituals" },
+    {
+      label: "Categories",
+      href: "/products",
+      children: [
+        { label: "All Products", href: "/products" },
+        { label: "Best Selling Kits", href: "/products?category=kits" },
+        { label: "Face Care", href: "/products?category=face" },
+        { label: "Lip Care", href: "/products?category=lip-balm" },
+        { label: "Hair Care", href: "/products?category=hair-care" },
+        { label: "Body Care", href: "/products?category=body-care" },
+        { label: "Eat to Glow", href: "/products?category=food" },
+        { label: "Detox", href: "/products?category=detox" },
+        { label: "Natural Food", href: "/products?category=natural-food" },
+      ],
+    },
+    {
+      label: "Svayam Collections",
+      href: "/products",
+      children: [
+        { label: "Svayam Soundarya", href: "/products?collection=soundarya" },
+        { label: "Svayam Swasthya", href: "/products?collection=swasthya" },
+      ],
+    },
+    {
+      label: "Explore Products",
+      href: "/products",
+      children: exploreProducts.length > 0 ? exploreProducts : EXPLORE_FALLBACK,
+    },
+  ], [exploreProducts]);
 
   const menuEase = "ease-[cubic-bezier(0.22,1,0.36,1)]";
 
