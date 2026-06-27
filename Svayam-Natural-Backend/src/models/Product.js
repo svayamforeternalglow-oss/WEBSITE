@@ -1,5 +1,35 @@
 import mongoose from 'mongoose';
 
+const ingredientSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    trim: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  icon: {
+    type: String,
+    trim: true,
+  },
+}, { _id: false });
+
+const benefitSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    trim: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  icon: {
+    type: String,
+    trim: true,
+  },
+}, { _id: false });
+
 const productSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -16,6 +46,26 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please add a description'],
     maxlength: [2000, 'Description cannot be more than 2000 characters']
+  },
+  story: {
+    type: String,
+    trim: true,
+    maxlength: [8000, 'Story cannot be more than 8000 characters']
+  },
+  howToUse: {
+    type: String,
+    trim: true,
+    maxlength: [2000, 'How to use cannot be more than 2000 characters']
+  },
+  sku: {
+    type: String,
+    trim: true,
+    maxlength: [120, 'SKU cannot be more than 120 characters']
+  },
+  weight: {
+    type: String,
+    trim: true,
+    maxlength: [120, 'Weight cannot be more than 120 characters']
   },
   price: {
     type: Number,
@@ -37,6 +87,8 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true
   }],
+  ingredients: [ingredientSchema],
+  benefits: [benefitSchema],
   category: {
     type: String,
     required: [true, 'Please define a category (e.g., Face Care, Hair Care)']

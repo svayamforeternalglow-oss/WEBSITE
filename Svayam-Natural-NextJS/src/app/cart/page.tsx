@@ -1,21 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCartStore, type CartItem } from '@/lib/cart';
+import { useCartStore } from '@/lib/cart';
 import { useToastStore } from '@/lib/toast';
-import { api } from '@/lib/api';
+import { useFreeDliveryNotification } from '@/hooks/useFreeDliveryNotification';
 import FreeDeliveryProgress from '@/components/FreeDeliveryProgress';
 import { CartPageSkeleton } from '@/components/SkeletonLoader';
 
 export default function CartPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const {
     items,
-    setItems,
     removeItem,
     updateQuantity,
     clearCart,
@@ -26,40 +21,8 @@ export default function CartPage() {
   } = useCartStore();
   const { addToast } = useToastStore();
 
-  const recoverToken = searchParams.get('recover');
-
-  useEffect(() => {
-    if (!hasHydrated || !recoverToken) return;
-
-    let active = true;
-
-    (async () => {
-      try {
-        const response = await api.get<{ success: boolean; data: { items: CartItem[] } }>(
-          `/cart/recovery/${recoverToken}`
-        );
-        if (!active) return;
-        if (response?.data?.items?.length) {
-          setItems(response.data.items);
-          addToast('Cart restored from your saved items.', 'success');
-        } else {
-          addToast('Recovery link has no items to restore.', 'warning');
-        }
-      } catch {
-        if (active) {
-          addToast('Recovery link expired or invalid.', 'error');
-        }
-      } finally {
-        if (active) {
-          router.replace('/cart');
-        }
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [addToast, hasHydrated, recoverToken, router, setItems]);
+  // Trigger free delivery celebration if unlocked
+  useFreeDliveryNotification();
 
   const handleRemove = (slug: string, name: string) => {
     removeItem(slug);

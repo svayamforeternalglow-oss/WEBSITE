@@ -1,18 +1,19 @@
 import cron from 'node-cron';
-import crypto from 'crypto';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
-import AbandonedCart from '../models/AbandonedCart.js';
+import User from '../models/User.js';
+import Cart from '../models/Cart.js';
 import { transitionOrder, ORDER_STATES, CANCELLATION_REASONS } from '../services/orderStateMachine.js';
 import { ensureShiprocketOrder } from '../services/shiprocketAutomation.js';
-import { sendAbandonedCartEmail } from '../services/emailService.js';
 import { paidMissingShiprocketMatch } from './adminMetrics.js';
+import { generateCartDiscountCode } from './discountCodeGenerator.js';
+import { getEmailsForRetry, cleanupOldAbandonedCarts } from '../services/emailQueueService.js';
 
 const startCronJobs = () => {
-  const cartToken = () => crypto.randomBytes(24).toString('hex');
-  const frontendBaseUrl = (process.env.FRONTEND_URL || 'https://www.svayamnatural.com').replace(/\/$/, '');
-  const firstEmailDelayMinutes = Number(process.env.ABANDONED_CART_FIRST_EMAIL_MINUTES || 60);
-  const secondEmailDelayMinutes = Number(process.env.ABANDONED_CART_SECOND_EMAIL_MINUTES || 0);
+  const abandonedCartHoursRaw = Number(process.env.ABANDONED_CART_HOURS);
+  const abandonedCartHours = Number.isFinite(abandonedCartHoursRaw)
+    ? abandonedCartHoursRaw
+    : 6;
 
   cron.schedule('*/15 * * * *', async () => {
     try {
@@ -78,82 +79,109 @@ const startCronJobs = () => {
     }
   });
 
-  cron.schedule('*/15 * * * *', async () => {
-    if (!firstEmailDelayMinutes || firstEmailDelayMinutes <= 0) {
-      return;
-    }
-
+  // Abandoned cart email job (runs every 30 minutes)
+  cron.schedule('*/30 * * * *', async () => {
     try {
-      const now = new Date();
-      const firstDelayMs = firstEmailDelayMinutes * 60 * 1000;
-      const secondDelayMs = secondEmailDelayMinutes * 60 * 1000;
-      const maxReminders = secondEmailDelayMinutes > 0 ? 2 : 1;
+      const cutoff = new Date(Date.now() - abandonedCartHours * 60 * 60 * 1000);
+      
+      // Find users with abandoned carts
+      const candidates = await User.find({
+        'savedCart.items.0': { $exists: true },
+        'savedCart.updatedAt': { $lte: cutoff },
+        $or: [
+          { abandonedCartEmailSentAt: { $exists: false } },
+          { abandonedCartEmailSentAt: null },
+        ],
+      }).limit(50);
 
-      const carts = await AbandonedCart.find({
-        lastActivityAt: { $lte: new Date(Date.now() - firstDelayMs) },
-        reminderCount: { $lt: maxReminders },
-        items: { $exists: true, $ne: [] },
-      })
-        .populate('user', 'name email')
-        .limit(50);
-
-      if (carts.length === 0) {
+      if (candidates.length === 0) {
         return;
       }
 
-      for (const cart of carts) {
-        if (!cart.user || !cart.user.email) {
+      const emailService = await import('../services/emailService.js');
+
+      console.log(`[Cron] Found ${candidates.length} users with abandoned carts`);
+
+      for (const user of candidates) {
+        if (!user.email || !user.savedCart?.items?.length) {
           continue;
         }
 
-        const hasRecentOrder = await Order.exists({
-          user: cart.user._id,
-          createdAt: { $gte: cart.lastActivityAt },
-        });
+        try {
+          // Generate discount code for abandoned cart recovery
+          const discountCode = generateCartDiscountCode({
+            items: user.savedCart.items,
+            subtotal: user.savedCart.items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0),
+            abandonedAt: user.savedCart.updatedAt,
+          });
 
-        if (hasRecentOrder) {
-          await AbandonedCart.deleteOne({ _id: cart._id });
-          continue;
+          // Send email with discount offer
+          await emailService.sendAbandonedCartEmail(
+            user.email,
+            user.savedCart,
+            user.name,
+            discountCode
+          );
+
+          user.abandonedCartEmailSentAt = new Date();
+          await user.save();
+
+          console.log(`[Cron] Abandoned cart email sent to ${user.email} with discount ${discountCode.code}`);
+        } catch (error) {
+          console.error(`[Cron] Abandoned cart email failed for ${user.email}:`, error.message || error);
         }
-
-        const shouldSendFirst = cart.reminderCount === 0;
-        const shouldSendSecond =
-          secondEmailDelayMinutes > 0 &&
-          cart.reminderCount === 1 &&
-          cart.firstReminderAt &&
-          now.getTime() - new Date(cart.firstReminderAt).getTime() >= secondDelayMs;
-
-        if (!shouldSendFirst && !shouldSendSecond) {
-          continue;
-        }
-
-        if (!cart.recoveryToken) {
-          cart.recoveryToken = cartToken();
-        }
-
-        const recoveryUrl = `${frontendBaseUrl}/cart?recover=${cart.recoveryToken}`;
-
-        await sendAbandonedCartEmail({
-          email: cart.user.email,
-          name: cart.user.name,
-          recoveryUrl,
-          items: cart.items,
-          subtotal: cart.subtotal,
-          currency: cart.currency,
-          reminderNumber: cart.reminderCount + 1,
-        });
-
-        cart.reminderCount += 1;
-        if (cart.reminderCount === 1) {
-          cart.firstReminderAt = now;
-        } else {
-          cart.secondReminderAt = now;
-        }
-        cart.tokenExpiresAt = new Date();
-        await cart.save();
       }
     } catch (error) {
-      console.error('[Cron] Abandoned cart email job failed:', error);
+      console.error('[Cron] Abandoned cart job failed:', error);
+    }
+  });
+
+  // Email retry job (runs every 15 minutes)
+  cron.schedule('*/15 * * * *', async () => {
+    try {
+      const failedEmails = await getEmailsForRetry();
+      
+      if (failedEmails.length === 0) {
+        return;
+      }
+
+      const emailService = await import('../services/emailService.js');
+
+      console.log(`[Cron] Found ${failedEmails.length} failed emails to retry`);
+
+      for (const cart of failedEmails) {
+        try {
+          if (cart.email && cart.items?.length) {
+            const discountCode = cart.discountCode ? {
+              code: cart.discountCode,
+              percentage: cart.discountPercentage || 5,
+            } : null;
+
+            await emailService.sendAbandonedCartEmail(
+              cart.email,
+              cart,
+              cart.user ? (await User.findById(cart.user))?.name : null,
+              discountCode
+            );
+
+            console.log(`[Cron] Retried abandoned cart email for ${cart.email}`);
+          }
+        } catch (error) {
+          console.error(`[Cron] Email retry failed for ${cart.email}:`, error.message);
+        }
+      }
+    } catch (error) {
+      console.error('[Cron] Email retry job failed:', error);
+    }
+  });
+
+  // Cleanup old abandoned carts (runs once per day at 2 AM)
+  cron.schedule('0 2 * * *', async () => {
+    try {
+      const cleanedCount = await cleanupOldAbandonedCarts();
+      console.log(`[Cron] Cleanup completed. Removed ${cleanedCount} old abandoned carts.`);
+    } catch (error) {
+      console.error('[Cron] Cleanup job failed:', error);
     }
   });
 

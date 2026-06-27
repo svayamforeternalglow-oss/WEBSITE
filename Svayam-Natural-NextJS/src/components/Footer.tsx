@@ -11,10 +11,19 @@ import {
 const API = process.env.NEXT_PUBLIC_API_URL || "https://api.svayamnatural.com/api/v1";
 
 const FOOTER_LINKS = [
-  { label: "Sustainability", href: "/radiance-rituals" },
+  { label: "Sustainability", href: "/sustainability" },
   { label: "Shipping", href: "/shipping-policy" },
   { label: "Privacy Policy", href: "/privacy-policy" },
 ];
+
+// Mail SVG icon component
+function MailIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+    </svg>
+  );
+}
 
 // WhatsApp SVG icon component
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -30,12 +39,8 @@ const DEFAULT_SOCIALS = [
   { label: "Facebook", href: "#", icon: FacebookIcon, configKey: "facebook_url" },
   { label: "Twitter", href: "#", icon: TwitterIcon, configKey: "twitter_url" },
   { label: "WhatsApp", href: "#", icon: WhatsAppIcon, configKey: "whatsapp_group_link" },
+  { label: "Email", href: "mailto:svayamforeternalglow@gmail.com", icon: MailIcon, configKey: undefined },
 ];
-
-const DEFAULT_CONTACT = {
-  email: 'support@svayam-natural.com',
-  phone: '',
-};
 
 type FooterVariant = "forest" | "light";
 
@@ -45,7 +50,6 @@ interface FooterProps {
 
 export default function Footer({ variant = "forest" }: FooterProps) {
   const [socials, setSocials] = useState(DEFAULT_SOCIALS);
-  const [contact, setContact] = useState(DEFAULT_CONTACT);
   const isLight = variant === "light";
 
   useEffect(() => {
@@ -60,12 +64,8 @@ export default function Footer({ variant = "forest" }: FooterProps) {
           const map = data.data.map;
           setSocials(DEFAULT_SOCIALS.map((s) => ({
             ...s,
-            href: map[s.configKey] || s.href,
+            href: (s.configKey && map[s.configKey]) || s.href,
           })));
-          setContact({
-            email: map.support_email || DEFAULT_CONTACT.email,
-            phone: map.support_phone || DEFAULT_CONTACT.phone,
-          });
         }
       } catch {
         // Keep defaults when remote config is unavailable.
@@ -74,9 +74,6 @@ export default function Footer({ variant = "forest" }: FooterProps) {
   }, []);
 
   const visibleSocials = socials.filter((social) => social.href && social.href !== "#");
-  const contactEmail = contact.email?.trim();
-  const contactPhone = contact.phone?.trim();
-  const contactPhoneHref = contactPhone ? contactPhone.replace(/[^\d+]/g, '') : '';
 
   return (
     <footer className={isLight ? "border-t border-neutral-300 bg-white" : "border-t border-forest-dark bg-forest"}>
@@ -97,28 +94,6 @@ export default function Footer({ variant = "forest" }: FooterProps) {
               </Link>
             ))}
           </nav>
-
-          <div className="flex flex-col items-center gap-1 text-center">
-            <span className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${isLight ? "text-clay/60" : "text-sand/60"}`}>
-              Contact
-            </span>
-            {contactEmail && (
-              <a
-                href={`mailto:${contactEmail}`}
-                className={`text-[11px] font-medium transition-colors duration-200 ${isLight ? "text-clay/80 hover:text-gold-dark" : "text-sand/80 hover:text-gold"}`}
-              >
-                {contactEmail}
-              </a>
-            )}
-            {contactPhone && (
-              <a
-                href={`tel:${contactPhoneHref}`}
-                className={`text-[11px] font-medium transition-colors duration-200 ${isLight ? "text-clay/80 hover:text-gold-dark" : "text-sand/80 hover:text-gold"}`}
-              >
-                {contactPhone}
-              </a>
-            )}
-          </div>
 
           <div className="flex items-center justify-center gap-2.5">
             {visibleSocials.map((social) => (

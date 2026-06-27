@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { products, getCategoryDisplayName, getProductBySlug as getStaticProduct } from "@/lib/products";
+import { getCategoryDisplayName } from "@/lib/products";
 import { fetchProductBySlug } from "@/lib/productApi";
 import StorySection from "@/components/StorySection";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
@@ -11,20 +11,13 @@ import SuryakantiPage from "@/components/SuryakantiPage";
 import ProductImageHero from "./ProductImageHero";
 import type { Metadata } from "next";
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
-}
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  // Try API first for live data, fall back to static
-  const apiProduct = await fetchProductBySlug(slug);
-  const staticProduct = getStaticProduct(slug);
-  const product = apiProduct || staticProduct;
+  const product = await fetchProductBySlug(slug);
   if (!product) return { title: "Product Not Found" };
   return {
     title: `${product.name} — ${product.tagline || ''}`,
@@ -32,8 +25,8 @@ export async function generateMetadata({
   };
 }
 
-// ISR: revalidate every 60 seconds for live data
-export const revalidate = 60;
+// SSR: always fetch fresh data from the backend
+export const dynamic = 'force-dynamic';
 
 export default async function ProductPage({
   params,
@@ -41,12 +34,8 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  
-  // Fetch from API (live data merged with editorial), fall back to static
-  const apiProduct = await fetchProductBySlug(slug);
-  const staticProduct = getStaticProduct(slug);
-  const product = apiProduct || staticProduct;
-  
+  const product = await fetchProductBySlug(slug);
+
   if (!product) notFound();
 
   // Special pages for premium products
@@ -107,7 +96,7 @@ export default async function ProductPage({
                 {product.tagline}
               </p>
             )}
-            <p className="mb-8 max-w-lg leading-relaxed text-clay-light">
+            <p className="mb-8 max-w-lg whitespace-pre-wrap leading-relaxed text-clay-light lg:max-h-48 lg:overflow-y-auto thin-scrollbar">
               {product.description}
             </p>
 

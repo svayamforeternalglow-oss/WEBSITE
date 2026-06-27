@@ -75,17 +75,6 @@
   }
 }
 
-@keyframes toastPop {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 @keyframes kenBurns {
   0% {
     transform: scale(1) translate(0, 0);
@@ -143,10 +132,6 @@
 
 .animate-slideInRight {
   animation: slideInRight 0.6s ease-out both;
-}
-
-.animate-toastPop {
-  animation: toastPop 0.35s ease-out both;
 }
 
 .animate-kenBurns {
@@ -416,4 +401,27 @@
 .hero-title span:first-child {
   font-weight: 400;
   letter-spacing: 0.04em;
+}
+
+/* Thin custom scrollbar for description and scrollable areas */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-clay);
+  border-radius: 99px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-forest);
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-clay) transparent;
 }

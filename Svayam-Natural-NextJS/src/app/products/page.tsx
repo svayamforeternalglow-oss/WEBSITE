@@ -8,7 +8,6 @@ import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { fetchProducts, type MergedProduct } from "@/lib/productApi";
 import {
   PRODUCTS_PAGE_CATEGORIES,
-  CATEGORY_TO_BACKEND_MAP,
   CONCERN_ROUTE_PRODUCTS,
   COLLECTION_ROUTE_PRODUCTS,
   normalizeCategoryQuery,
@@ -42,18 +41,8 @@ function ProductsContent() {
   const loadProducts = useCallback(async () => {
     setLoading(true);
     try {
-      // Build category filter for API
-      let categoryForApi: string | undefined;
-      if (activeCategory !== "all") {
-        categoryForApi = CATEGORY_TO_BACKEND_MAP[activeCategory];
-        if (!categoryForApi && !(activeCategory in CATEGORY_TO_BACKEND_MAP)) {
-          categoryForApi = activeCategory;
-        }
-      }
-
       const result = await fetchProducts({
         search: searchQuery.trim() || undefined,
-        category: categoryForApi || undefined,
         active: true,
       });
 
@@ -81,12 +70,14 @@ function ProductsContent() {
         }
       }
 
-      // 3. Filter by category slug sets
+      // 3. Filter by category slug sets OR new category field
       if (activeCategory !== "all") {
         const catConfig = PRODUCTS_PAGE_CATEGORIES.find((c) => c.id === activeCategory);
-        if (catConfig && catConfig.slugs.length > 0) {
+        if (catConfig) {
           const slugSet = new Set<string>(catConfig.slugs as unknown as string[]);
-          filtered = filtered.filter((p) => slugSet.has(p.slug));
+          filtered = filtered.filter((p) =>
+            slugSet.has(p.slug) || (catConfig.categoryQuery !== undefined && p.category === catConfig.categoryQuery)
+          );
         }
       }
       

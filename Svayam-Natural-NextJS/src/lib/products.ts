@@ -22,16 +22,32 @@ export interface Product {
 }
 
 export const CATEGORY_THEMES: Record<string, ProductTheme> = {
+  'best-selling-kits': 'herbal',
+  'face-care': 'skincare',
+  'lip-care': 'beauty',
   'hair-care': 'herbal',
-  'skin-care': 'skincare',
   'body-care': 'skincare',
-  'beauty-products': 'beauty',
+  'eat-to-glow': 'food',
+  'detox': 'wellness',
   'natural-food': 'food',
+  // Backward compat for old category values
+  'skin-care': 'skincare',
+  'beauty-products': 'beauty',
   'wellness': 'wellness',
 };
 
 export const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
+  'best-selling-kits': 'Best Selling Kits',
+  'face-care': 'Face Care',
+  'lip-care': 'Lip Care',
+  'hair-care': 'Hair Care',
+  'body-care': 'Body Care',
+  'eat-to-glow': 'Eat to Glow',
+  'detox': 'Detox',
+  'natural-food': 'Natural Food',
+  // Backward compat for old category values
   'skin-care': 'Face Care',
+  'beauty-products': 'Lip Care',
 };
 
 export const products: Product[] = [
@@ -86,6 +102,7 @@ export const products: Product[] = [
     ingredients: [
       { name: 'Hibiscus Extract', icon: '🌺', description: 'Rich in amino acids and vitamins that nourish hair while providing natural hold.' },
       { name: 'Aloe Vera', icon: '🌿', description: 'Hydrates and soothes the scalp, preventing dryness and flaking.' },
+      { name: 'Glycerin', icon: '💧', description: 'Natural humectant that locks in moisture for all-day softness.' },
     ],
     benefits: [
       { title: 'Define Curls', description: 'Shape and define curls naturally without crunchiness.', icon: '🌀' },
@@ -431,15 +448,15 @@ export function getCategoryDisplayName(category: string): string {
 
 /** Category filter options for All Products page. */
 export const PRODUCTS_PAGE_CATEGORIES = [
-  { id: "all", label: "All Products", slugs: [] },
-  { id: "kits", label: "Best Selling Kits", slugs: ["complete-radiance-kit", "hair-care-kit", "tejasamrit-golden-latte-family-pack", "royal-bathing-kit", "autea", "tejasamrit"] },
-  { id: "face", label: "Face Care", slugs: ["chandraprabha-night-nectar", "suryakanti-day-cream", "lavanyam-facepack", "face-polishing-scrub", "tarunya-rose-toner"] },
-  { id: "lip-balm", label: "Lip Care", slugs: ["kumkumadi-lip-balm", "rose-lip-balm"] },
-  { id: "hair-care", label: "Hair Care", slugs: ["keshvardhini-hair-oil", "hibiscus-hair-gel", "bhruhshakti-roll-on", "kesh-shuddhi", "kesh-samraksha"] },
-  { id: "body-care", label: "Body Care", slugs: ["abhyanga-natural-soap", "snehchandan-natural-soap", "abhyanga-udvartana", "mango-body-butter", "kayashuddhi-abhyanga-body-oil", "triphala-natural-soap", "glowup-night-gel"] },
-  { id: "food", label: "Eat to Glow", slugs: ["tejasamrit", "autea", "gulkand"] },
-  { id: "detox", label: "Detox", slugs: ["triphala-detox", "tridosha-rasayan", "swarnahairdra-turmeric"] },
-  { id: "natural-food", label: "Natural Food", slugs: ["swarnahairdra-turmeric", "sonamoti-wheat", "triphala-detox", "tridosha-rasayan", "autea", "gulkand"] },
+  { id: "all", label: "All Products", slugs: [], categoryQuery: undefined },
+  { id: "kits", label: "Best Selling Kits", slugs: ["complete-radiance-kit", "hair-care-kit", "tejasamrit-golden-latte-family-pack", "royal-bathing-kit", "tejasamrit"], categoryQuery: "best-selling-kits" },
+  { id: "face", label: "Face Care", slugs: ["chandraprabha-night-nectar", "suryakanti-day-cream", "lavanyam-facepack", "face-polishing-scrub", "tarunya-rose-toner"], categoryQuery: "face-care" },
+  { id: "lip-balm", label: "Lip Care", slugs: ["kumkumadi-lip-balm", "rose-lip-balm"], categoryQuery: "lip-care" },
+  { id: "hair-care", label: "Hair Care", slugs: ["keshvardhini-hair-oil", "hibiscus-hair-gel", "bhruhshakti-roll-on", "kesh-shuddhi", "kesh-samraksha"], categoryQuery: "hair-care" },
+  { id: "body-care", label: "Body Care", slugs: ["abhyanga-natural-soap", "snehchandan-natural-soap", "abhyanga-udvartana", "mango-body-butter", "kayashuddhi-abhyanga-body-oil", "triphala-natural-soap", "glowup-night-gel"], categoryQuery: "body-care" },
+  { id: "food", label: "Eat to Glow", slugs: ["tejasamrit", "autea", "gulkand"], categoryQuery: "eat-to-glow" },
+  { id: "detox", label: "Detox", slugs: ["triphala-detox", "tridosha-rasayan", "swarnahairdra-turmeric"], categoryQuery: "detox" },
+  { id: "natural-food", label: "Natural Food", slugs: ["swarnahairdra-turmeric", "sonamoti-wheat", "triphala-detox", "tridosha-rasayan", "autea", "gulkand"], categoryQuery: "natural-food" },
 ] as const;
 
 export const CATEGORY_QUERY_ALIASES: Record<string, string> = {
@@ -448,19 +465,24 @@ export const CATEGORY_QUERY_ALIASES: Record<string, string> = {
   'body care': 'body-care',
   skincare: 'face',
   'skin-care': 'face',
-  'beauty-products': 'all',
+  'beauty-products': 'lip-balm',
   wellness: 'body-care',
+  'best selling kits': 'kits',
+  'face care': 'face',
+  'lip care': 'lip-balm',
+  'eat to glow': 'food',
+  'natural food': 'natural-food',
 };
 
 export const CATEGORY_TO_BACKEND_MAP: Record<string, string | undefined> = {
   all: undefined,
-  kits: undefined,
-  face: 'skin-care',
-  'lip-balm': 'beauty-products',
+  kits: 'best-selling-kits',
+  face: 'face-care',
+  'lip-balm': 'lip-care',
   'hair-care': 'hair-care',
   'body-care': 'body-care',
-  food: undefined,
-  detox: 'natural-food',
+  food: 'eat-to-glow',
+  detox: 'detox',
   'natural-food': 'natural-food',
 };
 

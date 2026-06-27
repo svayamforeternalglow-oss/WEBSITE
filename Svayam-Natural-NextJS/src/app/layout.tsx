@@ -5,19 +5,13 @@ import ConditionalNavbar from "@/components/ConditionalNavbar";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import CartDrawer from "@/components/CartDrawer";
 import ToastContainer from "@/components/Toast";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
+import ConditionalWhatsAppFloat from "@/components/ConditionalWhatsAppFloat";
 import TopBanner from "@/components/TopBanner";
-<<<<<<< Updated upstream
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/lib/uploadthing";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-=======
-<<<<<<< HEAD
-import CartSync from "@/components/CartSync";
-=======
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
->>>>>>> ec236a2cc98f3795f335f63c762e1eb127e7fdf1
->>>>>>> Stashed changes
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -70,14 +64,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable} ${cormorant.variable}`}>
       <body className="antialiased">
+        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <TopBanner />
         <ConditionalNavbar />
         <main>{children}</main>
         <ConditionalFooter />
-        <CartSync />
         <CartDrawer />
         <ToastContainer />
-        <WhatsAppFloat />
+        <ConditionalWhatsAppFloat />
         <Analytics />
         <SpeedInsights />
       </body>

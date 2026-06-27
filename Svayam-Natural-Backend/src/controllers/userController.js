@@ -112,3 +112,119 @@ export const removeWishlist = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const normalizeCartItem = (item) => {
+  const slug = typeof item?.slug === 'string' ? item.slug.trim() : '';
+  if (!slug) {
+    return null;
+  }
+
+  const quantity = Number(item?.quantity || item?.qty || 1);
+  if (!Number.isFinite(quantity) || quantity < 1 || quantity > 20) {
+    return null;
+  }
+
+  const safeNumber = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+  const safeString = (value) => (typeof value === 'string' ? value.trim() : '');
+
+  return {
+    productId: safeString(item?.productId || item?.product),
+    slug,
+    name: safeString(item?.name),
+    price: safeNumber(item?.price),
+    originalPrice: safeNumber(item?.originalPrice),
+    image: safeString(item?.image),
+    weight: safeString(item?.weight),
+    sku: safeString(item?.sku),
+    quantity,
+  };
+};
+
+// @desc    Update saved cart (used for abandoned cart recovery)
+// @route   POST /api/v1/users/cart
+// @access  Private
+export const updateSavedCart = async (req, res) => {
+  const { items } = req.body;
+
+  if (!Array.isArray(items)) {
+    return res.status(400).json({ message: 'Cart items are required' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const normalizedItems = items
+      .map(normalizeCartItem)
+      .filter(Boolean);
+
+    user.savedCart = {
+      items: normalizedItems,
+      updatedAt: new Date(),
+    };
+    user.abandonedCartEmailSentAt = null;
+
+    await user.save();
+
+    return res.json({
+      items: user.savedCart?.items || [],
+      updatedAt: user.savedCart?.updatedAt || null,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get saved cart
+// @route   GET /api/v1/users/cart
+// @access  Private
+export const getSavedCart = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('savedCart');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.json({
+      items: user.savedCart?.items || [],
+      updatedAt: user.savedCart?.updatedAt || null,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Change password
+// @route   PUT /api/v1/users/change-password
+// @access  Private
+export const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current password and new password are required' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!(await user.matchPassword(currentPassword))) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

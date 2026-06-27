@@ -124,7 +124,7 @@ if (isCorsOpenMode) {
 // Rate limiting — tune max upward if legitimate storefront traffic hits 429s behind carrier NAT.
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: Number(process.env.RATE_LIMIT_MAX) || 1000, // limit each IP to 1000 requests per windowMs (default)
   skip: (req) => req.method === 'OPTIONS',
 });
 app.use('/api', limiter);
@@ -144,7 +144,6 @@ import adminRoutes from './routes/adminRoutes.js';
 import shippingRoutes from './routes/shippingRoutes.js';
 import taxonomyRoutes from './routes/taxonomyRoutes.js';
 import siteConfigRoutes from './routes/siteConfigRoutes.js';
-import cartRoutes from './routes/cartRoutes.js';
 
 // Routes
 app.use('/api/v1/users', userRoutes);
@@ -155,7 +154,6 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/shipping', shippingRoutes);
 app.use('/api/v1/taxonomy', taxonomyRoutes);
 app.use('/api/v1/site-config', siteConfigRoutes);
-app.use('/api/v1/cart', cartRoutes);
 
 app.get('/', (req, res) => {
   res.send('Svayam-Natural API is running...');

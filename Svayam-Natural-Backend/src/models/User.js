@@ -9,6 +9,23 @@ const addressSchema = new mongoose.Schema({
   country: { type: String, required: true, default: 'India' },
 }, { _id: false });
 
+const savedCartItemSchema = new mongoose.Schema({
+  productId: { type: String },
+  slug: { type: String, trim: true },
+  name: { type: String, trim: true },
+  price: { type: Number },
+  originalPrice: { type: Number },
+  image: { type: String, trim: true },
+  weight: { type: String, trim: true },
+  sku: { type: String, trim: true },
+  quantity: { type: Number, min: 1 },
+}, { _id: false });
+
+const savedCartSchema = new mongoose.Schema({
+  items: { type: [savedCartItemSchema], default: [] },
+  updatedAt: { type: Date, default: Date.now },
+}, { _id: false });
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -38,7 +55,9 @@ const userSchema = new mongoose.Schema({
   wishlist: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product'
-  }]
+  }],
+  savedCart: { type: savedCartSchema, default: undefined },
+  abandonedCartEmailSentAt: { type: Date, default: null }
 }, {
   timestamps: true
 });
