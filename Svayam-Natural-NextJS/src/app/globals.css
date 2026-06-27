@@ -402,3 +402,26 @@
   font-weight: 400;
   letter-spacing: 0.04em;
 }
+
+/* Thin custom scrollbar for description and scrollable areas */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-clay);
+  border-radius: 99px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-forest);
+}
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-clay) transparent;
+}
