@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getCategoryDisplayName, getProductBySlug as getStaticProduct } from "@/lib/products";
+import { getCategoryDisplayName } from "@/lib/products";
 import { fetchProductBySlug } from "@/lib/productApi";
 import StorySection from "@/components/StorySection";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
@@ -17,10 +17,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  // Try API first for live data, fall back to static
-  const apiProduct = await fetchProductBySlug(slug);
-  const staticProduct = getStaticProduct(slug);
-  const product = apiProduct || staticProduct;
+  const product = await fetchProductBySlug(slug);
   if (!product) return { title: "Product Not Found" };
   return {
     title: `${product.name} — ${product.tagline || ''}`,
@@ -37,12 +34,8 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  
-  // Fetch from API (live data merged with editorial), fall back to static
-  const apiProduct = await fetchProductBySlug(slug);
-  const staticProduct = getStaticProduct(slug);
-  const product = apiProduct || staticProduct;
-  
+  const product = await fetchProductBySlug(slug);
+
   if (!product) notFound();
 
   // Special pages for premium products
@@ -103,7 +96,7 @@ export default async function ProductPage({
                 {product.tagline}
               </p>
             )}
-            <p className="mb-8 max-w-lg leading-relaxed text-clay-light">
+            <p className="mb-8 max-w-lg whitespace-pre-wrap leading-relaxed text-clay-light">
               {product.description}
             </p>
 
